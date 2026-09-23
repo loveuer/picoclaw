@@ -106,6 +106,38 @@ func TestProviderChat_OpenAIUsesResponsesAPI(t *testing.T) {
 	}
 }
 
+func TestProviderChat_OpenAIStreamsResponsesWhenConfigured(t *testing.T) {
+	var requestBody map[string]any
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/v1/responses" {
+			t.Errorf("request path = %q, want /v1/responses", r.URL.Path)
+		}
+		if got := r.Header.Get("Accept"); got != "text/event-stream" {
+			t.Errorf("Accept = %q, want text/event-stream", got)
+		}
+		if err := json.NewDecoder(r.Body).Decode(&requestBody); err != nil {
+			t.Errorf("decode request: %v", err)
+		}
+		w.Header().Set("Content-Type", "text/event-stream")
+		_, _ = io.WriteString(w, "event: response.completed\n"+
+			"data: {\"type\":\"response.completed\",\"response\":{\"status\":\"completed\",\"output\":[{\"type\":\"message\",\"content\":[{\"type\":\"output_text\",\"text\":\"streamed answer\"}]}]}}\n\n")
+	}))
+	defer server.Close()
+
+	p := NewProvider("test-key", server.URL+"/v1", "", WithProviderName("openai"),
+		WithExtraBody(map[string]any{"stream": true}))
+	response, err := p.Chat(t.Context(), []Message{{Role: "user", Content: "hi"}}, nil, "gpt-6-luna", nil)
+	if err != nil {
+		t.Fatalf("Chat() error = %v", err)
+	}
+	if requestBody["stream"] != true || requestBody["model"] != "gpt-6-luna" {
+		t.Fatalf("requestBody stream/model = %v/%v", requestBody["stream"], requestBody["model"])
+	}
+	if response.Content != "streamed answer" {
+		t.Fatalf("Content = %q, want streamed answer", response.Content)
+	}
+}
+
 func TestProviderChat_OpenAIFallsBackWhenResponsesUnsupported(t *testing.T) {
 	var paths []string
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

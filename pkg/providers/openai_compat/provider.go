@@ -583,6 +583,9 @@ func (p *Provider) chatResponses(
 	options map[string]any,
 ) (*LLMResponse, error) {
 	requestBody := p.buildResponsesRequestBody(messages, tools, model, options)
+	if requestBody["stream"] == true {
+		return p.doRequest(ctx, "/responses", requestBody, orc.ParseResponseStream)
+	}
 	return p.doRequest(ctx, "/responses", requestBody, orc.ParseResponseBody)
 }
 
@@ -603,6 +606,9 @@ func (p *Provider) doRequest(
 	}
 
 	req.Header.Set("Content-Type", "application/json")
+	if requestBody["stream"] == true {
+		req.Header.Set("Accept", "text/event-stream")
+	}
 	if p.userAgent != "" {
 		req.Header.Set("User-Agent", p.userAgent)
 	}
