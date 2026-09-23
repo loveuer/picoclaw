@@ -504,6 +504,9 @@ func (p *Provider) buildResponsesRequestBody(
 	if maxTokens, ok := common.AsInt(options["max_tokens"]); ok {
 		requestBody["max_output_tokens"] = maxTokens
 	}
+	if temperature, ok := common.AsFloat(options["temperature"]); ok {
+		requestBody["temperature"] = temperature
+	}
 	if cacheKey, ok := options["prompt_cache_key"].(string); ok && cacheKey != "" &&
 		supportsPromptCacheKey(p.apiBase) {
 		requestBody["prompt_cache_key"] = cacheKey

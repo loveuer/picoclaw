@@ -94,8 +94,8 @@ func TestProviderChat_OpenAIUsesResponsesAPI(t *testing.T) {
 	if requestBody["max_output_tokens"] != float64(256) {
 		t.Fatalf("max_output_tokens = %v, want 256", requestBody["max_output_tokens"])
 	}
-	if _, ok := requestBody["temperature"]; ok {
-		t.Fatalf("temperature should be omitted from Responses request, got %v", requestBody["temperature"])
+	if requestBody["temperature"] != 0.2 {
+		t.Fatalf("temperature = %v, want 0.2", requestBody["temperature"])
 	}
 	if requestBody["prompt_cache_key"] != "agent-main" {
 		t.Fatalf("prompt_cache_key = %v, want agent-main", requestBody["prompt_cache_key"])
