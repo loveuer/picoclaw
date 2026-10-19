@@ -240,6 +240,37 @@ func TestSend_ThoughtMessageDoesNotFinalizeTrackedToolFeedback(t *testing.T) {
 	}
 }
 
+func TestSend_CommandReplyPreservesToolFeedback(t *testing.T) {
+	ch := newTestPicoChannel(t)
+	if err := ch.Start(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = ch.Stop(context.Background()) })
+	clientConn, received, cleanup := newTestPicoWebSocket(t)
+	t.Cleanup(cleanup)
+	ch.addConnForTest(&picoConn{id: "conn-1", conn: clientConn, sessionID: "sess-1"})
+	ch.RecordToolFeedbackMessage("pico:sess-1", "progress-1", "Working")
+	_, err := ch.Send(t.Context(), bus.OutboundMessage{
+		ChatID: "pico:sess-1", Content: "请待会再试",
+		Context: bus.InboundContext{Raw: map[string]string{"outbound_kind": "command_reply"}},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	select {
+	case msg := <-received:
+		if msg.Type != TypeMessageCreate || msg.Payload[PayloadKeyContent] != "请待会再试" ||
+			msg.Payload["message_id"] == "progress-1" {
+			t.Fatalf("command reply replaced task progress: %+v", msg)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("command reply was not delivered")
+	}
+	if id, ok := ch.currentToolFeedbackMessage("pico:sess-1"); !ok || id != "progress-1" {
+		t.Fatal("task progress was removed")
+	}
+}
+
 func TestSend_ToolCallsMessageIncludesModelName(t *testing.T) {
 	ch := newTestPicoChannel(t)
 

@@ -205,6 +205,10 @@ func (al *AgentLoop) processMessage(ctx context.Context, msg bus.InboundMessage)
 		return response, nil
 	}
 
+	return al.runMessagePrompt(ctx, agent, opts)
+}
+
+func (al *AgentLoop) runMessagePrompt(ctx context.Context, agent *AgentInstance, opts processOptions) (string, error) {
 	if pending := al.takePendingSkills(opts.Dispatch.SessionKey); len(pending) > 0 {
 		opts.ForcedSkills = append(opts.ForcedSkills, pending...)
 		logger.InfoCF("agent", "Applying pending skill override",

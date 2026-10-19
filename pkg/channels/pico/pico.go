@@ -66,7 +66,8 @@ func outboundMessageIsToolCalls(msg bus.OutboundMessage) bool {
 }
 
 func outboundMessageFinalizesTrackedToolFeedback(msg bus.OutboundMessage) bool {
-	return !outboundMessageIsToolFeedback(msg) &&
+	return !channels.IsCommandReply(msg) &&
+		!outboundMessageIsToolFeedback(msg) &&
 		!outboundMessageIsThought(msg) &&
 		!outboundMessageIsToolCalls(msg)
 }

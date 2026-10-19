@@ -859,6 +859,11 @@ func TestEvolutionBridge_TurnEndUsesExplicitAttemptTrail(t *testing.T) {
 	if err != nil {
 		t.Fatalf("newEvolutionBridge: %v", err)
 	}
+	t.Cleanup(func() {
+		if closeErr := bridge.Close(); closeErr != nil {
+			t.Errorf("Close: %v", closeErr)
+		}
+	})
 
 	err = bridge.OnEvent(context.Background(), Event{
 		Kind: EventKindTurnEnd,

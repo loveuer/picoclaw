@@ -8,11 +8,8 @@ import (
 	"github.com/sipeed/picoclaw/pkg/providers"
 )
 
-// ThinkingLevel controls how the provider sends thinking parameters.
-//
-//   - "adaptive": sends {thinking: {type: "adaptive"}} + output_config.effort (Claude 4.6+)
-//   - "low"/"medium"/"high"/"xhigh": sends {thinking: {type: "enabled", budget_tokens: N}} (all models)
-//   - "off": disables thinking
+// ThinkingLevel requests a provider-specific reasoning effort. Each provider
+// maps supported levels to its own API parameters.
 type ThinkingLevel string
 
 const (

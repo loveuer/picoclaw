@@ -225,7 +225,7 @@ func (p *Provider) applyThinkingControl(requestBody map[string]any, model string
 		return
 	}
 
-	if p.SupportsThinking() {
+	if p.supportsDeepSeekThinking() {
 		p.applyDeepSeekThinkingControl(requestBody, level)
 		return
 	}
@@ -339,6 +339,10 @@ func (p *Provider) SetProviderName(providerName string) {
 }
 
 func (p *Provider) SupportsThinking() bool {
+	return strings.EqualFold(strings.TrimSpace(p.providerName), "openai") || p.supportsDeepSeekThinking()
+}
+
+func (p *Provider) supportsDeepSeekThinking() bool {
 	return strings.EqualFold(strings.TrimSpace(p.providerName), "deepseek") || isDeepSeekHost(p.apiBase)
 }
 
@@ -504,6 +508,15 @@ func (p *Provider) buildResponsesRequestBody(
 	if maxTokens, ok := common.AsInt(options["max_tokens"]); ok {
 		requestBody["max_output_tokens"] = maxTokens
 	}
+	if level, ok := normalizedThinkingLevel(options); ok && level != "adaptive" {
+		effort := level
+		if level == "off" {
+			effort = "none"
+		}
+		if level != "off" || isOpenAIReasoningModel(model) {
+			requestBody["reasoning"] = map[string]any{"effort": effort}
+		}
+	}
 	if temperature, ok := common.AsFloat(options["temperature"]); ok {
 		requestBody["temperature"] = temperature
 	}
@@ -513,7 +526,47 @@ func (p *Provider) buildResponsesRequestBody(
 	}
 
 	maps.Copy(requestBody, p.extraBody)
+	// Agent calls include a default temperature. Reasoning models reject it
+	// unless their effective effort is "none". Keep explicit extra_body values
+	// so callers can override the model default when their endpoint supports it.
+	if _, explicit := p.extraBody["temperature"]; !explicit &&
+		shouldOmitResponsesTemperature(model, requestBody["reasoning"]) {
+		delete(requestBody, "temperature")
+	}
 	return requestBody
+}
+
+func shouldOmitResponsesTemperature(model string, reasoning any) bool {
+	if settings, ok := reasoning.(map[string]any); ok {
+		if effort, ok := settings["effort"].(string); ok {
+			return !strings.EqualFold(strings.TrimSpace(effort), "none")
+		}
+	}
+	return isOpenAIReasoningModel(model)
+}
+
+// The agent supplies a temperature even when the user leaves it unset, so
+// recognize reasoning model families when no effort is specified explicitly.
+func isOpenAIReasoningModel(model string) bool {
+	model = strings.ToLower(strings.TrimSpace(model))
+	if strings.HasPrefix(model, "gpt-oss") {
+		return true
+	}
+	if len(model) > 1 && model[0] == 'o' && model[1] >= '0' && model[1] <= '9' {
+		return true
+	}
+	if !strings.HasPrefix(model, "gpt-") {
+		return false
+	}
+	version := strings.TrimPrefix(model, "gpt-")
+	major := 0
+	for _, digit := range version {
+		if digit < '0' || digit > '9' {
+			break
+		}
+		major = major*10 + int(digit-'0')
+	}
+	return major >= 5
 }
 
 func (p *Provider) Chat(

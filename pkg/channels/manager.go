@@ -368,6 +368,11 @@ func (m *Manager) RecordReactionUndo(channel, chatID string, undo func()) {
 // preSend handles typing stop, reaction undo, and placeholder editing before sending a message.
 // Returns the delivered message IDs and true when delivery completed before a normal Send.
 func (m *Manager) preSend(ctx context.Context, name string, msg bus.OutboundMessage, ch Channel) ([]string, bool) {
+	// Command replies during a running turn must not consume its placeholder,
+	// stop typing, or alter stream finalization state.
+	if IsCommandReply(msg) {
+		return nil, false
+	}
 	chatID := outboundMessageChatID(msg)
 	key := name + ":" + chatID
 	streamKey := streamSuppressionKey(name, chatID, msg.SessionKey)

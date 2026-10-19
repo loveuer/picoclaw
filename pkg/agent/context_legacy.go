@@ -16,15 +16,17 @@ import (
 // as a ContextManager implementation. It is the default when no other
 // ContextManager is configured.
 type legacyContextManager struct {
-	al          *AgentLoop
-	summarizing sync.Map // dedup for async Compact (post-turn)
+	al            *AgentLoop
+	summarizing   sync.Map // dedup for async Compact (post-turn)
+	contextMu     sync.Mutex
+	resetVersions map[string]uint64 // invalidate summaries started before a reset
 }
 
 func (m *legacyContextManager) Assemble(_ context.Context, req *AssembleRequest) (*AssembleResponse, error) {
 	// Legacy: read history from session, return as-is.
 	// Budget enforcement happens in BuildMessages caller via
 	// isOverContextBudget + forceCompression.
-	agent := m.al.registry.GetDefaultAgent()
+	agent := m.al.agentForSession(req.SessionKey)
 	if agent == nil {
 		return &AssembleResponse{}, nil
 	}
@@ -63,12 +65,18 @@ func (m *legacyContextManager) Ingest(_ context.Context, _ *IngestRequest) error
 }
 
 func (m *legacyContextManager) Clear(_ context.Context, sessionKey string) error {
+	m.contextMu.Lock()
+	defer m.contextMu.Unlock()
 	// Routed (non-default) agents keep history in their own session store,
 	// so resolve the owning agent instead of assuming the default one.
 	agent := m.al.agentForSession(sessionKey)
 	if agent == nil || agent.Sessions == nil {
 		return fmt.Errorf("sessions not initialized")
 	}
+	if m.resetVersions == nil {
+		m.resetVersions = make(map[string]uint64)
+	}
+	m.resetVersions[sessionKey]++
 	agent.Sessions.SetHistory(sessionKey, []providers.Message{})
 	agent.Sessions.SetSummary(sessionKey, "")
 	return agent.Sessions.Save(sessionKey)
@@ -77,7 +85,7 @@ func (m *legacyContextManager) Clear(_ context.Context, sessionKey string) error
 // maybeSummarize triggers summarization if the session history exceeds thresholds.
 // It runs asynchronously in a goroutine.
 func (m *legacyContextManager) maybeSummarize(sessionKey string) {
-	agent := m.al.registry.GetDefaultAgent()
+	agent := m.al.agentForSession(sessionKey)
 	if agent == nil {
 		return
 	}
@@ -175,8 +183,11 @@ func (m *legacyContextManager) summarizeSession(agent *AgentInstance, sessionKey
 	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
 	defer cancel()
 
+	m.contextMu.Lock()
+	version := m.resetVersions[sessionKey]
 	history := agent.Sessions.GetHistory(sessionKey)
 	summary := agent.Sessions.GetSummary(sessionKey)
+	m.contextMu.Unlock()
 
 	if len(history) <= 4 {
 		return
@@ -245,9 +256,15 @@ func (m *legacyContextManager) summarizeSession(agent *AgentInstance, sessionKey
 	}
 
 	if finalSummary != "" {
+		m.contextMu.Lock()
+		if version != m.resetVersions[sessionKey] {
+			m.contextMu.Unlock()
+			return
+		}
 		agent.Sessions.SetSummary(sessionKey, finalSummary)
 		agent.Sessions.TruncateHistory(sessionKey, keepCount)
 		agent.Sessions.Save(sessionKey)
+		m.contextMu.Unlock()
 		m.al.emitEvent(
 			runtimeevents.KindAgentSessionSummarize,
 			m.al.newTurnEventScope(agent.ID, sessionKey, nil).meta(0, "summarizeSession", "turn.session.summarize"),

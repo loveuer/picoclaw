@@ -187,9 +187,12 @@ PicoClaw 按下面的规则解析 `provider` 和最终发给上游的模型 ID�
   "model_name": "gpt-5.4",
   "provider": "openai",
   "model": "gpt-5.4",
-  "api_keys": ["sk-..."]
+  "api_keys": ["sk-..."],
+  "thinking_level": "high"
 }
 ```
+
+对于支持推理的 OpenAI Responses 模型，`thinking_level` 会映射为 `reasoning.effort`：`off` 对应 `none`，`low`、`medium`、`high`、`xhigh` 原样传递，`adaptive` 使用模型默认值。各模型支持的级别可能不同。启用思考时，PicoClaw 会省略默认的 `temperature` 参数。
 
 **火山引擎（Doubao）**
 

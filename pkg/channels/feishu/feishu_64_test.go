@@ -386,6 +386,21 @@ func TestFinalizeTrackedToolFeedbackMessage_StopsTrackingBeforeEdit(t *testing.T
 	}
 }
 
+func TestFinalizeToolFeedbackMessage_CommandReplyPreservesProgress(t *testing.T) {
+	ch := &FeishuChannel{progress: channels.NewToolFeedbackAnimator(nil)}
+	ch.RecordToolFeedbackMessage("chat-1", "progress-1", "Working")
+	_, handled := ch.FinalizeToolFeedbackMessage(t.Context(), bus.OutboundMessage{
+		ChatID: "chat-1", Content: "请待会再试",
+		Context: bus.InboundContext{Raw: map[string]string{"outbound_kind": "command_reply"}},
+	})
+	if handled {
+		t.Fatal("command reply finalized task progress")
+	}
+	if id, ok := ch.currentToolFeedbackMessage("chat-1"); !ok || id != "progress-1" {
+		t.Fatal("task progress was removed")
+	}
+}
+
 func TestFinalizeTrackedToolFeedbackMessage_EditFailureKeepsTrackedMessage(t *testing.T) {
 	ch := &FeishuChannel{
 		progress: channels.NewToolFeedbackAnimator(nil),

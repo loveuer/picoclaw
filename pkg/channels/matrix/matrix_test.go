@@ -14,6 +14,7 @@ import (
 	"maunium.net/go/mautrix/event"
 	"maunium.net/go/mautrix/id"
 
+	"github.com/sipeed/picoclaw/pkg/bus"
 	"github.com/sipeed/picoclaw/pkg/channels"
 	"github.com/sipeed/picoclaw/pkg/config"
 	"github.com/sipeed/picoclaw/pkg/media"
@@ -67,6 +68,21 @@ func TestFinalizeTrackedToolFeedbackMessage_StopsTrackingBeforeEdit(t *testing.T
 	}
 	if len(msgIDs) != 1 || msgIDs[0] != "$event1" {
 		t.Fatalf("finalizeTrackedToolFeedbackMessage() ids = %v, want [$event1]", msgIDs)
+	}
+}
+
+func TestFinalizeToolFeedbackMessage_CommandReplyPreservesProgress(t *testing.T) {
+	ch := &MatrixChannel{progress: channels.NewToolFeedbackAnimator(nil)}
+	ch.RecordToolFeedbackMessage("!room:matrix.org", "$progress", "Working")
+	_, handled := ch.FinalizeToolFeedbackMessage(t.Context(), bus.OutboundMessage{
+		ChatID: "!room:matrix.org", Content: "请待会再试",
+		Context: bus.InboundContext{Raw: map[string]string{"outbound_kind": "command_reply"}},
+	})
+	if handled {
+		t.Fatal("command reply finalized task progress")
+	}
+	if id, ok := ch.currentToolFeedbackMessage("!room:matrix.org"); !ok || id != "$progress" {
+		t.Fatal("task progress was removed")
 	}
 }
 

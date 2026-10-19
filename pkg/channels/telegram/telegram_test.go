@@ -610,6 +610,26 @@ func TestSend_NonToolFeedbackDeletesTrackedProgressMessage(t *testing.T) {
 	assert.False(t, ok, "tracked tool feedback should be cleared after final reply")
 }
 
+func TestSend_CommandReplyPreservesToolFeedback(t *testing.T) {
+	caller := &stubCaller{callFn: func(_ context.Context, url string, _ *ta.RequestData) (*ta.Response, error) {
+		if !strings.Contains(url, "sendMessage") {
+			t.Fatalf("command reply edited or deleted task progress: %s", url)
+		}
+		return successResponseWithMessageID(t, 2), nil
+	}}
+	ch := newTestChannel(t, caller)
+	ch.RecordToolFeedbackMessage("12345", "1", "Working")
+	ids, err := ch.Send(t.Context(), bus.OutboundMessage{
+		ChatID: "12345", Content: "请待会再试",
+		Context: bus.InboundContext{Raw: map[string]string{"outbound_kind": "command_reply"}},
+	})
+	require.NoError(t, err)
+	assert.Equal(t, []string{"2"}, ids)
+	msgID, ok := ch.currentToolFeedbackMessage("12345")
+	assert.True(t, ok)
+	assert.Equal(t, "1", msgID)
+}
+
 func TestSend_ToolFeedbackTrackingIsTopicScoped(t *testing.T) {
 	nextMessageID := 0
 	caller := &stubCaller{

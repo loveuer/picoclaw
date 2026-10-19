@@ -66,7 +66,6 @@ func (al *AgentLoop) stopActiveTurnForSession(sessionKey string) (commands.StopR
 	}
 
 	snap := ts.snapshot()
-	result.TaskName = snap.UserMessage
 
 	if strings.HasPrefix(snap.TurnID, pendingTurnPrefix) {
 		// A pending placeholder means this session is either idle (our own
@@ -76,6 +75,7 @@ func (al *AgentLoop) stopActiveTurnForSession(sessionKey string) (commands.StopR
 		// case explicitly, since it knows loaded=true.
 		return result, nil
 	}
+	result.TaskName = snap.UserMessage
 
 	if err := al.HardAbort(sessionKey); err != nil {
 		if al.getActiveTurnState(sessionKey) == nil {

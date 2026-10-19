@@ -393,6 +393,18 @@ func (al *AgentLoop) buildCommandsRuntime(
 			return al.contextManager.Clear(ctx, opts.SessionKey)
 		}
 
+		rt.StartNewConversation = func(ctx context.Context, prompt string) (string, error) {
+			if err := rt.ClearHistory(); err != nil {
+				return "", fmt.Errorf("failed to clear chat history: %w", err)
+			}
+			if prompt == "" {
+				return "Chat history cleared!", nil
+			}
+			opts.Dispatch.UserMessage = prompt
+			opts.UserMessage = prompt
+			return al.runMessagePrompt(ctx, agent, *opts)
+		}
+
 		rt.AskSideQuestion = func(ctx context.Context, question string) (string, error) {
 			return al.askSideQuestion(ctx, agent, opts, question)
 		}

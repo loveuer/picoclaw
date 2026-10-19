@@ -199,6 +199,8 @@ dammi le ultime news
 - Generic slash commands are executed through a single path in `pkg/agent/loop.go` via `commands.Executor`.
 - Channel adapters no longer consume generic commands locally; they forward inbound text to the bus/agent path. Telegram still auto-registers supported commands such as `/start`, `/help`, `/show`, `/list`, `/use`, and `/btw` at startup.
 - Unknown slash command (for example `/foo`) passes through to normal LLM processing.
+- `/new` clears the current session's history and summary, like `/clear`. `/new <prompt>` clears them and immediately runs the supplied prompt; subsequent messages continue that fresh conversation. The model, workspace, and system instructions remain active. Spaces, tabs, and newlines can separate the command from its prompt.
+- If the same session already has a running or queued task, `/new` (with or without a prompt) replies with the current task's name and asks you to retry later. It does not interrupt the task or queue the new prompt. Other sessions can still use `/new`.
 - Registered but unsupported command on the current channel (for example `/show` on WhatsApp) returns an explicit user-facing error and stops further processing.
 
 ### Session Isolation

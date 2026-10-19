@@ -246,6 +246,7 @@ func (c *TelegramChannel) Send(ctx context.Context, msg bus.OutboundMessage) ([]
 		}
 	}
 	trackedMsgID, hasTrackedMsg := c.currentToolFeedbackMessage(trackedChatID)
+	hasTrackedMsg = hasTrackedMsg && !channels.IsCommandReply(msg)
 	if !isToolFeedback {
 		if msgIDs, handled := c.finalizeToolFeedbackMessageForChat(ctx, trackedChatID, msg); handled {
 			return msgIDs, nil
@@ -594,6 +595,9 @@ func (c *TelegramChannel) finalizeToolFeedbackMessageForChat(
 	chatID string,
 	msg bus.OutboundMessage,
 ) ([]string, bool) {
+	if channels.IsCommandReply(msg) {
+		return nil, false
+	}
 	return c.finalizeTrackedToolFeedbackMessage(ctx, chatID, msg.Content, c.EditMessage)
 }
 

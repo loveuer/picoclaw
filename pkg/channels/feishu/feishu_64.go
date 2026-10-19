@@ -180,6 +180,7 @@ func (c *FeishuChannel) Send(ctx context.Context, msg bus.OutboundMessage) ([]st
 		}
 	}
 	trackedMsgID, hasTrackedMsg := c.currentToolFeedbackMessage(msg.ChatID)
+	hasTrackedMsg = hasTrackedMsg && !channels.IsCommandReply(msg)
 
 	// Build interactive card with markdown content
 	sendContent := msg.Content
@@ -412,7 +413,7 @@ func (c *FeishuChannel) finalizeTrackedToolFeedbackMessage(
 }
 
 func (c *FeishuChannel) FinalizeToolFeedbackMessage(ctx context.Context, msg bus.OutboundMessage) ([]string, bool) {
-	if outboundMessageIsToolFeedback(msg) {
+	if outboundMessageIsToolFeedback(msg) || channels.IsCommandReply(msg) {
 		return nil, false
 	}
 	return c.finalizeTrackedToolFeedbackMessage(ctx, msg.ChatID, msg.Content, c.EditMessage)

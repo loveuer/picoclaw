@@ -254,9 +254,12 @@ Notes that matter:
   "model_name": "gpt-5.4",
   "provider": "openai",
   "model": "gpt-5.4",
-  "api_keys": ["sk-..."]
+  "api_keys": ["sk-..."],
+  "thinking_level": "high"
 }
 ```
+
+For OpenAI Responses models that support reasoning, `thinking_level` maps to `reasoning.effort`: `off` becomes `none`, `low`, `medium`, `high`, and `xhigh` pass through, and `adaptive` uses the model default. Supported levels vary by model. PicoClaw omits its default `temperature` when reasoning is enabled.
 
 **NEAR AI Cloud**
 

@@ -3375,110 +3375,131 @@ func TestProcessMessage_CommandOutcomes(t *testing.T) {
 		},
 		Content: "/new",
 	})
-	if newResp != "LLM reply" {
+	if newResp != "Chat history cleared!" {
 		t.Fatalf("unexpected /new reply: %q", newResp)
 	}
-	if provider.calls != 2 {
-		t.Fatalf("LLM should be called for passthrough /new command, calls=%d", provider.calls)
+	if provider.calls != 1 {
+		t.Fatalf("LLM should not be called for /new, calls=%d", provider.calls)
 	}
 }
 
 func TestProcessMessage_ClearCommandClearsRoutedAgentSession(t *testing.T) {
-	workspace := t.TempDir()
-	cfg := &config.Config{
-		Agents: config.AgentsConfig{
-			Defaults: config.AgentDefaults{
-				Workspace:         filepath.Join(workspace, "default"),
-				ModelName:         "test-model",
-				MaxTokens:         4096,
-				MaxToolIterations: 10,
-			},
-			List: []config.AgentConfig{
-				{
-					ID:        "main",
-					Default:   true,
-					Workspace: filepath.Join(workspace, "main"),
-				},
-				{
-					ID:        "support",
-					Workspace: filepath.Join(workspace, "support"),
-				},
-			},
-			Dispatch: &config.DispatchConfig{
-				Rules: []config.DispatchRule{
-					{
-						Name:  "support-dingtalk",
-						Agent: "support",
-						When: config.DispatchSelector{
-							Channel: "dingtalk",
+	for _, command := range []string{"/clear", "/new", "/new 新问题"} {
+		t.Run(command, func(t *testing.T) {
+			workspace := t.TempDir()
+			cfg := &config.Config{
+				Agents: config.AgentsConfig{
+					Defaults: config.AgentDefaults{
+						Workspace:         filepath.Join(workspace, "default"),
+						ModelName:         "test-model",
+						MaxTokens:         4096,
+						MaxToolIterations: 10,
+					},
+					List: []config.AgentConfig{
+						{
+							ID:        "main",
+							Default:   true,
+							Workspace: filepath.Join(workspace, "main"),
+						},
+						{
+							ID:        "support",
+							Workspace: filepath.Join(workspace, "support"),
+						},
+					},
+					Dispatch: &config.DispatchConfig{
+						Rules: []config.DispatchRule{
+							{
+								Name:  "support-dingtalk",
+								Agent: "support",
+								When: config.DispatchSelector{
+									Channel: "dingtalk",
+								},
+							},
 						},
 					},
 				},
-			},
-		},
-		Session: config.SessionConfig{
-			Dimensions: []string{"chat"},
-		},
-	}
+				Session: config.SessionConfig{
+					Dimensions: []string{"chat"},
+				},
+			}
 
-	al := NewAgentLoop(cfg, bus.NewMessageBus(), &countingMockProvider{response: "LLM reply"})
-	mainAgent, ok := al.registry.GetAgent("main")
-	if !ok {
-		t.Fatal("expected main agent")
-	}
-	supportAgent, ok := al.registry.GetAgent("support")
-	if !ok {
-		t.Fatal("expected support agent")
-	}
+			provider := &capturingMockProvider{response: "LLM reply", captureFn: func(messages []providers.Message) {
+				for _, message := range messages {
+					if strings.Contains(message.Content, "main history") ||
+						strings.Contains(message.Content, "main summary") ||
+						strings.Contains(message.Content, "support history") ||
+						strings.Contains(message.Content, "support summary") {
+						t.Fatalf("another conversation leaked into /new prompt: %+v", messages)
+					}
+				}
+			}}
+			al := NewAgentLoop(cfg, bus.NewMessageBus(), provider)
+			t.Cleanup(al.Close)
+			mainAgent, ok := al.registry.GetAgent("main")
+			if !ok {
+				t.Fatal("expected main agent")
+			}
+			supportAgent, ok := al.registry.GetAgent("support")
+			if !ok {
+				t.Fatal("expected support agent")
+			}
 
-	msg := testInboundMessage(bus.InboundMessage{
-		Context: bus.InboundContext{
-			Channel:  "dingtalk",
-			ChatID:   "chat1",
-			ChatType: "direct",
-			SenderID: "user1",
-		},
-		Content: "/clear",
-	})
-	route, routedAgent, err := al.resolveMessageRoute(msg)
-	if err != nil {
-		t.Fatalf("resolveMessageRoute() error = %v", err)
-	}
-	if routedAgent != supportAgent {
-		t.Fatalf("routed agent = %s, want support", routedAgent.ID)
-	}
-	sessionKey := al.allocateRouteSession(route, msg).SessionKey
+			msg := testInboundMessage(bus.InboundMessage{
+				Context: bus.InboundContext{
+					Channel:  "dingtalk",
+					ChatID:   "chat1",
+					ChatType: "direct",
+					SenderID: "user1",
+				},
+				Content: command,
+			})
+			route, routedAgent, err := al.resolveMessageRoute(msg)
+			if err != nil {
+				t.Fatalf("resolveMessageRoute() error = %v", err)
+			}
+			if routedAgent != supportAgent {
+				t.Fatalf("routed agent = %s, want support", routedAgent.ID)
+			}
+			sessionKey := al.allocateRouteSession(route, msg).SessionKey
 
-	mainHistory := []providers.Message{{Role: "user", Content: "main history"}}
-	supportHistory := []providers.Message{{Role: "user", Content: "support history"}}
-	mainAgent.Sessions.SetHistory(sessionKey, mainHistory)
-	mainAgent.Sessions.SetSummary(sessionKey, "main summary")
-	supportAgent.Sessions.SetHistory(sessionKey, supportHistory)
-	supportAgent.Sessions.SetSummary(sessionKey, "support summary")
+			mainHistory := []providers.Message{{Role: "user", Content: "main history"}}
+			supportHistory := []providers.Message{{Role: "user", Content: "support history"}}
+			mainAgent.Sessions.SetHistory(sessionKey, mainHistory)
+			mainAgent.Sessions.SetSummary(sessionKey, "main summary")
+			supportAgent.Sessions.SetHistory(sessionKey, supportHistory)
+			supportAgent.Sessions.SetSummary(sessionKey, "support summary")
 
-	response, err := al.processMessage(context.Background(), msg)
-	if err != nil {
-		t.Fatalf("processMessage() error = %v", err)
-	}
-	if response != "Chat history cleared!" {
-		t.Fatalf("response = %q, want clear confirmation", response)
-	}
+			response, err := al.processMessage(context.Background(), msg)
+			if err != nil {
+				t.Fatalf("processMessage() error = %v", err)
+			}
+			wantResponse, wantHistory := "Chat history cleared!", 0
+			if command == "/new 新问题" {
+				wantResponse, wantHistory = "LLM reply", 2
+			}
+			if response != wantResponse {
+				t.Fatalf("response = %q, want clear confirmation", response)
+			}
 
-	if got := supportAgent.Sessions.GetHistory(sessionKey); len(got) != 0 {
-		t.Fatalf("support history len = %d, want 0", len(got))
-	}
-	if got := supportAgent.Sessions.GetSummary(sessionKey); got != "" {
-		t.Fatalf("support summary = %q, want empty", got)
-	}
-	if got := mainAgent.Sessions.GetHistory(sessionKey); len(got) != len(mainHistory) {
-		t.Fatalf("main history len = %d, want %d", len(got), len(mainHistory))
-	} else if got[0].Role != mainHistory[0].Role {
-		t.Fatalf("main history[0].Role = %q, want %q", got[0].Role, mainHistory[0].Role)
-	} else if got[0].Content != mainHistory[0].Content {
-		t.Fatalf("main history[0].Content = %q, want %q", got[0].Content, mainHistory[0].Content)
-	}
-	if got := mainAgent.Sessions.GetSummary(sessionKey); got != "main summary" {
-		t.Fatalf("main summary = %q, want %q", got, "main summary")
+			if got := supportAgent.Sessions.GetHistory(sessionKey); len(got) != wantHistory {
+				t.Fatalf("support history len = %d, want %d", len(got), wantHistory)
+			} else if wantHistory > 0 && got[0].Content != "新问题" {
+				t.Fatalf("new prompt = %q", got[0].Content)
+			}
+			if got := supportAgent.Sessions.GetSummary(sessionKey); got != "" {
+				t.Fatalf("support summary = %q, want empty", got)
+			}
+			if got := mainAgent.Sessions.GetHistory(sessionKey); len(got) != len(mainHistory) {
+				t.Fatalf("main history len = %d, want %d", len(got), len(mainHistory))
+			} else if got[0].Role != mainHistory[0].Role {
+				t.Fatalf("main history[0].Role = %q, want %q", got[0].Role, mainHistory[0].Role)
+			} else if got[0].Content != mainHistory[0].Content {
+				t.Fatalf("main history[0].Content = %q, want %q", got[0].Content, mainHistory[0].Content)
+			}
+			if got := mainAgent.Sessions.GetSummary(sessionKey); got != "main summary" {
+				t.Fatalf("main summary = %q, want %q", got, "main summary")
+			}
+		})
 	}
 }
 

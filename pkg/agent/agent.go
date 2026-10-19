@@ -132,6 +132,7 @@ const (
 	messageKindToolFeedback    = "tool_feedback"
 	messageKindToolCalls       = "tool_calls"
 	outboundKindFinal          = "final"
+	outboundKindCommandReply   = "command_reply"
 	metadataKeyAccountID       = "account_id"
 	metadataKeyGuildID         = "guild_id"
 	metadataKeyTeamID          = "team_id"
@@ -185,10 +186,14 @@ func (al *AgentLoop) Run(ctx context.Context) error {
 			// during turn setup. Each placeholder has a unique turnID to prevent
 			// cross-worker cleanup issues.
 			placeholder := &turnState{
-				turnID: makePendingTurnID(sessionKey, al.turnSeq.Add(1)),
-				phase:  TurnPhaseSetup,
+				turnID:      makePendingTurnID(sessionKey, al.turnSeq.Add(1)),
+				phase:       TurnPhaseSetup,
+				userMessage: msg.Content,
 			}
-			if _, loaded := al.activeTurnStates.LoadOrStore(sessionKey, placeholder); loaded {
+			if active, loaded := al.activeTurnStates.LoadOrStore(sessionKey, placeholder); loaded {
+				if al.tryRejectNewCommand(ctx, msg, sessionKey, active.(*turnState)) {
+					continue
+				}
 				if al.tryHandleStopCommand(ctx, msg, sessionKey) {
 					continue
 				}

@@ -26,7 +26,7 @@ type ContextManager interface {
 	Ingest(ctx context.Context, req *IngestRequest) error
 
 	// Clear removes all stored context for a session (messages, summaries, etc.).
-	// Called when the user issues /clear or /reset.
+	// Called when the user issues /clear or /new.
 	Clear(ctx context.Context, sessionKey string) error
 }
 
