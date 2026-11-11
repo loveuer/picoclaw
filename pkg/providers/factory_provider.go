@@ -381,25 +381,8 @@ func finalizeProviderFromConfig(
 }
 
 func isEmptyAPIKeyAllowed(protocol string) bool {
-	option, ok := modelProviderOptionForName(protocol)
+	option, ok := providerMetadataForName(protocol)
 	return ok && option.EmptyAPIKeyAllowed
-}
-
-// IsEmptyAPIKeyAllowedForProtocol reports whether a protocol allows requests
-// without api_key when using its default local endpoint.
-func IsEmptyAPIKeyAllowedForProtocol(protocol string) bool {
-	protocol = strings.ToLower(strings.TrimSpace(protocol))
-	return isEmptyAPIKeyAllowed(protocol)
-}
-
-// IsHTTPAPIProtocol reports whether a provider uses an HTTP API base in the
-// model configuration path. This excludes providers such as Bedrock, CLI
-// bridges, and OAuth-only managed providers even if they do not require an
-// explicit api_key field.
-func IsHTTPAPIProtocol(protocol string) bool {
-	protocol = NormalizeProvider(protocol)
-	option, ok := modelProviderOptionsByName[protocol]
-	return ok && option.httpAPI
 }
 
 // DefaultAPIBaseForProtocol returns the configured default API base for a protocol.
@@ -411,7 +394,7 @@ func DefaultAPIBaseForProtocol(protocol string) string {
 
 // getDefaultAPIBase returns the default API base URL for a given protocol.
 func getDefaultAPIBase(protocol string) string {
-	option, ok := modelProviderOptionForName(protocol)
+	option, ok := providerMetadataForName(protocol)
 	if !ok {
 		return ""
 	}

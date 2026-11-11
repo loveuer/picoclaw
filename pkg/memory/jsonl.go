@@ -233,7 +233,7 @@ func (s *JSONLStore) UpsertSessionMeta(
 // Main-session aliases (e.g. "agent:main:main" or its opaque form) are
 // skipped during promotion.  The main session is a shared global fallback
 // and promoting its history into individual sessions would attach stale
-// messages to every new Web UI session (issue #2972).
+// messages to every new session (issue #2972).
 func (s *JSONLStore) PromoteAliasHistory(
 	_ context.Context,
 	sessionKey string,

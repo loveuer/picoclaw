@@ -13,22 +13,14 @@ PicoClaw 将企业微信整合为单一的 `channels.wecom` 渠道，基于腾�
 - 基于企业微信 AI Bot 协议的流式回复
 - 接收文本、语音、图片、文件、视频及混合消息
 - 发送文本及媒体消息（`image`、`file`、`voice`、`video`）
-- 通过 Web UI 或 CLI 扫码绑定
+- 通过 CLI 扫码绑定
 - 发送者白名单和 `reasoning_channel_id` 路由
 
 ---
 
 ## 快速开始
 
-### 方式一：Web UI 扫码绑定（推荐）
-
-打开 Web UI，进入 **Channels → WeCom**，点击扫码绑定按钮。用企业微信扫码并在 App 内确认，凭据自动保存。
-
-<p align="center">
-<img src="../../../assets/wecom-qr-binding.jpg" alt="Web UI 企业微信扫码绑定" width="600">
-</p>
-
-### 方式二：CLI 扫码登录
+### 方式一：CLI 扫码登录
 
 运行：
 
@@ -50,7 +42,7 @@ picoclaw auth wecom --timeout 10m
 
 > ⚠️ 仅扫描二维码还不够——必须在企业微信 App 内点击**确认**，否则命令会超时。
 
-### 方式三：手动配置
+### 方式二：手动配置
 
 如果已有企业微信 AI Bot 的 `bot_id` 和 `secret`，可直接配置：
 

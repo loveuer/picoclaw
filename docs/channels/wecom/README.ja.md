@@ -13,22 +13,14 @@ PicoClaw は WeCom を公式 WeCom AI Bot WebSocket API に基づく単一の `c
 - WeCom AI Bot プロトコルによるチャンネル側ストリーミング返信
 - テキスト、音声、画像、ファイル、動画、ミックスメッセージの受信
 - テキストおよびメディア返信の送信（`image`、`file`、`voice`、`video`）
-- Web UI または CLI による QR コードオンボーディング
+- CLI による QR コードオンボーディング
 - 共有許可リストと `reasoning_channel_id` ルーティング
 
 ---
 
 ## クイックスタート
 
-### オプション 1：Web UI QR バインディング（推奨）
-
-Web UI を開き、**Channels → WeCom** に移動して、QR バインディングボタンをクリックします。WeCom で QR コードをスキャンし、アプリ内で確認すると、認証情報が自動的に保存されます。
-
-<p align="center">
-<img src="../../../assets/wecom-qr-binding.jpg" alt="Web UI での WeCom QR バインディング" width="600">
-</p>
-
-### オプション 2：CLI QR ログイン
+### オプション 1：CLI QR ログイン
 
 実行：
 
@@ -50,7 +42,7 @@ picoclaw auth wecom --timeout 10m
 
 > ⚠️ QR コードのスキャンだけでは不十分です — WeCom アプリ内で **確認** をタップする必要があります。そうしないとコマンドがタイムアウトします。
 
-### オプション 3：手動設定
+### オプション 2：手動設定
 
 WeCom AI Bot プラットフォームから `bot_id` と `secret` を既にお持ちの場合、直接設定できます：
 

@@ -64,15 +64,11 @@
   </a>
 </p>
 
-2026-03-31 📱 **Suporte Android!** PicoClaw agora roda no Android! Baixe o APK em [picoclaw.io](https://picoclaw.io/download)
-
 2026-03-25 🚀 **v0.2.4 Lançada!** Reformulação da arquitetura Agent (SubTurn, Hooks, Steering, EventBus), integração WeChat/WeCom, fortalecimento de segurança (.security.yml, filtragem de dados sensíveis), novos providers (AWS Bedrock, Azure, Xiaomi MiMo) e 35 correções de bugs. O PicoClaw atingiu **26K Stars**!
 
 2026-03-17 🚀 **v0.2.3 Lançada!** UI na bandeja do sistema (Windows e Linux), consulta de status de sub-agent (`spawn_status`), hot-reload experimental do Gateway, controle de segurança do Cron e 2 correções de segurança. O PicoClaw atingiu **25K Stars**!
 
 2026-03-09 🎉 **v0.2.1 — Maior atualização até agora!** Suporte ao protocolo MCP, 4 novos channels (Matrix/IRC/WeCom/Discord Proxy), 3 novos providers (Kimi/Minimax/Avian), pipeline de visão, armazenamento de memória JSONL, roteamento de modelos.
-
-2026-02-28 📦 **v0.2.0** lançada com suporte a Docker Compose e Web UI Launcher.
 
 <details>
 <summary>Notícias anteriores...</summary>
@@ -174,8 +170,7 @@ Alternativamente, baixe o binário para sua plataforma na página de [GitHub Rel
 
 Pré-requisitos:
 
-- Go 1.25+
-- Node.js 22+ e pnpm 10.33.0+ para builds do Web UI / launcher
+- Go 1.25.13+
 
 ```bash
 git clone https://github.com/sipeed/picoclaw.git
@@ -183,14 +178,8 @@ git clone https://github.com/sipeed/picoclaw.git
 cd picoclaw
 make deps
 
-# Instalar dependências do frontend
-(cd web/frontend && pnpm install --frozen-lockfile)
-
 # Compilar o binário principal
 make build
-
-# Compilar o Web UI Launcher (necessário para o modo WebUI)
-make build-launcher
 
 # Compilar os binários core para todas as plataformas gerenciadas pelo Makefile
 make build-all
@@ -206,138 +195,7 @@ make install
 
 ## 🚀 Guia de Início Rápido
 
-### 🌐 WebUI Launcher (Recomendado para Desktop)
-
-O WebUI Launcher fornece uma interface baseada em navegador para configuração e chat. Esta é a maneira mais fácil de começar — sem necessidade de conhecimento de linha de comando.
-
-**Opção 1: Duplo clique (Desktop)**
-
-Após baixar de [picoclaw.io](https://picoclaw.io), dê duplo clique em `picoclaw-launcher` (ou `picoclaw-launcher.exe` no Windows). Seu navegador abrirá automaticamente em `http://localhost:18800`.
-
-**Opção 2: Linha de comando**
-
-```bash
-picoclaw-launcher
-# Abra http://localhost:18800 no seu navegador
-```
-
-> [!TIP]
-> **Acesso remoto / Docker / VM:** Adicione a flag `-public` para escutar em todas as interfaces:
-> ```bash
-> picoclaw-launcher -public
-> ```
-
-<p align="center">
-<img src="../../assets/launcher-webui.jpg" alt="WebUI Launcher" width="600">
-</p>
-
-**Primeiros passos:**
-
-Abra o WebUI e então: **1)** Configure um Provider (adicione sua API key de LLM) -> **2)** Configure um Channel (ex.: Telegram) -> **3)** Inicie o Gateway -> **4)** Converse!
-
-Para documentação detalhada do WebUI, veja [docs.picoclaw.io](https://docs.picoclaw.io).
-
-<details>
-<summary><b>Docker (alternativa)</b></summary>
-
-```bash
-# 1. Clone este repositório
-git clone https://github.com/sipeed/picoclaw.git
-cd picoclaw
-
-# 2. Primeira execução — gera automaticamente docker/data/config.json e encerra
-#    (só é acionado quando config.json e workspace/ estão ausentes)
-docker compose -f docker/docker-compose.yml --profile launcher up
-# O container imprime "First-run setup complete." e para.
-
-# 3. Configure suas API keys
-vim docker/data/config.json
-
-# 4. Iniciar
-docker compose -f docker/docker-compose.yml --profile launcher up -d
-# Abra http://localhost:18800
-```
-
-> **Usuários de Docker / VM:** O Gateway escuta em `127.0.0.1` por padrão. Defina `PICOCLAW_GATEWAY_HOST=0.0.0.0` ou use a flag `-public` para torná-lo acessível pelo host.
-
-```bash
-# Verificar logs
-docker compose -f docker/docker-compose.yml logs -f
-
-# Parar
-docker compose -f docker/docker-compose.yml --profile launcher down
-
-# Atualizar
-docker compose -f docker/docker-compose.yml pull
-docker compose -f docker/docker-compose.yml --profile launcher up -d
-```
-
-</details>
-
-<details>
-<summary><b>macOS — Aviso de segurança no primeiro lançamento</b></summary>
-
-O macOS pode bloquear o `picoclaw-launcher` no primeiro lançamento porque ele foi baixado da internet e não é notarizado pela Mac App Store.
-
-**Passo 1:** Dê um duplo clique em `picoclaw-launcher`. Você verá um aviso de segurança:
-
-<p align="center">
-<img src="../../assets/macos-gatekeeper-warning.jpg" alt="Aviso do macOS Gatekeeper" width="400">
-</p>
-
-> *"picoclaw-launcher" não foi aberto — A Apple não conseguiu verificar se "picoclaw-launcher" está livre de malware que possa prejudicar seu Mac ou comprometer sua privacidade.*
-
-**Passo 2:** Abra **Configurações do Sistema** → **Privacidade e Segurança** → role até a seção **Segurança** → clique em **Abrir Mesmo Assim** → confirme clicando em **Abrir Mesmo Assim** na caixa de diálogo.
-
-<p align="center">
-<img src="../../assets/macos-gatekeeper-allow.jpg" alt="macOS Privacidade e Segurança — Abrir Mesmo Assim" width="600">
-</p>
-
-Após esta etapa única, o `picoclaw-launcher` abrirá normalmente nos lançamentos seguintes.
-
-</details>
-
-<a id="-run-on-old-android-phones"></a>
-### 📱 Android
-
-Dê uma segunda vida ao seu celular de uma década! Transforme-o em um Assistente de IA inteligente com o PicoClaw.
-
-**Opção 1: Instalação via APK**
-
-Pré-visualização:
-
-<table>
-  <tr>
-    <td><img src="../../assets/fui_main_page.jpg" width="200"></td>
-    <td><img src="../../assets/fui_web_page.jpg" width="200"></td>
-    <td><img src="../../assets/fui_log_page.jpg" width="200"></td>
-    <td><img src="../../assets/fui_setting_page.jpg" width="200"></td>
-  </tr>
-</table>
-
-Baixe o APK de [picoclaw.io](https://picoclaw.io/download/) e instale diretamente. Sem necessidade de Termux!
-
-**Opção 2: Termux**
-
-<details>
-<summary><b>Terminal Launcher (para ambientes com recursos limitados)</b></summary>
-
-1. Instale o [Termux](https://github.com/termux/termux-app) (baixe nas [GitHub Releases](https://github.com/termux/termux-app/releases), ou pesquise no F-Droid / Google Play)
-2. Execute os seguintes comandos:
-
-```bash
-# Baixar a versão mais recente
-wget https://github.com/sipeed/picoclaw/releases/latest/download/picoclaw_Linux_arm64.tar.gz
-tar xzf picoclaw_Linux_arm64.tar.gz
-pkg install proot
-termux-chroot ./picoclaw onboard   # chroot fornece um layout padrão de sistema de arquivos Linux
-```
-
-Em seguida, siga a seção Terminal Launcher abaixo para concluir a configuração.
-
-<img src="../../assets/termux.jpg" alt="PicoClaw on Termux" width="512">
-
-Para ambientes mínimos onde apenas o binário principal `picoclaw` está disponível (sem Launcher UI), você pode configurar tudo via linha de comando e um arquivo de configuração JSON.
+### CLI
 
 **1. Inicializar**
 
@@ -360,8 +218,11 @@ Isso cria `~/.picoclaw/config.json` e o diretório workspace.
   "model_list": [
     {
       "model_name": "gpt-5.4",
-      "model": "openai/gpt-5.4",
-      "api_keys": ["sk-your-api-key"]
+      "provider": "openai",
+      "model": "gpt-5.4",
+      "api_keys": [
+        "sk-your-api-key"
+      ]
     }
   ]
 }
@@ -382,7 +243,59 @@ picoclaw agent
 picoclaw gateway
 ```
 
+<details>
+<summary><b>Docker (alternativa)</b></summary>
+
+```bash
+# 1. Clone este repositório
+git clone https://github.com/sipeed/picoclaw.git
+cd picoclaw
+
+# 2. Primeira execução — gera automaticamente docker/data/config.json e encerra
+#    (só é acionado quando config.json e workspace/ estão ausentes)
+docker compose -f docker/docker-compose.yml --profile gateway up
+# O container imprime "First-run setup complete." e para.
+
+# 3. Configure suas API keys
+vim docker/data/config.json
+
+# 4. Iniciar
+docker compose -f docker/docker-compose.yml --profile gateway up -d
+```
+
+> **Usuários de Docker / VM:** O Gateway escuta em `127.0.0.1` por padrão. Defina `PICOCLAW_GATEWAY_HOST=0.0.0.0` ou use a flag `-public` para torná-lo acessível pelo host.
+
+```bash
+# Verificar logs
+docker compose -f docker/docker-compose.yml logs -f
+
+# Parar
+docker compose -f docker/docker-compose.yml --profile gateway down
+
+# Atualizar
+docker compose -f docker/docker-compose.yml pull
+docker compose -f docker/docker-compose.yml --profile gateway up -d
+```
+
 </details>
+
+<a id="-run-on-old-android-phones"></a>
+### 📱 Android (Termux)
+
+1. Instale o [Termux](https://github.com/termux/termux-app) (baixe nas [GitHub Releases](https://github.com/termux/termux-app/releases), ou pesquise no F-Droid / Google Play)
+2. Execute os seguintes comandos:
+
+```bash
+# Baixar a versão mais recente
+wget https://github.com/sipeed/picoclaw/releases/latest/download/picoclaw_Linux_arm64.tar.gz
+tar xzf picoclaw_Linux_arm64.tar.gz
+pkg install proot
+termux-chroot ./picoclaw onboard   # chroot fornece um layout padrão de sistema de arquivos Linux
+```
+
+<img src="../../assets/termux.jpg" alt="PicoClaw on Termux" width="512">
+
+[Android Termux Guide](../guides/android-termux.md).
 
 ## 🔌 Providers (LLM)
 
@@ -589,7 +502,7 @@ Para guias detalhados além deste README:
 
 | Tópico | Descrição |
 |--------|-----------|
-| [Docker & Início Rápido](../guides/docker.pt-br.md) | Configuração do Docker Compose, modos Launcher/Agent |
+| [Docker & Início Rápido](../guides/docker.pt-br.md) | Configuração do Docker Compose, modos Gateway/Agent |
 | [Apps de Chat](../guides/chat-apps.pt-br.md) | Guias de configuração para todos os 17+ channels |
 | [Configuração](../guides/configuration.pt-br.md) | Variáveis de ambiente, layout do workspace, sandbox de segurança |
 | [Providers & Models](../guides/providers.pt-br.md) | 30+ providers de LLM, roteamento de modelos, configuração de model_list |

@@ -64,15 +64,11 @@
   </a>
 </p>
 
-2026-03-31 📱 **Android 지원!** PicoClaw가 이제 Android에서 실행됩니다! APK는 [picoclaw.io](https://picoclaw.io/download)에서 다운로드하세요.
-
 2026-03-25 🚀 **v0.2.4 출시!** 에이전트 아키텍처 전면 개편(SubTurn, Hooks, Steering, EventBus), WeChat/WeCom 통합, 보안 강화(`.security.yml`, 민감 정보 필터링), 새 프로바이더(AWS Bedrock, Azure, Xiaomi MiMo), 그리고 35건의 버그 수정이 포함되었습니다. PicoClaw는 **26K 스타**를 달성했습니다!
 
 2026-03-17 🚀 **v0.2.3 출시!** 시스템 트레이 UI(Windows 및 Linux), 서브에이전트 상태 조회(`spawn_status`), 실험적 게이트웨이 핫 리로드, Cron 보안 게이트, 그리고 2건의 보안 수정이 추가되었습니다. PicoClaw는 **25K 스타**를 달성했습니다!
 
 2026-03-09 🎉 **v0.2.1 — 역대 최대 업데이트!** MCP 프로토콜 지원, 4개의 새 채널(Matrix/IRC/WeCom/Discord Proxy), 3개의 새 프로바이더(Kimi/Minimax/Avian), 비전 파이프라인, JSONL 메모리 저장소, 모델 라우팅이 추가되었습니다.
-
-2026-02-28 📦 **v0.2.0** 이 Docker Compose 및 WebUI 런처 지원과 함께 출시되었습니다.
 
 <details>
 <summary>이전 뉴스...</summary>
@@ -174,8 +170,7 @@ PicoClaw는 사실상 거의 모든 Linux 장치에 배포할 수 있습니다!
 
 필수 사항:
 
-- Go 1.25+
-- Web UI / launcher 빌드에는 Node.js 22+와 pnpm 10.33.0+가 필요합니다
+- Go 1.25.13+
 
 ```bash
 git clone https://github.com/sipeed/picoclaw.git
@@ -183,14 +178,8 @@ git clone https://github.com/sipeed/picoclaw.git
 cd picoclaw
 make deps
 
-# 프런트엔드 의존성 설치
-(cd web/frontend && pnpm install --frozen-lockfile)
-
 # 코어 바이너리 빌드
 make build
-
-# WebUI 런처 빌드 (WebUI 모드에 필요)
-make build-launcher
 
 # Makefile이 관리하는 모든 플랫폼용 코어 바이너리 빌드
 make build-all
@@ -206,137 +195,7 @@ make install
 
 ## 🚀 빠른 시작 가이드
 
-### 🌐 WebUI Launcher (데스크톱 권장)
-
-WebUI Launcher는 설정과 채팅을 위한 브라우저 기반 인터페이스를 제공합니다. 명령줄을 몰라도 가장 쉽게 시작할 수 있는 방법입니다.
-
-**옵션 1: 더블클릭(데스크톱)**
-
-[picoclaw.io](https://picoclaw.io)에서 다운로드한 뒤 `picoclaw-launcher`를 더블클릭하세요(Windows에서는 `picoclaw-launcher.exe`). 브라우저가 자동으로 `http://localhost:18800`을 엽니다.
-
-**옵션 2: 명령줄**
-
-```bash
-picoclaw-launcher
-# 브라우저에서 http://localhost:18800 열기
-```
-
-> [!TIP]
-> **원격 접속 / Docker / VM:** 모든 인터페이스에서 수신하려면 `-public` 플래그를 추가하세요.
-> ```bash
-> picoclaw-launcher -public
-> ```
-
-<p align="center">
-<img src="../../assets/launcher-webui.jpg" alt="WebUI Launcher" width="600">
-</p>
-
-**시작 방법:**
-
-WebUI를 연 뒤 다음 순서로 진행하세요. **1)** 프로바이더 설정(LLM API 키 추가) -> **2)** 채널 설정(예: Telegram) -> **3)** 게이트웨이 시작 -> **4)** 채팅!
-
-자세한 WebUI 문서는 [docs.picoclaw.io](https://docs.picoclaw.io)를 참고하세요.
-
-<details>
-<summary><b>Docker(대안)</b></summary>
-
-```bash
-# 1. 이 저장소를 클론
-git clone https://github.com/sipeed/picoclaw.git
-cd picoclaw
-
-# 2. 첫 실행 - docker/data/config.json을 자동 생성한 뒤 종료
-#    (config.json과 workspace/가 모두 없을 때만 실행됨)
-docker compose -f docker/docker-compose.yml --profile launcher up
-# 컨테이너가 "First-run setup complete."를 출력하고 종료됩니다.
-
-# 3. API 키 설정
-vim docker/data/config.json
-
-# 4. 시작
-docker compose -f docker/docker-compose.yml --profile launcher up -d
-# http://localhost:18800 열기
-```
-
-> **Docker / VM 사용자:** 게이트웨이는 기본적으로 `127.0.0.1`에서 수신합니다. 호스트에서 접근 가능하게 하려면 `PICOCLAW_GATEWAY_HOST=0.0.0.0`을 설정하거나 `-public` 플래그를 사용하세요.
-
-```bash
-# 로그 확인
-docker compose -f docker/docker-compose.yml logs -f
-
-# 중지
-docker compose -f docker/docker-compose.yml --profile launcher down
-
-# 업데이트
-docker compose -f docker/docker-compose.yml pull
-docker compose -f docker/docker-compose.yml --profile launcher up -d
-```
-
-</details>
-
-<details>
-<summary><b>macOS - 첫 실행 보안 경고</b></summary>
-
-macOS에서는 인터넷에서 다운로드한 앱이고 Mac App Store 공증을 거치지 않았기 때문에, 첫 실행 시 `picoclaw-launcher`가 차단될 수 있습니다.
-
-**1단계:** `picoclaw-launcher`를 더블클릭합니다. 그러면 보안 경고가 표시됩니다.
-
-<p align="center">
-<img src="../../assets/macos-gatekeeper-warning.jpg" alt="macOS Gatekeeper warning" width="400">
-</p>
-
-> *"picoclaw-launcher"을(를) 열 수 없습니다. Apple에서 이 앱이 악성 소프트웨어가 없으며 Mac이나 개인 정보를 해치지 않는다고 확인할 수 없습니다.*
-
-**2단계:** **시스템 설정** -> **개인정보 보호 및 보안** 으로 이동한 뒤 **보안** 섹션까지 스크롤하여 **그래도 열기(Open Anyway)** 를 클릭하고, 대화상자에서 다시 한 번 **그래도 열기**를 확인합니다.
-
-<p align="center">
-<img src="../../assets/macos-gatekeeper-allow.jpg" alt="macOS Privacy & Security — Open Anyway" width="600">
-</p>
-
-이 과정을 한 번만 거치면 이후에는 `picoclaw-launcher`가 정상적으로 열립니다.
-
-</details>
-
-### 📱 Android
-
-오래된 스마트폰에 새 생명을 불어넣어 보세요! PicoClaw를 설치하면 스마트 AI 어시스턴트로 바꿀 수 있습니다.
-
-**옵션 1: APK 설치**
-
-미리보기:
-
-<table>
-  <tr>
-    <td><img src="../../assets/fui_main_page.jpg" width="200"></td>
-    <td><img src="../../assets/fui_web_page.jpg" width="200"></td>
-    <td><img src="../../assets/fui_log_page.jpg" width="200"></td>
-    <td><img src="../../assets/fui_setting_page.jpg" width="200"></td>
-  </tr>
-</table>
-
-[picoclaw.io](https://picoclaw.io/download/)에서 APK를 다운로드해 바로 설치하세요. Termux가 필요 없습니다!
-
-**옵션 2: Termux**
-
-<details>
-<summary><b>터미널 런처 (리소스 제약 환경용)</b></summary>
-
-1. [Termux](https://github.com/termux/termux-app)를 설치합니다([GitHub Releases](https://github.com/termux/termux-app/releases)에서 다운로드하거나 F-Droid / Google Play에서 검색).
-2. 다음 명령을 실행합니다.
-
-```bash
-# 최신 릴리스 다운로드
-wget https://github.com/sipeed/picoclaw/releases/latest/download/picoclaw_Linux_arm64.tar.gz
-tar xzf picoclaw_Linux_arm64.tar.gz
-pkg install proot
-termux-chroot ./picoclaw onboard   # chroot가 표준 Linux 파일시스템 레이아웃을 제공합니다
-```
-
-그다음 아래의 터미널 런처 섹션을 따라 설정을 마무리하세요.
-
-<img src="../../assets/termux.jpg" alt="PicoClaw on Termux" width="512">
-
-런처 UI 없이 `picoclaw` 코어 바이너리만 있는 최소 환경에서는 명령줄과 JSON 설정 파일만으로도 모든 설정을 마칠 수 있습니다.
+### CLI
 
 **1. 초기화**
 
@@ -348,8 +207,9 @@ picoclaw onboard
 
 **2. 설정** (`~/.picoclaw/config.json`)
 
-```jsonc
+```json
 {
+  "version": 3,
   "agents": {
     "defaults": {
       "model_name": "gpt-5.4"
@@ -358,16 +218,17 @@ picoclaw onboard
   "model_list": [
     {
       "model_name": "gpt-5.4",
-      "model": "openai/gpt-5.4",
-      // api_key는 이제 .security.yml에서 로드됩니다.
+      "provider": "openai",
+      "model": "gpt-5.4",
+      "api_keys": [
+        "sk-your-api-key"
+      ]
     }
   ]
 }
 ```
 
 > 사용 가능한 모든 옵션이 포함된 전체 설정 템플릿은 저장소의 `config/config.example.json`을 참고하세요.
->
-> 참고: `config.example.json` 형식은 버전 0이며 민감 정보가 포함되어 있습니다. 실행 시 자동으로 버전 1+로 마이그레이션되며, 이후 `config.json`에는 비민감 정보만 저장되고 민감 정보는 `.security.yml`에 저장됩니다. 민감 정보를 직접 수정해야 한다면 `../security/security_configuration.md`를 참고하세요.
 
 **3. 채팅**
 
@@ -382,7 +243,58 @@ picoclaw agent
 picoclaw gateway
 ```
 
+<details>
+<summary><b>Docker(대안)</b></summary>
+
+```bash
+# 1. 이 저장소를 클론
+git clone https://github.com/sipeed/picoclaw.git
+cd picoclaw
+
+# 2. 첫 실행 - docker/data/config.json을 자동 생성한 뒤 종료
+#    (config.json과 workspace/가 모두 없을 때만 실행됨)
+docker compose -f docker/docker-compose.yml --profile gateway up
+# 컨테이너가 "First-run setup complete."를 출력하고 종료됩니다.
+
+# 3. API 키 설정
+vim docker/data/config.json
+
+# 4. 시작
+docker compose -f docker/docker-compose.yml --profile gateway up -d
+```
+
+> **Docker / VM:** 게이트웨이는 기본적으로 `127.0.0.1`에서 수신합니다. 호스트에서 접속하려면 `PICOCLAW_GATEWAY_HOST=0.0.0.0`을 설정하고 Compose에서 필요한 포트를 공개하세요.
+
+```bash
+# 로그 확인
+docker compose -f docker/docker-compose.yml logs -f
+
+# 중지
+docker compose -f docker/docker-compose.yml --profile gateway down
+
+# 업데이트
+docker compose -f docker/docker-compose.yml pull
+docker compose -f docker/docker-compose.yml --profile gateway up -d
+```
+
 </details>
+
+### 📱 Android (Termux)
+
+1. [Termux](https://github.com/termux/termux-app)를 설치합니다([GitHub Releases](https://github.com/termux/termux-app/releases)에서 다운로드하거나 F-Droid / Google Play에서 검색).
+2. 다음 명령을 실행합니다.
+
+```bash
+# 최신 릴리스 다운로드
+wget https://github.com/sipeed/picoclaw/releases/latest/download/picoclaw_Linux_arm64.tar.gz
+tar xzf picoclaw_Linux_arm64.tar.gz
+pkg install proot
+termux-chroot ./picoclaw onboard   # chroot가 표준 Linux 파일시스템 레이아웃을 제공합니다
+```
+
+<img src="../../assets/termux.jpg" alt="PicoClaw on Termux" width="512">
+
+[Android Termux Guide](../guides/android-termux.md).
 
 ## 🔌 프로바이더(LLM)
 

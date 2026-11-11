@@ -34,19 +34,6 @@ docker compose -f docker/docker-compose.yml logs -f picoclaw-gateway
 docker compose -f docker/docker-compose.yml --profile gateway down
 ```
 
-### Launcher モード (Web コンソール)
-
-`launcher` イメージには 2 つのバイナリ（`picoclaw`、`picoclaw-launcher`）が含まれており、デフォルトで Web コンソールを起動します。ブラウザベースの設定・チャット画面を提供します。
-
-```bash
-docker compose -f docker/docker-compose.yml --profile launcher up -d
-```
-
-ブラウザで http://localhost:18800 を開いてください。Launcher が Gateway プロセスを自動管理します。
-
-> [!WARNING]
-> Web コンソールは dashboard ログインパスワードで保護されます。信頼できないネットワークや公開インターネットには公開しないでください。
-
 ### Agent モード (ワンショット)
 
 ```bash

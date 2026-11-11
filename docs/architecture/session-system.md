@@ -9,7 +9,6 @@ This document describes the runtime session system used by PicoClaw to:
 - preserve compatibility with legacy `agent:...` session keys while the runtime uses opaque canonical keys
 
 This document covers the core runtime path in `pkg/session`, `pkg/memory`, and `pkg/agent`.
-It does not describe launcher login cookies or dashboard authentication sessions in `web/backend/middleware`.
 
 ## Responsibilities
 
@@ -237,7 +236,6 @@ That lets SubTurn reuse the same session-facing APIs without writing child-sessi
 
 The session system is consumed by more than the agent loop:
 
-- `web/backend/api/session.go` reads JSONL metadata and legacy JSON sessions to expose session history in the launcher UI.
 - `pkg/agent/steering.go` can recover scope metadata for active steering flows.
 - tooling and tests can still refer to legacy aliases because alias resolution is handled below the agent loop.
 

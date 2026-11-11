@@ -64,15 +64,11 @@
   </a>
 </p>
 
-2026-03-31 📱 **Android 支持！** PicoClaw 现可在 Android 上运行！APK 下载地址：[picoclaw.io](https://picoclaw.io/download)
-
 2026-03-25 🚀 **v0.2.4 发布！** Agent 架构全面重构（SubTurn、Hook、Steering、EventBus）、微信/企业微信深度集成、安全体系升级（.security.yml、敏感数据过滤）、新增 Provider（AWS Bedrock、Azure、小米 MiMo），以及 35 项 Bug 修复。PicoClaw 已达 **26K ⭐**！
 
 2026-03-17 🚀 **v0.2.3 发布！** 系统托盘 UI（Windows & Linux）、子 Agent 状态查询 (`spawn_status`)、实验性 Gateway 热重载、Cron 安全门控，以及 2 项安全修复。PicoClaw 已达 **25K ⭐**！
 
 2026-03-09 🎉 **v0.2.1 — 史上最大更新！** MCP 协议支持、4 个新频道 (Matrix/IRC/WeCom/Discord Proxy)、3 个新 Provider (Kimi/Minimax/Avian)、视觉管线、JSONL 记忆存储、模型路由。
-
-2026-02-28 📦 **v0.2.0** 发布，支持 Docker Compose 和 Web UI 启动器。
 
 <details>
 <summary>更早的新闻...</summary>
@@ -174,8 +170,7 @@ PicoClaw 几乎可以部署在任何 Linux 设备上！
 
 前置要求：
 
-- Go 1.25+
-- Node.js 22+ 和 pnpm 10.33.0+（用于 Web UI / launcher 构建）
+- Go 1.25.13+
 
 ```bash
 git clone https://github.com/sipeed/picoclaw.git
@@ -183,14 +178,8 @@ git clone https://github.com/sipeed/picoclaw.git
 cd picoclaw
 make deps
 
-# 安装前端依赖
-(cd web/frontend && pnpm install --frozen-lockfile)
-
 # 构建核心二进制文件
 make build
-
-# 构建 Web UI Launcher（WebUI 模式必需）
-make build-launcher
 
 # 为 Makefile 管理的所有平台构建核心二进制文件
 make build-all
@@ -206,138 +195,7 @@ make install
 
 ## 🚀 快速开始
 
-### 🌐 WebUI Launcher（推荐桌面用户）
-
-WebUI Launcher 提供基于浏览器的配置与聊天界面，是最简单的上手方式——无需命令行知识。
-
-**方式一：双击启动（桌面）**
-
-从 [picoclaw.io](https://picoclaw.io) 下载后，双击 `picoclaw-launcher`（Windows 上为 `picoclaw-launcher.exe`），浏览器将自动打开 `http://localhost:18800`。
-
-**方式二：命令行**
-
-```bash
-picoclaw-launcher
-# 在浏览器中打开 http://localhost:18800
-```
-
-> [!TIP]
-> **远程访问 / Docker / 虚拟机：** 添加 `-public` 参数以监听所有网络接口：
-> ```bash
-> picoclaw-launcher -public
-> ```
-
-<p align="center">
-<img src="../../assets/launcher-webui.jpg" alt="WebUI Launcher" width="600">
-</p>
-
-**开始使用：**
-
-打开 WebUI，然后：**1)** 配置 Provider（填入 LLM API Key）-> **2)** 配置 Channel（如 Telegram）-> **3)** 启动 Gateway -> **4)** 开始聊天！
-
-详细 WebUI 文档请参阅 [docs.picoclaw.io](https://docs.picoclaw.io)。
-
-<details>
-<summary><b>Docker（备选方案）</b></summary>
-
-```bash
-# 1. 克隆本仓库
-git clone https://github.com/sipeed/picoclaw.git
-cd picoclaw
-
-# 2. 首次运行——自动生成 docker/data/config.json 后退出
-#    （仅在 config.json 和 workspace/ 均不存在时触发）
-docker compose -f docker/docker-compose.yml --profile launcher up
-# 容器打印 "First-run setup complete." 后停止。
-
-# 3. 填写 API Key
-vim docker/data/config.json
-
-# 4. 启动
-docker compose -f docker/docker-compose.yml --profile launcher up -d
-# 打开 http://localhost:18800
-```
-
-> **Docker / 虚拟机用户：** Gateway 默认监听 `127.0.0.1`。设置 `PICOCLAW_GATEWAY_HOST=0.0.0.0` 或使用 `-public` 参数以允许从宿主机访问。
-
-```bash
-# 查看日志
-docker compose -f docker/docker-compose.yml logs -f
-
-# 停止
-docker compose -f docker/docker-compose.yml --profile launcher down
-
-# 更新
-docker compose -f docker/docker-compose.yml pull
-docker compose -f docker/docker-compose.yml --profile launcher up -d
-```
-
-</details>
-
-<details>
-<summary><b>macOS — 首次启动安全警告</b></summary>
-
-macOS 可能会在首次启动时拦截 `picoclaw-launcher`，因为它从互联网下载，未经 Mac App Store 公证。
-
-**第一步：** 双击 `picoclaw-launcher`，会出现安全警告：
-
-<p align="center">
-<img src="../../assets/macos-gatekeeper-warning.jpg" alt="macOS Gatekeeper 警告" width="400">
-</p>
-
-> *"picoclaw-launcher" 无法打开 — Apple 无法验证 "picoclaw-launcher" 不含可能损害 Mac 或危及隐私的恶意软件。*
-
-**第二步：** 打开**系统设置** → **隐私与安全性** → 向下滚动找到**安全性**部分 → 点击**仍要打开** → 在弹窗中再次点击**打开**。
-
-<p align="center">
-<img src="../../assets/macos-gatekeeper-allow.jpg" alt="macOS 隐私与安全性 — 仍要打开" width="600">
-</p>
-
-完成这一次操作后，后续启动 `picoclaw-launcher` 将不再弹出警告。
-
-</details>
-
-<a id="-run-on-old-android-phones"></a>
-### 📱 Android
-
-让你十年前的旧手机焕发新生！将它变成你的 AI 助手。
-
-**方式一：APK 安装**
-
-预览：
-
-<table>
-  <tr>
-    <td><img src="../../assets/fui_main_page.jpg" width="200"></td>
-    <td><img src="../../assets/fui_web_page.jpg" width="200"></td>
-    <td><img src="../../assets/fui_log_page.jpg" width="200"></td>
-    <td><img src="../../assets/fui_setting_page.jpg" width="200"></td>
-  </tr>
-</table>
-
-从 [picoclaw.io](https://picoclaw.io/download/) 下载 APK 并直接安装，无需 Termux！
-
-**方式二：Termux**
-
-<details>
-<summary><b>Terminal Launcher（适用于资源受限环境）</b></summary>
-
-1. 安装 [Termux](https://github.com/termux/termux-app)（可从 [GitHub Releases](https://github.com/termux/termux-app/releases) 下载，或在 F-Droid / Google Play 中搜索）
-2. 执行以下命令：
-
-```bash
-# 从 Release 页面下载最新版本
-wget https://github.com/sipeed/picoclaw/releases/latest/download/picoclaw_Linux_arm64.tar.gz
-tar xzf picoclaw_Linux_arm64.tar.gz
-pkg install proot
-termux-chroot ./picoclaw onboard   # chroot 提供标准 Linux 文件系统布局
-```
-
-然后跟随下面的"Terminal Launcher"章节继续配置。
-
-<img src="../../assets/termux.jpg" alt="PicoClaw on Termux" width="512">
-
-对于只有 `picoclaw` 核心二进制文件的极简环境（无 Launcher UI），可通过命令行和 JSON 配置文件完成所有配置。
+### CLI
 
 **1. 初始化**
 
@@ -360,8 +218,11 @@ picoclaw onboard
   "model_list": [
     {
       "model_name": "gpt-5.4",
-      "model": "openai/gpt-5.4",
-      "api_keys": ["sk-your-api-key"]
+      "provider": "openai",
+      "model": "gpt-5.4",
+      "api_keys": [
+        "sk-your-api-key"
+      ]
     }
   ]
 }
@@ -382,7 +243,59 @@ picoclaw agent
 picoclaw gateway
 ```
 
+<details>
+<summary><b>Docker（备选方案）</b></summary>
+
+```bash
+# 1. 克隆本仓库
+git clone https://github.com/sipeed/picoclaw.git
+cd picoclaw
+
+# 2. 首次运行——自动生成 docker/data/config.json 后退出
+#    （仅在 config.json 和 workspace/ 均不存在时触发）
+docker compose -f docker/docker-compose.yml --profile gateway up
+# 容器打印 "First-run setup complete." 后停止。
+
+# 3. 填写 API Key
+vim docker/data/config.json
+
+# 4. 启动
+docker compose -f docker/docker-compose.yml --profile gateway up -d
+```
+
+> **Docker / 虚拟机用户：** Gateway 默认监听 `127.0.0.1`。如需从宿主机访问，请设置 `PICOCLAW_GATEWAY_HOST=0.0.0.0`，并在 Compose 中映射所需端口。
+
+```bash
+# 查看日志
+docker compose -f docker/docker-compose.yml logs -f
+
+# 停止
+docker compose -f docker/docker-compose.yml --profile gateway down
+
+# 更新
+docker compose -f docker/docker-compose.yml pull
+docker compose -f docker/docker-compose.yml --profile gateway up -d
+```
+
 </details>
+
+<a id="-run-on-old-android-phones"></a>
+### 📱 Android (Termux)
+
+1. 安装 [Termux](https://github.com/termux/termux-app)（可从 [GitHub Releases](https://github.com/termux/termux-app/releases) 下载，或在 F-Droid / Google Play 中搜索）
+2. 执行以下命令：
+
+```bash
+# 从 Release 页面下载最新版本
+wget https://github.com/sipeed/picoclaw/releases/latest/download/picoclaw_Linux_arm64.tar.gz
+tar xzf picoclaw_Linux_arm64.tar.gz
+pkg install proot
+termux-chroot ./picoclaw onboard   # chroot 提供标准 Linux 文件系统布局
+```
+
+<img src="../../assets/termux.jpg" alt="PicoClaw on Termux" width="512">
+
+[Android Termux Guide](../guides/android-termux.md).
 
 ## 🔌 Providers (LLM)
 
@@ -597,7 +510,7 @@ PicoClaw 通过 `cron` 工具支持定时提醒和重复任务：
 
 | 主题 | 说明 |
 |------|------|
-| 🐳 [Docker 与快速开始](../guides/docker.zh.md) | Docker Compose 配置、Launcher/Agent 模式、快速开始 |
+| 🐳 [Docker 与快速开始](../guides/docker.zh.md) | Docker Compose 配置、Gateway/Agent 模式、快速开始 |
 | 💬 [聊天应用配置](../guides/chat-apps.zh.md) | 全部 17+ Channel 配置指南 |
 | ⚙️ [配置指南](../guides/configuration.zh.md) | 环境变量、工作区布局、安全沙箱 |
 | 🔌 [提供商与模型配置](../guides/providers.zh.md) | 30+ LLM Provider、模型路由、model_list 配置 |

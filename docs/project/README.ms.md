@@ -64,15 +64,11 @@
   </a>
 </p>
 
-2026-03-31 📱 **Sokongan Android!** PicoClaw sekarang berjalan di Android! Muat turun APK di [picoclaw.io](https://picoclaw.io/download)
-
 2026-03-25 🚀 **v0.2.4 Dikeluarkan!** Penstrukturan semula seni bina Agent (SubTurn, Hooks, Steering, EventBus), integrasi WeChat/WeCom, penguatan keselamatan (.security.yml, penapisan data sensitif), penyedia baharu (AWS Bedrock, Azure, Xiaomi MiMo), dan 35 pembetulan pepijat. PicoClaw mencapai **26K Stars**!
 
 2026-03-17 🚀 **v0.2.3 Dikeluarkan!** UI dulang sistem (Windows & Linux), pertanyaan status sub-agent (`spawn_status`), muat semula panas Gateway eksperimental, kawalan keselamatan Cron, dan 2 pembetulan keselamatan. PicoClaw mencapai **25K Stars**!
 
 2026-03-09 🎉 **v0.2.1 — Kemas kini terbesar setakat ini!** Sokongan protokol MCP, 4 saluran baharu (Matrix/IRC/WeCom/Discord Proxy), 3 penyedia baharu (Kimi/Minimax/Avian), saluran paip visi, storan memori JSONL, penghalaan model.
-
-2026-02-28 📦 **v0.2.0** dikeluarkan dengan sokongan Docker Compose dan Pelancar Web UI.
 
 <details>
 <summary>Berita terdahulu...</summary>
@@ -175,22 +171,15 @@ Muat turun binari untuk platform anda dari halaman [GitHub Releases](https://git
 
 Prasyarat:
 
-- Go 1.25+
-- Node.js 22+ dan pnpm 10.33.0+ untuk binaan Web UI / launcher
+- Go 1.25.13+
 
 ```bash
 git clone https://github.com/sipeed/picoclaw.git
 cd picoclaw
 make deps
 
-# Pasang dependensi frontend
-(cd web/frontend && pnpm install --frozen-lockfile)
-
 # Bina binari teras
 make build
-
-# Bina Pelancar Web UI (diperlukan untuk mod WebUI)
-make build-launcher
 
 # Bina binari teras untuk semua platform yang diuruskan oleh Makefile
 make build-all
@@ -206,134 +195,7 @@ make install
 
 ## 🚀 Panduan Permulaan Pantas
 
-### 🌐 Pelancar WebUI (Disyorkan untuk Desktop)
-
-Pelancar WebUI menyediakan antara muka berasaskan pelayar untuk konfigurasi dan sembang. Ini adalah cara termudah untuk bermula — tiada pengetahuan baris arahan diperlukan.
-
-**Pilihan 1: Klik dua kali (Desktop)**
-
-Selepas memuat turun dari [picoclaw.io](https://picoclaw.io), klik dua kali `picoclaw-launcher` (atau `picoclaw-launcher.exe` pada Windows). Pelayar anda akan dibuka secara automatik di `http://localhost:18800`.
-
-**Pilihan 2: Baris arahan**
-
-```bash
-picoclaw-launcher
-# Buka http://localhost:18800 dalam pelayar anda
-```
-
-> [!TIP]
-> **Akses jauh / Docker / VM:** Tambah bendera `-public` untuk mendengar pada semua antara muka:
-> ```bash
-> picoclaw-launcher -public
-> ```
-
-<p align="center">
-<img src="../../assets/launcher-webui.jpg" alt="Pelancar WebUI" width="600">
-</p>
-
-**Memulakan:** Buka WebUI, kemudian: **1)** Konfigurasikan Penyedia (tambah kunci API LLM) -> **2)** Konfigurasikan Saluran (cth. Telegram) -> **3)** Mulakan Gateway -> **4)** Sembang!
-
-Untuk dokumentasi WebUI terperinci, lihat [docs.picoclaw.io](https://docs.picoclaw.io).
-
-<details>
-<summary><b>Docker (alternatif)</b></summary>
-
-```bash
-# 1. Klon repo ini
-git clone https://github.com/sipeed/picoclaw.git
-cd picoclaw
-
-# 2. Jalankan pertama kali — jana docker/data/config.json secara automatik kemudian keluar
-docker compose -f docker/docker-compose.yml --profile launcher up
-
-# 3. Tetapkan kunci API anda
-vim docker/data/config.json
-
-# 4. Mulakan
-docker compose -f docker/docker-compose.yml --profile launcher up -d
-# Buka http://localhost:18800
-```
-
-> **Pengguna Docker / VM:** Gateway mendengar pada `127.0.0.1` secara lalai. Tetapkan `PICOCLAW_GATEWAY_HOST=0.0.0.0` atau gunakan bendera `-public` untuk membolehkan akses dari hos.
-
-```bash
-# Semak log
-docker compose -f docker/docker-compose.yml logs -f
-
-# Henti
-docker compose -f docker/docker-compose.yml --profile launcher down
-
-# Kemas kini
-docker compose -f docker/docker-compose.yml pull
-docker compose -f docker/docker-compose.yml --profile launcher up -d
-```
-
-</details>
-
-
-<details>
-<summary><b>macOS — Amaran Keselamatan Pelancaran Pertama</b></summary>
-
-macOS mungkin menyekat `picoclaw-launcher` pada pelancaran pertama kerana ia dimuat turun dari internet dan tidak disahkan melalui Mac App Store.
-
-**Langkah 1:** Klik dua kali `picoclaw-launcher`. Anda akan melihat amaran keselamatan:
-
-<p align="center">
-<img src="../../assets/macos-gatekeeper-warning.jpg" alt="Amaran macOS Gatekeeper" width="400">
-</p>
-
-> *"picoclaw-launcher" Tidak Dibuka — Apple tidak dapat mengesahkan "picoclaw-launcher" bebas daripada perisian hasad yang mungkin membahayakan Mac anda atau menjejaskan privasi anda.*
-
-**Langkah 2:** Buka **Tetapan Sistem** → **Privasi & Keselamatan** → tatal ke bawah ke bahagian **Keselamatan** → klik **Buka Juga** → sahkan dengan mengklik **Buka Juga** dalam dialog.
-
-<p align="center">
-<img src="../../assets/macos-gatekeeper-allow.jpg" alt="macOS Privasi & Keselamatan — Buka Juga" width="600">
-</p>
-
-Selepas langkah sekali ini, `picoclaw-launcher` akan dibuka secara normal pada pelancaran seterusnya.
-
-</details>
-
-### 📱 Android
-
-Berikan telefon lama anda kehidupan baru! Jadikannya Pembantu AI pintar dengan PicoClaw.
-
-**Pilihan 1: Pasang APK**
-
-Pratonton:
-
-<table>
-  <tr>
-    <td><img src="../../assets/fui_main_page.jpg" width="200"></td>
-    <td><img src="../../assets/fui_web_page.jpg" width="200"></td>
-    <td><img src="../../assets/fui_log_page.jpg" width="200"></td>
-    <td><img src="../../assets/fui_setting_page.jpg" width="200"></td>
-  </tr>
-</table>
-
-Muat turun APK dari [picoclaw.io](https://picoclaw.io/download/) dan pasang secara langsung. Tiada Termux diperlukan!
-
-**Pilihan 2: Termux**
-
-<details>
-<summary><b>Pelancar Terminal (untuk persekitaran terhad sumber)</b></summary>
-
-1. Pasang [Termux](https://github.com/termux/termux-app) (muat turun dari [GitHub Releases](https://github.com/termux/termux-app/releases), atau cari di F-Droid / Google Play)
-2. Jalankan arahan berikut:
-
-```bash
-# Muat turun keluaran terkini
-wget https://github.com/sipeed/picoclaw/releases/latest/download/picoclaw_Linux_arm64.tar.gz
-tar xzf picoclaw_Linux_arm64.tar.gz
-pkg install proot
-termux-chroot ./picoclaw onboard   # chroot menyediakan susun atur sistem fail Linux standard
-```
-
-Kemudian ikuti bahagian Pelancar Terminal di bawah untuk melengkapkan konfigurasi.
-
-<img src="../../assets/termux.jpg" alt="PicoClaw pada Termux" width="512">
-
-Untuk persekitaran minimal di mana hanya binari teras `picoclaw` tersedia (tiada UI Pelancar), anda boleh mengkonfigurasi semua melalui baris arahan dan fail konfigurasi JSON.
+### CLI
 
 **1. Mulakan**
 
@@ -347,6 +209,7 @@ Ini mencipta `~/.picoclaw/config.json` dan direktori ruang kerja.
 
 ```json
 {
+  "version": 3,
   "agents": {
     "defaults": {
       "model_name": "gpt-5.4"
@@ -355,13 +218,17 @@ Ini mencipta `~/.picoclaw/config.json` dan direktori ruang kerja.
   "model_list": [
     {
       "model_name": "gpt-5.4",
-      "model": "openai/gpt-5.4"
+      "provider": "openai",
+      "model": "gpt-5.4",
+      "api_keys": [
+        "sk-your-api-key"
+      ]
     }
   ]
 }
 ```
 
-> Lihat `config/config.example.json` dalam repo untuk templat konfigurasi lengkap. Nota: kunci API kini disimpan dalam `.security.yml`, bukan `config.json`.
+> Lihat `config/config.example.json` dalam repo untuk templat konfigurasi lengkap.
 
 **3. Sembang**
 
@@ -375,8 +242,56 @@ picoclaw agent
 picoclaw gateway
 ```
 
+<details>
+<summary><b>Docker (alternatif)</b></summary>
+
+```bash
+# 1. Klon repo ini
+git clone https://github.com/sipeed/picoclaw.git
+cd picoclaw
+
+# 2. Jalankan pertama kali — jana docker/data/config.json secara automatik kemudian keluar
+docker compose -f docker/docker-compose.yml --profile gateway up
+
+# 3. Tetapkan kunci API anda
+vim docker/data/config.json
+
+# 4. Mulakan
+docker compose -f docker/docker-compose.yml --profile gateway up -d
+```
+
+> **Pengguna Docker / VM:** Gateway mendengar pada `127.0.0.1` secara lalai. Tetapkan `PICOCLAW_GATEWAY_HOST=0.0.0.0` atau gunakan bendera `-public` untuk membolehkan akses dari hos.
+
+```bash
+# Semak log
+docker compose -f docker/docker-compose.yml logs -f
+
+# Henti
+docker compose -f docker/docker-compose.yml --profile gateway down
+
+# Kemas kini
+docker compose -f docker/docker-compose.yml pull
+docker compose -f docker/docker-compose.yml --profile gateway up -d
+```
+
 </details>
 
+### 📱 Android (Termux)
+
+1. Pasang [Termux](https://github.com/termux/termux-app) (muat turun dari [GitHub Releases](https://github.com/termux/termux-app/releases), atau cari di F-Droid / Google Play)
+2. Jalankan arahan berikut:
+
+```bash
+# Muat turun keluaran terkini
+wget https://github.com/sipeed/picoclaw/releases/latest/download/picoclaw_Linux_arm64.tar.gz
+tar xzf picoclaw_Linux_arm64.tar.gz
+pkg install proot
+termux-chroot ./picoclaw onboard   # chroot menyediakan susun atur sistem fail Linux standard
+```
+
+<img src="../../assets/termux.jpg" alt="PicoClaw pada Termux" width="512">
+
+[Android Termux Guide](../guides/android-termux.md).
 
 ## 🔌 Penyedia (LLM)
 
@@ -587,7 +502,7 @@ Untuk panduan terperinci melebihi README ini:
 
 | Topik | Penerangan |
 |-------|------------|
-| [Docker & Permulaan Pantas](../guides/docker.ms.md) | Persediaan Docker Compose, mod Launcher/Agent |
+| [Docker & Permulaan Pantas](../guides/docker.ms.md) | Persediaan Docker Compose, mod Gateway/Agent |
 | [Aplikasi Sembang](../guides/chat-apps.ms.md) | Panduan persediaan 17+ saluran |
 | [Konfigurasi](../guides/configuration.ms.md) | Pemboleh ubah persekitaran, susun atur ruang kerja |
 | [Penyedia & Model](../guides/providers.md) | 30+ penyedia LLM, penghalaan model |

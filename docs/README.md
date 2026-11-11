@@ -83,7 +83,6 @@ Examples:
 
 - `pkg/**/README.md`
 - `cmd/**/README.md`
-- `web/README.md`
 - `examples/**/README.md`
 
 These files still follow the same translation naming rules.
@@ -99,8 +98,8 @@ These files still follow the same translation naming rules.
 ## Examples
 
 - New setup guide:
-  - `docs/guides/launcher-setup.md`
-  - `docs/guides/launcher-setup.zh.md`
+  - `docs/guides/session-guide.md`
+  - `docs/guides/session-guide.zh.md`
 - New security guide:
   - `docs/security/token-rotation.md`
 - New translated package README:

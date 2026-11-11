@@ -35,7 +35,7 @@ PICOCLAW_HOME=/srv/picoclaw PICOCLAW_CONFIG=/srv/picoclaw/main.json picoclaw gat
 
 Provider streaming menggunakan double opt-in dan dimatikan secara lalai. Agent hanya mencuba streaming apabila saluran semasa mempunyai `settings.streaming.enabled: true`, entry model aktif mempunyai `streaming.enabled: true`, dan kedua-dua provider serta saluran menyokong streaming. Jika mana-mana syarat tiada, PicoClaw menggunakan laluan permintaan bukan streaming biasa.
 
-Pico WebUI ialah saluran pertama yang disambungkan sepenuhnya. Pico mencipta mesej assistant pertama dengan wire message sedia ada `message.create`, kemudian mengemas kini mesej yang sama dengan `message.update`; tiada jenis wire message Pico baharu ditambah.
+Pico ialah saluran pertama yang disambungkan sepenuhnya. Pico mencipta mesej assistant pertama dengan wire message sedia ada `message.create`, kemudian mengemas kini mesej yang sama dengan `message.update`; tiada jenis wire message Pico baharu ditambah.
 
 Biarkan `streaming` tidak ditetapkan jika anda tidak mahu streaming. Blok `streaming` yang tiada bermaksud dimatikan; anda tidak perlu menulis `"streaming": {"enabled": false}`.
 

@@ -49,10 +49,6 @@ const PassphraseEnvVar = "PICOCLAW_KEY_PASSPHRASE"
 // process environment. Replace it at startup to use a different source, such as
 // an in-memory SecureStore, so that all LoadConfig() calls everywhere share the
 // same passphrase source without needing os.Environ.
-//
-// Example (launcher main.go):
-//
-//	credential.PassphraseProvider = apiHandler.passphraseStore.Get
 var PassphraseProvider func() string = func() string {
 	return os.Getenv(PassphraseEnvVar)
 }

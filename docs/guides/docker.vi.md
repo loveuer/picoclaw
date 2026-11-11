@@ -34,19 +34,6 @@ docker compose -f docker/docker-compose.yml logs -f picoclaw-gateway
 docker compose -f docker/docker-compose.yml --profile gateway down
 ```
 
-### Chế Độ Launcher (Web Console)
-
-Image `launcher` bao gồm cả hai binary (`picoclaw`, `picoclaw-launcher`) và khởi động web console mặc định, cung cấp giao diện trình duyệt để cấu hình và chat.
-
-```bash
-docker compose -f docker/docker-compose.yml --profile launcher up -d
-```
-
-Mở http://localhost:18800 trong trình duyệt. Launcher tự động quản lý tiến trình gateway.
-
-> [!WARNING]
-> Web console được bảo vệ bằng mật khẩu đăng nhập dashboard. Không để lộ launcher ra mạng không tin cậy hoặc internet công cộng.
-
 ### Chế Độ Agent (One-shot)
 
 ```bash

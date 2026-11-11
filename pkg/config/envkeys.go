@@ -33,11 +33,6 @@ const (
 	// Default: <cwd>/skills
 	EnvBuiltinSkills = "PICOCLAW_BUILTIN_SKILLS"
 
-	// EnvBinary overrides the path to the picoclaw executable.
-	// Used by the web launcher when spawning the gateway subprocess.
-	// Default: resolved from the same directory as the current executable.
-	EnvBinary = "PICOCLAW_BINARY"
-
 	// EnvGatewayHost overrides the host address for the gateway server.
 	// Default: "localhost"
 	EnvGatewayHost = "PICOCLAW_GATEWAY_HOST"

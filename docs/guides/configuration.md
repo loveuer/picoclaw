@@ -143,19 +143,6 @@ Example clean web policy:
 }
 ```
 
-### Web launcher dashboard
-
-**picoclaw-launcher** serves a browser UI that requires password sign-in first. On first run, open `/launcher-setup` to create the dashboard password. Later manual sign-ins use `/launcher-login`.
-
-- **Config file**: Same directory as `config.json` (or the file pointed to by `PICOCLAW_CONFIG`). The launcher-specific file is `launcher-config.json`.
-- **Password storage**: On supported platforms, the password is stored as a bcrypt hash in `launcher-auth.db`. On platforms where the SQLite password store is unavailable, the bcrypt hash is stored in `launcher-config.json`.
-- **Legacy migration**: Older `launcher_token` values are migrated once into password login and removed from saved launcher config.
-- **Local auto-login**: When the launcher auto-opens a local browser after startup, it uses a one-shot loopback-only bootstrap endpoint to set the session cookie automatically.
-- **Unsupported auth paths**: URL token login (`?token=...`), `PICOCLAW_LAUNCHER_TOKEN`, and `Authorization: Bearer` dashboard auth are no longer supported.
-- **Sign-out**: Use **`POST /api/auth/logout`** with **`Content-Type: application/json`** (body may be `{}`). Do not rely on a GET URL for logout (CSRF-safe pattern).
-- **Brute-force**: **`POST /api/auth/login`** is **rate-limited per client IP per minute** (HTTP 429 when exceeded).
-- **Session lifetime**: The HttpOnly session cookie lasts about **31 days** by default, but sessions are invalidated when the launcher process restarts.
-
 ### Skill Sources
 
 By default, skills are loaded from:
@@ -795,7 +782,7 @@ Resolution rules:
 
 Provider streaming uses a double opt-in and is disabled by default. The agent only tries streaming when the current channel has `settings.streaming.enabled: true`, the active model entry has `streaming.enabled: true`, and both the provider and channel support streaming. If any condition is missing, PicoClaw uses the normal non-streaming request path.
 
-Pico WebUI is the first fully wired channel. Pico creates the first assistant message with the existing `message.create` wire message, then updates that same message with `message.update`; no new Pico wire message type is introduced.
+Pico is the first fully wired channel. Pico creates the first assistant message with the existing `message.create` wire message, then updates that same message with `message.update`; no new Pico wire message type is introduced.
 
 Leave `streaming` unset when you do not want streaming. An omitted `streaming` block means disabled; you do not need to write `"streaming": {"enabled": false}`.
 

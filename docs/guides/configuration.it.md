@@ -35,7 +35,7 @@ PICOCLAW_HOME=/srv/picoclaw PICOCLAW_CONFIG=/srv/picoclaw/main.json picoclaw gat
 
 Lo streaming del provider usa un double opt-in ed è disattivato per impostazione predefinita. L'agent prova lo streaming solo quando il canale corrente ha `settings.streaming.enabled: true`, l'entry del modello attivo ha `streaming.enabled: true`, e sia il provider sia il canale supportano lo streaming. Se manca una qualsiasi condizione, PicoClaw usa il normale percorso di richiesta non streaming.
 
-Pico WebUI è il primo canale completamente collegato. Pico crea il primo messaggio assistant con il wire message esistente `message.create`, poi aggiorna lo stesso messaggio con `message.update`; non viene introdotto alcun nuovo tipo di wire message Pico.
+Pico è il primo canale completamente collegato. Pico crea il primo messaggio assistant con il wire message esistente `message.create`, poi aggiorna lo stesso messaggio con `message.update`; non viene introdotto alcun nuovo tipo di wire message Pico.
 
 Lascia `streaming` assente quando non vuoi usare lo streaming. Un blocco `streaming` omesso significa disattivato; non è necessario scrivere `"streaming": {"enabled": false}`.
 

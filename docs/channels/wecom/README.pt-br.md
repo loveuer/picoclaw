@@ -13,22 +13,14 @@ Isso substitui a antiga separação `wecom`, `wecom_app` e `wecom_aibot` por um 
 - Respostas em streaming pelo protocolo WeCom AI Bot
 - Mensagens recebidas: texto, voz, imagem, arquivo, vídeo e mensagens mistas
 - Respostas enviadas: texto e mídia (`image`, `file`, `voice`, `video`)
-- Onboarding por QR code via Web UI ou CLI
+- Onboarding por QR code via CLI
 - Lista de permissões compartilhada e roteamento `reasoning_channel_id`
 
 ---
 
 ## Início Rápido
 
-### Opção 1: Vinculação QR via Web UI (Recomendado)
-
-Abra a Web UI, navegue até **Channels → WeCom** e clique no botão de vinculação QR. Escaneie o QR code com o WeCom e confirme no aplicativo — as credenciais são salvas automaticamente.
-
-<p align="center">
-<img src="../../../assets/wecom-qr-binding.jpg" alt="Vinculação QR do WeCom na Web UI" width="600">
-</p>
-
-### Opção 2: Login QR via CLI
+### Opção 1: Login QR via CLI
 
 Execute:
 
@@ -50,7 +42,7 @@ picoclaw auth wecom --timeout 10m
 
 > ⚠️ Escanear o QR code não é suficiente — você também deve tocar em **Confirmar** dentro do aplicativo WeCom, caso contrário o comando expirará.
 
-### Opção 3: Configuração Manual
+### Opção 2: Configuração Manual
 
 Se você já possui um `bot_id` e `secret` da plataforma WeCom AI Bot, configure diretamente:
 

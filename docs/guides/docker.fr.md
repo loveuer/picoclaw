@@ -34,19 +34,6 @@ docker compose -f docker/docker-compose.yml logs -f picoclaw-gateway
 docker compose -f docker/docker-compose.yml --profile gateway down
 ```
 
-### Mode Launcher (Console Web)
-
-L'image `launcher` inclut les deux binaires (`picoclaw`, `picoclaw-launcher`) et démarre la console web par défaut, qui fournit une interface navigateur pour la configuration et le chat.
-
-```bash
-docker compose -f docker/docker-compose.yml --profile launcher up -d
-```
-
-Ouvrez http://localhost:18800 dans votre navigateur. Le launcher gère automatiquement le processus gateway.
-
-> [!WARNING]
-> La console web est protégée par un mot de passe de connexion au dashboard. Ne l'exposez pas à des réseaux non fiables ni à Internet public.
-
 ### Mode Agent (One-shot)
 
 ```bash

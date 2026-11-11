@@ -744,7 +744,7 @@ In practice, check these places first:
 - `~/.picoclaw/logs/` for persisted gateway logs
 - the terminal running `picoclaw gateway` or `picoclaw agent`
 - Docker stdout/stderr via `docker compose -f docker/docker-compose.yml logs -f`
-- launcher or service logs if PicoClaw is being run under another supervisor
+- service logs if PicoClaw is being run under another supervisor
 
 Useful controls:
 

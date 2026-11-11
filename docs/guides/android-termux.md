@@ -2,7 +2,7 @@
 
 > Back to [Guides](README.md)
 
-This guide covers running the PicoClaw terminal binary on an ARM64 Android phone with Termux. Use the APK from [picoclaw.io](https://picoclaw.io/download/) if you want the Android app experience; use Termux when you want a lightweight command-line install on an older or resource-constrained device.
+This guide covers running the PicoClaw terminal binary on an ARM64 Android phone with Termux for a lightweight command-line install.
 
 ## Requirements
 

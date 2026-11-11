@@ -33,19 +33,6 @@ docker compose -f docker/docker-compose.yml logs -f picoclaw-gateway
 docker compose -f docker/docker-compose.yml --profile gateway down
 ```
 
-### Mod Launcher (Konsol Web)
-
-Imej `launcher` merangkumi kedua-dua binari (`picoclaw`, `picoclaw-launcher`) dan memulakan konsol web secara lalai, yang menyediakan UI berasaskan pelayar untuk konfigurasi dan sembang.
-
-```bash
-docker compose -f docker/docker-compose.yml --profile launcher up -d
-```
-
-Buka http://localhost:18800 dalam pelayar anda. Launcher mengurus proses gateway secara automatik.
-
-> [!WARNING]
-> Konsol web dilindungi oleh kata laluan log masuk dashboard. Jangan dedahkannya kepada rangkaian tidak dipercayai atau internet awam.
-
 ### Mod Agent (One-shot)
 
 ```bash

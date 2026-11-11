@@ -10,7 +10,6 @@
 3. 这一轮该使用 agent 的主模型，还是配置中的轻量模型
 
 本文覆盖 `pkg/routing` 及其在 `pkg/agent` 中的集成方式。
-它不讨论 `web/` 目录下 launcher 的 HTTP `ServeMux` 路由，也不讨论前端 TanStack Router 文件路由。
 
 ## 路由分层
 
@@ -258,15 +257,6 @@ Agent 分发和模型路由发生在不同位置：
 - legacy `agent:...` key
 
 这样一来，手工系统流、测试和兼容路径即使在正常路由 scope 会生成不同 key 的情况下，仍然能保持确定性。
-
-## 本文不覆盖的内容
-
-仓库里还存在两套和这里无关的“route”系统：
-
-- `web/backend/api/router.go` 注册的后端 HTTP 路由
-- `web/frontend/src/routes/` 下的前端文件路由
-
-它们属于 launcher 的实现细节，和本文描述的运行时路由系统是两回事。
 
 ## 相关文件
 

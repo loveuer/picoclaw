@@ -413,7 +413,7 @@ Cấu hình `providers` cũ đã **bị deprecated** và đã được loại b�
 
 Provider streaming dùng cơ chế double opt-in và bị tắt theo mặc định. Agent chỉ thử streaming khi channel hiện tại có `settings.streaming.enabled: true`, entry model đang dùng có `streaming.enabled: true`, và cả provider lẫn channel đều hỗ trợ streaming. Nếu thiếu bất kỳ điều kiện nào, PicoClaw dùng đường dẫn yêu cầu không streaming thông thường.
 
-Pico WebUI là channel đầu tiên được nối đầy đủ. Pico tạo message assistant đầu tiên bằng wire message hiện có `message.create`, sau đó cập nhật chính message đó bằng `message.update`; không thêm loại wire message Pico mới.
+Pico là channel đầu tiên được nối đầy đủ. Pico tạo message assistant đầu tiên bằng wire message hiện có `message.create`, sau đó cập nhật chính message đó bằng `message.update`; không thêm loại wire message Pico mới.
 
 Hãy để trống `streaming` khi bạn không muốn dùng streaming. Bỏ qua block `streaming` nghĩa là đã tắt; bạn không cần viết `"streaming": {"enabled": false}`.
 

@@ -32,8 +32,6 @@
 
 - 配置项：`tools.serial.enabled`
 - Tool 注册：`pkg/agent/agent_init.go`
-- Web 工具页：`/api/tools` 能展示与切换 `serial`
-- 前端状态文案：新增 `requires_serial_platform`
 
 ## Serial Tool 设计
 

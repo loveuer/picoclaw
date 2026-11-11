@@ -64,15 +64,11 @@
   </a>
 </p>
 
-2026-03-31 📱 **Hỗ trợ Android!** PicoClaw giờ chạy trên Android! Tải APK tại [picoclaw.io](https://picoclaw.io/download)
-
 2026-03-25 🚀 **v0.2.4 đã phát hành!** Tái cấu trúc kiến trúc Agent (SubTurn, Hooks, Steering, EventBus), tích hợp WeChat/WeCom, tăng cường bảo mật (.security.yml, lọc dữ liệu nhạy cảm), provider mới (AWS Bedrock, Azure, Xiaomi MiMo) và 35 bản vá lỗi. PicoClaw đã đạt **26K Stars**!
 
 2026-03-17 🚀 **v0.2.3 đã phát hành!** Giao diện system tray (Windows & Linux), truy vấn trạng thái sub-agent (`spawn_status`), thử nghiệm Gateway hot-reload, bảo mật Cron, và 2 bản vá bảo mật. PicoClaw đã đạt **25K Stars**!
 
 2026-03-09 🎉 **v0.2.1 — Bản cập nhật lớn nhất từ trước đến nay!** Hỗ trợ giao thức MCP, 4 Channel mới (Matrix/IRC/WeCom/Discord Proxy), 3 Provider mới (Kimi/Minimax/Avian), pipeline thị giác, bộ nhớ JSONL, định tuyến mô hình.
-
-2026-02-28 📦 **v0.2.0** phát hành với hỗ trợ Docker Compose và Web UI Launcher.
 
 <details>
 <summary>Tin tức trước đó...</summary>
@@ -174,8 +170,7 @@ Ngoài ra, tải binary cho nền tảng của bạn từ trang [GitHub Releases
 
 Yêu cầu:
 
-- Go 1.25+
-- Node.js 22+ và pnpm 10.33.0+ cho các bản build Web UI / launcher
+- Go 1.25.13+
 
 ```bash
 git clone https://github.com/sipeed/picoclaw.git
@@ -183,14 +178,8 @@ git clone https://github.com/sipeed/picoclaw.git
 cd picoclaw
 make deps
 
-# Cài đặt dependencies frontend
-(cd web/frontend && pnpm install --frozen-lockfile)
-
 # Build binary lõi
 make build
-
-# Build Web UI Launcher (cần cho chế độ WebUI)
-make build-launcher
 
 # Build các binary lõi cho mọi nền tảng do Makefile quản lý
 make build-all
@@ -206,138 +195,7 @@ make install
 
 ## 🚀 Hướng dẫn Khởi động Nhanh
 
-### 🌐 WebUI Launcher (Khuyến nghị cho Desktop)
-
-WebUI Launcher cung cấp giao diện dựa trên trình duyệt để cấu hình và trò chuyện. Đây là cách dễ nhất để bắt đầu — không cần kiến thức dòng lệnh.
-
-**Tùy chọn 1: Nhấp đúp (Desktop)**
-
-Sau khi tải xuống từ [picoclaw.io](https://picoclaw.io), nhấp đúp vào `picoclaw-launcher` (hoặc `picoclaw-launcher.exe` trên Windows). Trình duyệt của bạn sẽ tự động mở tại `http://localhost:18800`.
-
-**Tùy chọn 2: Dòng lệnh**
-
-```bash
-picoclaw-launcher
-# Mở http://localhost:18800 trong trình duyệt của bạn
-```
-
-> [!TIP]
-> **Truy cập từ xa / Docker / VM:** Thêm cờ `-public` để lắng nghe trên tất cả giao diện:
-> ```bash
-> picoclaw-launcher -public
-> ```
-
-<p align="center">
-<img src="../../assets/launcher-webui.jpg" alt="WebUI Launcher" width="600">
-</p>
-
-**Bắt đầu:**
-
-Mở WebUI, sau đó: **1)** Cấu hình Provider (thêm API key LLM của bạn) -> **2)** Cấu hình Channel (ví dụ: Telegram) -> **3)** Khởi động Gateway -> **4)** Trò chuyện!
-
-Để biết tài liệu WebUI chi tiết, xem [docs.picoclaw.io](https://docs.picoclaw.io).
-
-<details>
-<summary><b>Docker (thay thế)</b></summary>
-
-```bash
-# 1. Clone this repo
-git clone https://github.com/sipeed/picoclaw.git
-cd picoclaw
-
-# 2. First run — auto-generates docker/data/config.json then exits
-#    (only triggers when both config.json and workspace/ are missing)
-docker compose -f docker/docker-compose.yml --profile launcher up
-# The container prints "First-run setup complete." and stops.
-
-# 3. Set your API keys
-vim docker/data/config.json
-
-# 4. Start
-docker compose -f docker/docker-compose.yml --profile launcher up -d
-# Open http://localhost:18800
-```
-
-> **Người dùng Docker / VM:** Gateway lắng nghe trên `127.0.0.1` theo mặc định. Đặt `PICOCLAW_GATEWAY_HOST=0.0.0.0` hoặc dùng cờ `-public` để có thể truy cập từ host.
-
-```bash
-# Check logs
-docker compose -f docker/docker-compose.yml logs -f
-
-# Stop
-docker compose -f docker/docker-compose.yml --profile launcher down
-
-# Update
-docker compose -f docker/docker-compose.yml pull
-docker compose -f docker/docker-compose.yml --profile launcher up -d
-```
-
-</details>
-
-<details>
-<summary><b>macOS — Cảnh báo bảo mật khi khởi chạy lần đầu</b></summary>
-
-macOS có thể chặn `picoclaw-launcher` khi khởi chạy lần đầu vì nó được tải từ internet và chưa được công chứng qua Mac App Store.
-
-**Bước 1:** Nhấp đúp vào `picoclaw-launcher`. Bạn sẽ thấy cảnh báo bảo mật:
-
-<p align="center">
-<img src="../../assets/macos-gatekeeper-warning.jpg" alt="Cảnh báo macOS Gatekeeper" width="400">
-</p>
-
-> *"picoclaw-launcher" Không Mở Được — Apple không thể xác minh "picoclaw-launcher" không chứa phần mềm độc hại có thể gây hại cho Mac hoặc xâm phạm quyền riêng tư của bạn.*
-
-**Bước 2:** Mở **Cài đặt Hệ thống** → **Quyền riêng tư & Bảo mật** → cuộn xuống phần **Bảo mật** → nhấp **Vẫn Mở** → xác nhận bằng cách nhấp **Vẫn Mở** trong hộp thoại.
-
-<p align="center">
-<img src="../../assets/macos-gatekeeper-allow.jpg" alt="macOS Quyền riêng tư & Bảo mật — Vẫn Mở" width="600">
-</p>
-
-Sau bước này, `picoclaw-launcher` sẽ mở bình thường trong các lần khởi chạy tiếp theo.
-
-</details>
-
-<a id="-run-on-old-android-phones"></a>
-### 📱 Android
-
-Hãy cho chiếc điện thoại cũ của bạn một cuộc sống mới! Biến nó thành Trợ lý AI thông minh với PicoClaw.
-
-**Tùy chọn 1: Cài đặt APK**
-
-Xem trước:
-
-<table>
-  <tr>
-    <td><img src="../../assets/fui_main_page.jpg" width="200"></td>
-    <td><img src="../../assets/fui_web_page.jpg" width="200"></td>
-    <td><img src="../../assets/fui_log_page.jpg" width="200"></td>
-    <td><img src="../../assets/fui_setting_page.jpg" width="200"></td>
-  </tr>
-</table>
-
-Tải APK từ [picoclaw.io](https://picoclaw.io/download/) và cài đặt trực tiếp. Không cần Termux!
-
-**Tùy chọn 2: Termux**
-
-<details>
-<summary><b>Terminal Launcher (cho môi trường hạn chế tài nguyên)</b></summary>
-
-1. Cài đặt [Termux](https://github.com/termux/termux-app) (tải từ [GitHub Releases](https://github.com/termux/termux-app/releases), hoặc tìm kiếm trong F-Droid / Google Play)
-2. Chạy các lệnh sau:
-
-```bash
-# Download the latest release
-wget https://github.com/sipeed/picoclaw/releases/latest/download/picoclaw_Linux_arm64.tar.gz
-tar xzf picoclaw_Linux_arm64.tar.gz
-pkg install proot
-termux-chroot ./picoclaw onboard   # chroot provides a standard Linux filesystem layout
-```
-
-Sau đó làm theo phần Terminal Launcher bên dưới để hoàn tất cấu hình.
-
-<img src="../../assets/termux.jpg" alt="PicoClaw on Termux" width="512">
-
-Đối với các môi trường tối giản chỉ có binary lõi `picoclaw` (không có Launcher UI), bạn có thể cấu hình mọi thứ qua dòng lệnh và tệp cấu hình JSON.
+### CLI
 
 **1. Khởi tạo**
 
@@ -360,8 +218,11 @@ Lệnh này tạo `~/.picoclaw/config.json` và thư mục workspace.
   "model_list": [
     {
       "model_name": "gpt-5.4",
-      "model": "openai/gpt-5.4",
-      "api_keys": ["sk-your-api-key"]
+      "provider": "openai",
+      "model": "gpt-5.4",
+      "api_keys": [
+        "sk-your-api-key"
+      ]
     }
   ]
 }
@@ -382,7 +243,59 @@ picoclaw agent
 picoclaw gateway
 ```
 
+<details>
+<summary><b>Docker (thay thế)</b></summary>
+
+```bash
+# 1. Clone this repo
+git clone https://github.com/sipeed/picoclaw.git
+cd picoclaw
+
+# 2. First run — auto-generates docker/data/config.json then exits
+#    (only triggers when both config.json and workspace/ are missing)
+docker compose -f docker/docker-compose.yml --profile gateway up
+# The container prints "First-run setup complete." and stops.
+
+# 3. Set your API keys
+vim docker/data/config.json
+
+# 4. Start
+docker compose -f docker/docker-compose.yml --profile gateway up -d
+```
+
+> **Người dùng Docker / VM:** Gateway lắng nghe trên `127.0.0.1` theo mặc định. Đặt `PICOCLAW_GATEWAY_HOST=0.0.0.0` hoặc dùng cờ `-public` để có thể truy cập từ host.
+
+```bash
+# Check logs
+docker compose -f docker/docker-compose.yml logs -f
+
+# Stop
+docker compose -f docker/docker-compose.yml --profile gateway down
+
+# Update
+docker compose -f docker/docker-compose.yml pull
+docker compose -f docker/docker-compose.yml --profile gateway up -d
+```
+
 </details>
+
+<a id="-run-on-old-android-phones"></a>
+### 📱 Android (Termux)
+
+1. Cài đặt [Termux](https://github.com/termux/termux-app) (tải từ [GitHub Releases](https://github.com/termux/termux-app/releases), hoặc tìm kiếm trong F-Droid / Google Play)
+2. Chạy các lệnh sau:
+
+```bash
+# Download the latest release
+wget https://github.com/sipeed/picoclaw/releases/latest/download/picoclaw_Linux_arm64.tar.gz
+tar xzf picoclaw_Linux_arm64.tar.gz
+pkg install proot
+termux-chroot ./picoclaw onboard   # chroot provides a standard Linux filesystem layout
+```
+
+<img src="../../assets/termux.jpg" alt="PicoClaw on Termux" width="512">
+
+[Android Termux Guide](../guides/android-termux.md).
 
 ## 🔌 Providers (LLM)
 
@@ -589,7 +502,7 @@ PicoClaw hỗ trợ nhắc nhở đã lên lịch và tác vụ định kỳ th�
 
 | Chủ đề | Mô tả |
 |--------|-------|
-| [Docker & Khởi động Nhanh](../guides/docker.vi.md) | Thiết lập Docker Compose, chế độ Launcher/Agent |
+| [Docker & Khởi động Nhanh](../guides/docker.vi.md) | Thiết lập Docker Compose, chế độ Gateway/Agent |
 | [Ứng dụng Chat](../guides/chat-apps.vi.md) | Hướng dẫn thiết lập 17+ Channel |
 | [Cấu hình](../guides/configuration.vi.md) | Biến môi trường, bố cục workspace, sandbox bảo mật |
 | [Providers & Models](../guides/providers.vi.md) | 30+ Provider LLM, định tuyến mô hình, cấu hình model_list |

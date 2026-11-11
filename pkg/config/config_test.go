@@ -2536,8 +2536,7 @@ func TestLoadConfig_MixedKeys_NoPassphrase(t *testing.T) {
 
 // TestSaveConfig_UsesPassphraseProvider verifies that SaveConfig encrypts plaintext
 // api_keys using credential.PassphraseProvider() rather than os.Getenv directly.
-// This matters for the launcher, which clears the environment variable and redirects
-// PassphraseProvider to an in-memory SecureStore.
+// This also supports callers that supply the passphrase from an in-memory store.
 func TestSaveConfig_UsesPassphraseProvider(t *testing.T) {
 	dir := t.TempDir()
 	cfgPath := filepath.Join(dir, "config.json")
@@ -2546,7 +2545,7 @@ func TestSaveConfig_UsesPassphraseProvider(t *testing.T) {
 	t.Setenv("PICOCLAW_KEY_PASSPHRASE", "")
 	mustSetupSSHKey(t)
 
-	// Replace PassphraseProvider with an in-memory function (simulating SecureStore).
+	// Replace PassphraseProvider with an in-memory function (without an environment variable).
 	const testPassphrase = "provider-passphrase"
 	orig := credential.PassphraseProvider
 	credential.PassphraseProvider = func() string { return testPassphrase }

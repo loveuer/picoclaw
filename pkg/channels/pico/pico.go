@@ -513,7 +513,7 @@ func (c *PicoChannel) SendPlaceholder(ctx context.Context, chatID string) (strin
 	return msgID, nil
 }
 
-// BeginStream implements channels.StreamingCapable for Pico WebUI.
+// BeginStream implements channels.StreamingCapable for the Pico protocol.
 func (c *PicoChannel) BeginStream(ctx context.Context, chatID string) (channels.Streamer, error) {
 	if c == nil || c.config == nil || !c.config.Streaming.Enabled {
 		return nil, fmt.Errorf("streaming disabled in config")
@@ -743,7 +743,7 @@ func (s *picoStreamer) sendReasoningLocked(ctx context.Context, content string) 
 	return nil
 }
 
-// SendMedia implements channels.MediaSender for the Pico web UI.
+// SendMedia implements channels.MediaSender for the Pico protocol.
 // Media is delivered as a normal assistant message carrying structured
 // attachments plus an authenticated same-origin download URL.
 func (c *PicoChannel) SendMedia(ctx context.Context, msg bus.OutboundMediaMessage) ([]string, error) {

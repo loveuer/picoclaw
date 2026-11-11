@@ -64,15 +64,11 @@
   </a>
 </p>
 
-2026-03-31 📱 **Android サポート！** PicoClawがAndroidで動作！APKは[picoclaw.io](https://picoclaw.io/download)からダウンロード
-
 2026-03-25 🚀 **v0.2.4 リリース！** Agent アーキテクチャ全面刷新（SubTurn、Hooks、Steering、EventBus）、WeChat/WeCom 統合、セキュリティ強化（.security.yml、機密データフィルタリング）、新プロバイダー（AWS Bedrock、Azure、Xiaomi MiMo）、35 件のバグ修正。PicoClaw **26K ⭐** 達成！
 
 2026-03-17 🚀 **v0.2.3 リリース！** システムトレイ UI（Windows & Linux）、サブエージェントステータス追跡（`spawn_status`）、実験的 Gateway ホットリロード、cron セキュリティゲート、セキュリティ修正 2 件。PicoClaw **25K ⭐** 達成！
 
 2026-03-09 🎉 **v0.2.1 — 最大のアップデート！** MCP プロトコルサポート、4 つの新チャンネル (Matrix/IRC/WeCom/Discord Proxy)、3 つの新プロバイダー (Kimi/Minimax/Avian)、ビジョンパイプライン、JSONL メモリストア、モデルルーティング。
-
-2026-02-28 📦 **v0.2.0** リリース — Docker Compose と Web UI Launcher サポート。
 
 <details>
 <summary>過去のニュース...</summary>
@@ -174,8 +170,7 @@ PicoClaw はほぼすべての Linux デバイスにデプロイできます！
 
 前提条件:
 
-- Go 1.25+
-- Web UI / launcher のビルドには Node.js 22+ と pnpm 10.33.0+ が必要
+- Go 1.25.13+
 
 ```bash
 git clone https://github.com/sipeed/picoclaw.git
@@ -183,14 +178,8 @@ git clone https://github.com/sipeed/picoclaw.git
 cd picoclaw
 make deps
 
-# フロントエンド依存関係をインストール
-(cd web/frontend && pnpm install --frozen-lockfile)
-
 # コアバイナリをビルド
 make build
-
-# Web UI Launcher をビルド（WebUI モードに必要）
-make build-launcher
 
 # Makefile が管理するすべてのプラットフォーム向けにコアバイナリをビルド
 make build-all
@@ -206,138 +195,7 @@ make install
 
 ## 🚀 クイックスタートガイド
 
-### 🌐 WebUI Launcher（デスクトップ向け推奨）
-
-WebUI Launcher はブラウザベースの設定・チャットインターフェースを提供します。コマンドラインの知識不要で、最も簡単に始められる方法です。
-
-**オプション 1: ダブルクリック（デスクトップ）**
-
-[picoclaw.io](https://picoclaw.io) からダウンロード後、`picoclaw-launcher`（Windows では `picoclaw-launcher.exe`）をダブルクリックしてください。ブラウザが自動的に `http://localhost:18800` を開きます。
-
-**オプション 2: コマンドライン**
-
-```bash
-picoclaw-launcher
-# ブラウザで http://localhost:18800 を開く
-```
-
-> [!TIP]
-> **リモートアクセス / Docker / VM:** すべてのインターフェースでリッスンするには `-public` フラグを追加してください：
-> ```bash
-> picoclaw-launcher -public
-> ```
-
-<p align="center">
-<img src="../../assets/launcher-webui.jpg" alt="WebUI Launcher" width="600">
-</p>
-
-**始め方:**
-
-WebUI を開いたら：**1)** Provider を設定（LLM API キーを追加）→ **2)** Channel を設定（例：Telegram）→ **3)** Gateway を起動 → **4)** チャット！
-
-WebUI の詳細なドキュメントは [docs.picoclaw.io](https://docs.picoclaw.io) を参照してください。
-
-<details>
-<summary><b>Docker（代替手段）</b></summary>
-
-```bash
-# 1. このリポジトリをクローン
-git clone https://github.com/sipeed/picoclaw.git
-cd picoclaw
-
-# 2. 初回実行 — docker/data/config.json を自動生成して終了
-#    （config.json と workspace/ の両方が存在しない場合のみ実行）
-docker compose -f docker/docker-compose.yml --profile launcher up
-# コンテナが "First-run setup complete." を出力して停止します。
-
-# 3. API キーを設定
-vim docker/data/config.json
-
-# 4. 起動
-docker compose -f docker/docker-compose.yml --profile launcher up -d
-# http://localhost:18800 を開く
-```
-
-> **Docker / VM ユーザー:** Gateway はデフォルトで `127.0.0.1` でリッスンします。ホストからアクセスできるようにするには `PICOCLAW_GATEWAY_HOST=0.0.0.0` を設定するか、`-public` フラグを使用してください。
-
-```bash
-# ログを確認
-docker compose -f docker/docker-compose.yml logs -f
-
-# 停止
-docker compose -f docker/docker-compose.yml --profile launcher down
-
-# 更新
-docker compose -f docker/docker-compose.yml pull
-docker compose -f docker/docker-compose.yml --profile launcher up -d
-```
-
-</details>
-
-<details>
-<summary><b>macOS — 初回起動時のセキュリティ警告</b></summary>
-
-`picoclaw-launcher` はインターネットからダウンロードされ、Mac App Store を通じて公証されていないため、macOS が初回起動時にブロックする場合があります。
-
-**ステップ 1：** `picoclaw-launcher` をダブルクリックすると、セキュリティ警告が表示されます：
-
-<p align="center">
-<img src="../../assets/macos-gatekeeper-warning.jpg" alt="macOS Gatekeeper 警告" width="400">
-</p>
-
-> *"picoclaw-launcher" は開けません — "picoclaw-launcher" がMacに害を与えたりプライバシーを侵害するマルウェアを含まないことをAppleは確認できません。*
-
-**ステップ 2：** **システム設定** → **プライバシーとセキュリティ** を開き、**セキュリティ** セクションまでスクロールして **このまま開く** をクリック → ダイアログで再度 **開く** をクリックします。
-
-<p align="center">
-<img src="../../assets/macos-gatekeeper-allow.jpg" alt="macOS プライバシーとセキュリティ — このまま開く" width="600">
-</p>
-
-この操作を一度行うと、以降の起動では警告が表示されなくなります。
-
-</details>
-
-<a id="-run-on-old-android-phones"></a>
-### 📱 Android
-
-10 年前のスマホに第二の人生を！PicoClaw でスマート AI アシスタントに変身させましょう。
-
-**オプション 1: APK インストール**
-
-プレビュー：
-
-<table>
-  <tr>
-    <td><img src="../../assets/fui_main_page.jpg" width="200"></td>
-    <td><img src="../../assets/fui_web_page.jpg" width="200"></td>
-    <td><img src="../../assets/fui_log_page.jpg" width="200"></td>
-    <td><img src="../../assets/fui_setting_page.jpg" width="200"></td>
-  </tr>
-</table>
-
-[picoclaw.io](https://picoclaw.io/download/) から APK をダウンロードして直接インストール。Termux 不要！
-
-**オプション 2: Termux**
-
-<details>
-<summary><b>Terminal Launcher（リソース制約環境向け）</b></summary>
-
-1. [Termux](https://github.com/termux/termux-app) をインストール（[GitHub Releases](https://github.com/termux/termux-app/releases) からダウンロード、または F-Droid / Google Play で検索）
-2. 以下のコマンドを実行：
-
-```bash
-# 最新リリースをダウンロード
-wget https://github.com/sipeed/picoclaw/releases/latest/download/picoclaw_Linux_arm64.tar.gz
-tar xzf picoclaw_Linux_arm64.tar.gz
-pkg install proot
-termux-chroot ./picoclaw onboard   # chroot で標準的な Linux ファイルシステムレイアウトを提供
-```
-
-その後、下記の Terminal Launcher セクションの手順に従って設定を完了してください。
-
-<img src="../../assets/termux.jpg" alt="PicoClaw on Termux" width="512">
-
-`picoclaw` コアバイナリのみが利用可能な最小環境（Launcher UI なし）では、コマンドラインと JSON 設定ファイルですべてを設定できます。
+### CLI
 
 **1. 初期化**
 
@@ -360,8 +218,11 @@ picoclaw onboard
   "model_list": [
     {
       "model_name": "gpt-5.4",
-      "model": "openai/gpt-5.4",
-      "api_keys": ["sk-your-api-key"]
+      "provider": "openai",
+      "model": "gpt-5.4",
+      "api_keys": [
+        "sk-your-api-key"
+      ]
     }
   ]
 }
@@ -382,7 +243,59 @@ picoclaw agent
 picoclaw gateway
 ```
 
+<details>
+<summary><b>Docker（代替手段）</b></summary>
+
+```bash
+# 1. このリポジトリをクローン
+git clone https://github.com/sipeed/picoclaw.git
+cd picoclaw
+
+# 2. 初回実行 — docker/data/config.json を自動生成して終了
+#    （config.json と workspace/ の両方が存在しない場合のみ実行）
+docker compose -f docker/docker-compose.yml --profile gateway up
+# コンテナが "First-run setup complete." を出力して停止します。
+
+# 3. API キーを設定
+vim docker/data/config.json
+
+# 4. 起動
+docker compose -f docker/docker-compose.yml --profile gateway up -d
+```
+
+> **Docker / VM：** Gateway は既定で `127.0.0.1` を使用します。ホストから接続する場合は `PICOCLAW_GATEWAY_HOST=0.0.0.0` を設定し、Compose で必要なポートを公開してください。
+
+```bash
+# ログを確認
+docker compose -f docker/docker-compose.yml logs -f
+
+# 停止
+docker compose -f docker/docker-compose.yml --profile gateway down
+
+# 更新
+docker compose -f docker/docker-compose.yml pull
+docker compose -f docker/docker-compose.yml --profile gateway up -d
+```
+
 </details>
+
+<a id="-run-on-old-android-phones"></a>
+### 📱 Android (Termux)
+
+1. [Termux](https://github.com/termux/termux-app) をインストール（[GitHub Releases](https://github.com/termux/termux-app/releases) からダウンロード、または F-Droid / Google Play で検索）
+2. 以下のコマンドを実行：
+
+```bash
+# 最新リリースをダウンロード
+wget https://github.com/sipeed/picoclaw/releases/latest/download/picoclaw_Linux_arm64.tar.gz
+tar xzf picoclaw_Linux_arm64.tar.gz
+pkg install proot
+termux-chroot ./picoclaw onboard   # chroot で標準的な Linux ファイルシステムレイアウトを提供
+```
+
+<img src="../../assets/termux.jpg" alt="PicoClaw on Termux" width="512">
+
+[Android Termux Guide](../guides/android-termux.md).
 
 ## 🔌 Provider（LLM）
 
@@ -589,7 +502,7 @@ PicoClaw は `cron` ツールによるスケジュールリマインダーと定
 
 | トピック | 説明 |
 |---------|------|
-| [Docker & クイックスタート](../guides/docker.ja.md) | Docker Compose セットアップ、Launcher/Agent モード |
+| [Docker & クイックスタート](../guides/docker.ja.md) | Docker Compose セットアップ、Gateway/Agent モード |
 | [チャットアプリ](../guides/chat-apps.ja.md) | 17 以上の Channel セットアップガイド |
 | [設定](../guides/configuration.ja.md) | 環境変数、ワークスペース構成、セキュリティサンドボックス |
 | [Provider とモデル](../guides/providers.ja.md) | 30 以上の LLM Provider、モデルルーティング、model_list 設定 |

@@ -13,22 +13,14 @@ PicoClaw cung cấp WeCom dưới dạng một kênh duy nhất `channels.wecom`
 - Phản hồi streaming qua giao thức WeCom AI Bot
 - Nhận tin nhắn văn bản, giọng nói, hình ảnh, tệp, video và tin nhắn hỗn hợp
 - Gửi phản hồi văn bản và phương tiện (`image`, `file`, `voice`, `video`)
-- Đăng ký qua mã QR bằng Web UI hoặc CLI
+- Đăng ký qua mã QR bằng CLI
 - Danh sách cho phép chung và định tuyến `reasoning_channel_id`
 
 ---
 
 ## Bắt đầu nhanh
 
-### Tùy chọn 1: Liên kết QR qua Web UI (Khuyến nghị)
-
-Mở Web UI, điều hướng đến **Channels → WeCom** và nhấp vào nút liên kết QR. Quét mã QR bằng WeCom và xác nhận trong ứng dụng — thông tin đăng nhập được lưu tự động.
-
-<p align="center">
-<img src="../../../assets/wecom-qr-binding.jpg" alt="Liên kết QR WeCom trong Web UI" width="600">
-</p>
-
-### Tùy chọn 2: Đăng nhập QR qua CLI
+### Tùy chọn 1: Đăng nhập QR qua CLI
 
 Chạy:
 
@@ -50,7 +42,7 @@ picoclaw auth wecom --timeout 10m
 
 > ⚠️ Quét mã QR là chưa đủ — bạn cũng phải nhấn **Xác nhận** trong ứng dụng WeCom, nếu không lệnh sẽ hết thời gian chờ.
 
-### Tùy chọn 3: Cấu hình thủ công
+### Tùy chọn 2: Cấu hình thủ công
 
 Nếu bạn đã có `bot_id` và `secret` từ nền tảng WeCom AI Bot, hãy cấu hình trực tiếp:
 

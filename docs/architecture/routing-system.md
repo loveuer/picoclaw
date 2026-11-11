@@ -10,7 +10,6 @@ It is the combined pipeline that decides:
 3. whether the turn should use the agent's primary model or a configured light model
 
 This document covers the runtime path in `pkg/routing` and its integration in `pkg/agent`.
-It does not describe the launcher's HTTP `ServeMux` routes or the frontend's TanStack Router files under `web/`.
 
 ## Routing Layers
 
@@ -258,16 +257,6 @@ After a route is allocated, `pkg/agent/agent_utils.go:resolveScopeKey` preserves
 - a legacy `agent:...` key
 
 That makes manual system flows, tests, and compatibility paths deterministic even when the normal routed scope would have produced a different key.
-
-## What This Document Does Not Cover
-
-The repository also contains two unrelated route systems:
-
-- backend HTTP routes registered in `web/backend/api/router.go`
-- frontend file routes under `web/frontend/src/routes/`
-
-Those are launcher implementation details.
-They are separate from the runtime routing system described here.
 
 ## Related Files
 

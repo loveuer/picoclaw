@@ -34,19 +34,6 @@ docker compose -f docker/docker-compose.yml logs -f picoclaw-gateway
 docker compose -f docker/docker-compose.yml --profile gateway down
 ```
 
-### Launcher 模式 (Web 控制台)
-
-`launcher` 镜像包含两个二进制文件（`picoclaw`、`picoclaw-launcher`），默认启动 Web 控制台，提供基于浏览器的配置和聊天界面。
-
-```bash
-docker compose -f docker/docker-compose.yml --profile launcher up -d
-```
-
-在浏览器中打开 <http://localhost:18800>。Launcher 会自动管理 Gateway 进程。
-
-> [!WARNING]
-> Web 控制台通过 dashboard 登录密码保护。**不要**将启动器暴露到不可信网络或公网。完整说明见 [配置指南](configuration.md) 中的「Web 启动器控制台」一节。
-
 ### Agent 模式 (一次性运行)
 
 ```bash

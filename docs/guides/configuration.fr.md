@@ -412,7 +412,7 @@ L'ancienne configuration `providers` est **dépréciée** et a été supprimée 
 
 Le streaming provider utilise un double opt-in et est désactivé par défaut. L'agent ne tente le streaming que lorsque le channel courant a `settings.streaming.enabled: true`, que l'entrée de modèle active a `streaming.enabled: true`, et que le provider comme le channel prennent en charge le streaming. Si une condition manque, PicoClaw utilise le chemin de requête non-streaming normal.
 
-Pico WebUI est le premier channel entièrement câblé. Pico crée le premier message assistant avec le message wire existant `message.create`, puis met à jour ce même message avec `message.update`; aucun nouveau type de message Pico n'est introduit.
+Pico est le premier channel entièrement câblé. Pico crée le premier message assistant avec le message wire existant `message.create`, puis met à jour ce même message avec `message.update`; aucun nouveau type de message Pico n'est introduit.
 
 Laissez `streaming` absent si vous ne voulez pas de streaming. Un bloc `streaming` omis signifie désactivé; il n'est pas nécessaire d'écrire `"streaming": {"enabled": false}`.
 

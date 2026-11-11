@@ -9,7 +9,6 @@
 - 在运行时使用不透明 canonical key 的同时，继续兼容旧的 `agent:...` session key
 
 本文覆盖 `pkg/session`、`pkg/memory` 和 `pkg/agent` 中的核心运行时链路。
-它不讨论 `web/backend/middleware` 中 launcher 登录 Cookie 或 dashboard 鉴权 session。
 
 ## 职责
 
@@ -236,7 +235,6 @@ JSONL store 的设计核心是“追加优先、宁可暂时读到旧数据也�
 
 Session 系统不只被 agent loop 使用：
 
-- `web/backend/api/session.go` 会读取 JSONL metadata 和旧 JSON session，并把历史暴露给 launcher UI。
 - `pkg/agent/steering.go` 可以在 steering 场景下恢复 scope metadata。
 - 因为 alias 解析发生在 agent loop 之下，测试和工具仍然可以继续使用 legacy alias。
 

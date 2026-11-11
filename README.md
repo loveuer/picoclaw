@@ -64,8 +64,6 @@
   </a>
 </p>
 
-2026-05-28 🚀 **v0.2.9 Released!** MCP server management in Web UI, configurable Sogou-backed web search, tool feedback animation in channels, `pretty_print` and `disable_escape_html` defaults, and numerous bug fixes across providers and channels.
-
 2026-05-14 🚀 **v0.2.8 Released!** MCP CLI commands (`show`, `add`, `list`, `remove`, `test`, `edit`), empty object instead of null for MCP tool parameters, and build fixes.
 
 2026-05-07 🚀 **v0.2.7 Released!** Configurable Sogou-backed web search, channel tool feedback animation, linter fixes.
@@ -74,15 +72,11 @@
 
 2026-04-11 🚀 **v0.2.5 Released!** Zoneinfo from TZ/ZONEINFO env, Matrix CommonMark rendering alignment, `read_file` by lines.
 
-2026-03-31 📱 **Android Support!** PicoClaw now runs on Android! Download the APK at [picoclaw.io](https://picoclaw.io/download)
-
 2026-03-25 🚀 **v0.2.4 Released!** Agent architecture overhaul (SubTurn, Hooks, Steering, EventBus), WeChat/WeCom integration, security hardening (.security.yml, sensitive data filtering), new providers (AWS Bedrock, Azure, Xiaomi MiMo), and 35 bug fixes. PicoClaw has reached **26K Stars**!
 
 2026-03-17 🚀 **v0.2.3 Released!** System tray UI (Windows & Linux), sub-agent status query (`spawn_status`), experimental Gateway hot-reload, Cron security gating, and 2 security fixes. PicoClaw has reached **25K Stars**!
 
 2026-03-09 🎉 **v0.2.1 — Biggest update yet!** MCP protocol support, 4 new channels (Matrix/IRC/WeCom/Discord Proxy), 3 new providers (Kimi/Minimax/Avian), vision pipeline, JSONL memory store, model routing.
-
-2026-02-28 📦 **v0.2.0** released with Docker Compose and Web UI Launcher support.
 
 <details>
 <summary>Earlier news...</summary>
@@ -184,8 +178,7 @@ Alternatively, download the binary for your platform from the [GitHub Releases](
 
 Prerequisites:
 
-- Go 1.25+
-- Node.js 22+ and pnpm 10.33.0+ for Web UI / launcher builds
+- Go 1.25.13+
 
 ```bash
 git clone https://github.com/sipeed/picoclaw.git
@@ -193,14 +186,8 @@ git clone https://github.com/sipeed/picoclaw.git
 cd picoclaw
 make deps
 
-# Install frontend dependencies
-(cd web/frontend && pnpm install --frozen-lockfile)
-
 # Build the core binary for the current platform
 make build
-
-# Build the Web UI Launcher (required for WebUI mode)
-make build-launcher
 
 # Build core binaries for all Makefile-managed platforms
 make build-all
@@ -218,140 +205,7 @@ make install
 
 ## 🚀 Quick Start Guide
 
-### 🌐 WebUI Launcher (Recommended for Desktop)
-
-The WebUI Launcher provides a browser-based interface for configuration and chat. This is the easiest way to get started — no command-line knowledge required.
-
-**Option 1: Double-click (Desktop)**
-
-After downloading from [picoclaw.io](https://picoclaw.io), double-click `picoclaw-launcher` (or `picoclaw-launcher.exe` on Windows). Your browser will open automatically at `http://localhost:18800`.
-
-**Option 2: Command line**
-
-```bash
-picoclaw-launcher
-# Open http://localhost:18800 in your browser
-```
-
-> [!TIP]
-> **Remote access / Docker / VM:** Add the `-public` flag to listen on all interfaces:
-> ```bash
-> picoclaw-launcher -public
-> ```
-
-<p align="center">
-<img src="assets/launcher-webui.jpg" alt="WebUI Launcher" width="600">
-</p>
-
-**Getting started:**
-
-Open the WebUI, then: **1)** Configure a Provider (add your LLM API key) -> **2)** Configure a Channel (e.g., Telegram) -> **3)** Start the Gateway -> **4)** Chat!
-
-For detailed WebUI documentation, see [docs.picoclaw.io](https://docs.picoclaw.io).
-
-<details>
-<summary><b>Docker (alternative)</b></summary>
-
-```bash
-# 1. Clone this repo
-git clone https://github.com/sipeed/picoclaw.git
-cd picoclaw
-
-# 2. First run — auto-generates docker/data/config.json then exits
-#    (only triggers when both config.json and workspace/ are missing)
-docker compose -f docker/docker-compose.yml --profile launcher up
-# The container prints "First-run setup complete." and stops.
-
-# 3. Set your API keys
-vim docker/data/config.json
-
-# 4. Start
-docker compose -f docker/docker-compose.yml --profile launcher up -d
-# Open http://localhost:18800
-```
-
-> **Docker / VM users:** The Gateway listens on `127.0.0.1` by default. Set `PICOCLAW_GATEWAY_HOST=0.0.0.0` or use the `-public` flag to make it accessible from the host.
-
-```bash
-# Check logs
-docker compose -f docker/docker-compose.yml logs -f
-
-# Stop
-docker compose -f docker/docker-compose.yml --profile launcher down
-
-# Update
-docker compose -f docker/docker-compose.yml pull
-docker compose -f docker/docker-compose.yml --profile launcher up -d
-```
-
-</details>
-
-<details>
-<summary><b>macOS — First Launch Security Warning</b></summary>
-
-macOS may block `picoclaw-launcher` on first launch because it is downloaded from the internet and not notarized through the Mac App Store.
-
-**Step 1:** Double-click `picoclaw-launcher`. You will see a security warning:
-
-<p align="center">
-<img src="assets/macos-gatekeeper-warning.jpg" alt="macOS Gatekeeper warning" width="400">
-</p>
-
-> *"picoclaw-launcher" Not Opened — Apple could not verify "picoclaw-launcher" is free of malware that may harm your Mac or compromise your privacy.*
-
-**Step 2:** Open **System Settings** → **Privacy & Security** → scroll down to the **Security** section → click **Open Anyway** → confirm by clicking **Open Anyway** in the dialog.
-
-<p align="center">
-<img src="assets/macos-gatekeeper-allow.jpg" alt="macOS Privacy & Security — Open Anyway" width="600">
-</p>
-
-After this one-time step, `picoclaw-launcher` will open normally on subsequent launches.
-
-</details>
-
-<a id="-run-on-old-android-phones"></a>
-### 📱 Android
-
-Give your decade-old phone a second life! Turn it into a smart AI Assistant with PicoClaw.
-
-**Option 1: APK Install**
-
-Preview:
-
-<table>
-  <tr>
-    <td><img src="assets/fui_main_page.jpg" width="200"></td>
-    <td><img src="assets/fui_web_page.jpg" width="200"></td>
-    <td><img src="assets/fui_log_page.jpg" width="200"></td>
-    <td><img src="assets/fui_setting_page.jpg" width="200"></td>
-  </tr>
-</table>
-
-Download the APK from [picoclaw.io](https://picoclaw.io/download/) and install directly. No Termux required!
-
-**Option 2: Termux**
-
-For a full command-line setup checklist, see the [Android Termux Guide](docs/guides/android-termux.md).
-
-<details>
-<summary><b>Terminal Launcher (for resource-constrained environments)</b></summary>
-
-1. Install [Termux](https://github.com/termux/termux-app) (download from [GitHub Releases](https://github.com/termux/termux-app/releases), or search in F-Droid / Google Play)
-2. Run the following commands:
-
-```bash
-# Download the latest release
-wget https://github.com/sipeed/picoclaw/releases/latest/download/picoclaw_Linux_arm64.tar.gz
-tar xzf picoclaw_Linux_arm64.tar.gz
-pkg install proot
-termux-chroot ./picoclaw onboard   # chroot provides a standard Linux filesystem layout
-```
-
-Then follow the Terminal Launcher section below to complete configuration.
-
-<img src="assets/termux.jpg" alt="PicoClaw on Termux" width="512">
-
-For minimal environments where only the `picoclaw` core binary is available (no Launcher UI), you can configure everything via the command line and a JSON config file.
+### CLI
 
 **1. Initialize**
 
@@ -365,6 +219,7 @@ This creates `~/.picoclaw/config.json` and the workspace directory.
 
 ```json
 {
+  "version": 3,
   "agents": {
     "defaults": {
       "model_name": "gpt-5.4"
@@ -373,17 +228,17 @@ This creates `~/.picoclaw/config.json` and the workspace directory.
   "model_list": [
     {
       "model_name": "gpt-5.4",
-      "model": "openai/gpt-5.4"
-      // api_key is now loaded from .security.yml
+      "provider": "openai",
+      "model": "gpt-5.4",
+      "api_keys": [
+        "sk-your-api-key"
+      ]
     }
   ]
 }
 ```
 
 > See `config/config.example.json` in the repo for a complete configuration template with all available options.
->
-> Please note: config.example.json format is version 0, with sensitive codes in it, and will be auto migrated to version 1+, then, the config.json will only store insensitive data, the sensitive codes will be stored in .security.yml, if you need manually modify the codes, please see `docs/security/security_configuration.md` for more details.
-
 
 **3. Chat**
 
@@ -398,7 +253,59 @@ picoclaw agent
 picoclaw gateway
 ```
 
+<details>
+<summary><b>Docker (alternative)</b></summary>
+
+```bash
+# 1. Clone this repo
+git clone https://github.com/sipeed/picoclaw.git
+cd picoclaw
+
+# 2. First run — auto-generates docker/data/config.json then exits
+#    (only triggers when both config.json and workspace/ are missing)
+docker compose -f docker/docker-compose.yml --profile gateway up
+# The container prints "First-run setup complete." and stops.
+
+# 3. Set your API keys
+vim docker/data/config.json
+
+# 4. Start
+docker compose -f docker/docker-compose.yml --profile gateway up -d
+```
+
+> **Docker / VM users:** The Gateway listens on `127.0.0.1` by default. For host access, set `PICOCLAW_GATEWAY_HOST=0.0.0.0` and publish the required ports in Compose.
+
+```bash
+# Check logs
+docker compose -f docker/docker-compose.yml logs -f
+
+# Stop
+docker compose -f docker/docker-compose.yml --profile gateway down
+
+# Update
+docker compose -f docker/docker-compose.yml pull
+docker compose -f docker/docker-compose.yml --profile gateway up -d
+```
+
 </details>
+
+<a id="-run-on-old-android-phones"></a>
+### 📱 Android (Termux)
+
+1. Install [Termux](https://github.com/termux/termux-app) (download from [GitHub Releases](https://github.com/termux/termux-app/releases), or search in F-Droid / Google Play)
+2. Run the following commands:
+
+```bash
+# Download the latest release
+wget https://github.com/sipeed/picoclaw/releases/latest/download/picoclaw_Linux_arm64.tar.gz
+tar xzf picoclaw_Linux_arm64.tar.gz
+pkg install proot
+termux-chroot ./picoclaw onboard   # chroot provides a standard Linux filesystem layout
+```
+
+<img src="assets/termux.jpg" alt="PicoClaw on Termux" width="512">
+
+[Android Termux Guide](docs/guides/android-termux.md).
 
 ## 🔌 Providers (LLM)
 
@@ -643,7 +550,7 @@ For detailed guides beyond this README:
 
 | Topic | Description |
 |-------|-------------|
-| [Docker & Quick Start](docs/guides/docker.md) | Docker Compose setup, Launcher/Agent modes |
+| [Docker & Quick Start](docs/guides/docker.md) | Docker Compose setup, Gateway/Agent modes |
 | [Chat Apps](docs/guides/chat-apps.md) | All 18+ channel setup guides |
 | [Configuration](docs/guides/configuration.md) | Environment variables, workspace layout, security sandbox |
 | [MCP Server CLI](docs/reference/mcp-cli.md) | Add, list, test, edit, and remove MCP server entries from the CLI |

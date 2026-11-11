@@ -27,7 +27,7 @@ docker compose -f docker/docker-compose.yml --profile gateway up -d
 > **Docker Users**: By default, the Gateway listens on `127.0.0.1` which is not accessible from the host. If you need to access the health endpoints or expose ports, set `PICOCLAW_GATEWAY_HOST=0.0.0.0` in your environment or update `config.json`.
 
 > [!NOTE]
-> The `gateway` profile only serves the webhook handlers (including Pico when enabled) and health endpoints on the gateway port, so it does not expose generic REST chat endpoints such as `/chat` or `/a2a`. Launcher mode adds the browser UI plus `/api/pico/info` and an authenticated `/pico/ws` proxy on the launcher port, but `/pico/ws` is also available directly on the gateway whenever the Pico channel is enabled.
+> The `gateway` profile only serves the webhook handlers (including Pico when enabled) and health endpoints on the gateway port, so it does not expose generic REST chat endpoints such as `/chat` or `/a2a`. The `/pico/ws` endpoint is available directly on the gateway whenever the Pico channel is enabled.
 
 ```bash
 # 5. Check logs
@@ -36,19 +36,6 @@ docker compose -f docker/docker-compose.yml logs -f picoclaw-gateway
 # 6. Stop
 docker compose -f docker/docker-compose.yml --profile gateway down
 ```
-
-### Launcher Mode (Web Console)
-
-The `launcher` image includes both binaries (`picoclaw`, `picoclaw-launcher`) and starts the web console by default, which provides a browser-based UI for configuration and chat.
-
-```bash
-docker compose -f docker/docker-compose.yml --profile launcher up -d
-```
-
-Open http://localhost:18800 in your browser. The launcher manages the gateway process automatically.
-
-> [!WARNING]
-> The web console is protected by dashboard password login. **Do not** expose the launcher to untrusted networks or the public internet. See [Web launcher dashboard](configuration.md#web-launcher-dashboard) in the Configuration Guide.
 
 ### Agent Mode (One-shot)
 
