@@ -145,16 +145,6 @@
         "app_secret": "YOUR_QQ_APP_SECRET"
       }
     },
-    "maixcam": {
-      "enabled": false,
-      "type": "maixcam",
-      "allow_from": [],
-      "reasoning_channel_id": "",
-      "settings": {
-        "host": "0.0.0.0",
-        "port": 18790
-      }
-    },
     "whatsapp": {
       "enabled": false,
       "type": "whatsapp",
@@ -262,31 +252,6 @@
         "secret": "YOUR_SECRET",
         "websocket_url": "wss://openws.work.weixin.qq.com",
         "send_thinking_message": true
-      }
-    },
-    "pico": {
-      "enabled": false,
-      "type": "pico",
-      "allow_from": [],
-      "settings": {
-        "token": "YOUR_PICO_TOKEN",
-        "allow_token_query": false,
-        "allow_origins": [],
-        "ping_interval": 30,
-        "read_timeout": 60,
-        "max_connections": 100
-      }
-    },
-    "pico_client": {
-      "enabled": false,
-      "type": "pico_client",
-      "allow_from": [],
-      "settings": {
-        "url": "wss://remote-pico-server/pico/ws",
-        "token": "YOUR_PICO_TOKEN",
-        "session_id": "",
-        "ping_interval": 30,
-        "read_timeout": 60
       }
     },
     "irc": {

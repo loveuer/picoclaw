@@ -150,7 +150,6 @@ PicoClaw는 사실상 거의 모든 Linux 장치에 배포할 수 있습니다!
 
 - 최소형 홈 어시스턴트를 위해 $9.9 [LicheeRV-Nano](https://www.aliexpress.com/item/1005006519668532.html) E(이더넷) 또는 W(WiFi6) 에디션
 - 서버 자동 운영을 위해 $30~50 [NanoKVM](https://www.aliexpress.com/item/1005007369816019.html) 또는 $100 [NanoKVM-Pro](https://www.aliexpress.com/item/1005010048471263.html)
-- 스마트 감시를 위해 $50 [MaixCAM](https://www.aliexpress.com/item/1005008053333693.html) 또는 $100 [MaixCAM2](https://www.kickstarter.com/projects/zepan/maixcam2-build-your-next-gen-4k-ai-camera)
 
 <https://private-user-images.githubusercontent.com/83055338/547056448-e7b031ff-d6f5-4468-bcca-5726b6fecb5c.mp4>
 
@@ -381,9 +380,6 @@ PicoClaw는 `model_list` 설정을 통해 30개 이상의 LLM 프로바이더를
 | **VK** | 쉬움(그룹 토큰) | Long Poll | [가이드](../channels/vk/README.md) |
 | **IRC** | 중간(서버 + 닉네임) | IRC protocol | [가이드](../guides/chat-apps.md#irc) |
 | **OneBot** | 중간(WebSocket URL) | OneBot v11 | [가이드](../channels/onebot/README.md) |
-| **MaixCam** | 쉬움(활성화) | TCP socket | [가이드](../channels/maixcam/README.md) |
-| **Pico** | 쉬움(활성화) | 네이티브 프로토콜 | 내장 |
-| **Pico Client** | 쉬움(WebSocket URL) | WebSocket | 내장 |
 
 > webhook 기반 채널은 모두 하나의 게이트웨이 HTTP 서버(`gateway.host`:`gateway.port`, 기본값 `127.0.0.1:18790`)를 공유합니다. Feishu는 WebSocket/SDK 모드를 사용하며 이 공용 HTTP 서버를 사용하지 않습니다.
 

@@ -782,8 +782,6 @@ Resolution rules:
 
 Provider streaming uses a double opt-in and is disabled by default. The agent only tries streaming when the current channel has `settings.streaming.enabled: true`, the active model entry has `streaming.enabled: true`, and both the provider and channel support streaming. If any condition is missing, PicoClaw uses the normal non-streaming request path.
 
-Pico is the first fully wired channel. Pico creates the first assistant message with the existing `message.create` wire message, then updates that same message with `message.update`; no new Pico wire message type is introduced.
-
 Leave `streaming` unset when you do not want streaming. An omitted `streaming` block means disabled; you do not need to write `"streaming": {"enabled": false}`.
 
 Opt-in example:
@@ -802,11 +800,11 @@ Opt-in example:
     }
   ],
   "channel_list": {
-    "pico": {
+    "telegram": {
       "enabled": true,
-      "type": "pico",
+      "type": "telegram",
       "settings": {
-        "token": "YOUR_PICO_TOKEN",
+        "token": "YOUR_TELEGRAM_TOKEN",
         "streaming": {
           "enabled": true
         }
@@ -819,11 +817,11 @@ Opt-in example:
 | Field | Type | Default | Description |
 | ----- | ---- | ------- | ----------- |
 | `channel_list.<name>.settings.streaming.enabled` | bool | `false` | Allows this channel to display provider streaming output |
-| `channel_list.<name>.settings.streaming.throttle_seconds` | int | Pico default after enabling: `0` | Minimum interval for intermediate updates; final content is always flushed |
-| `channel_list.<name>.settings.streaming.min_growth_chars` | int | Pico default after enabling: `1` | Minimum character growth before sending an intermediate update; final content is always flushed |
+| `channel_list.<name>.settings.streaming.throttle_seconds` | int | Telegram: `3` | Minimum interval for intermediate updates; final content is always flushed |
+| `channel_list.<name>.settings.streaming.min_growth_chars` | int | Telegram: `200` | Minimum character growth before sending an intermediate update; final content is always flushed |
 | `model_list[].streaming.enabled` | bool | `false` | Allows this model entry to try provider streaming requests |
 
-Legacy Telegram environment variables remain compatible: `PICOCLAW_CHANNELS_TELEGRAM_STREAMING_ENABLED`, `PICOCLAW_CHANNELS_TELEGRAM_STREAMING_THROTTLE_SECONDS`, and `PICOCLAW_CHANNELS_TELEGRAM_STREAMING_MIN_GROWTH_CHARS`. They only apply to Telegram settings and do not enable or modify Pico `settings.streaming`.
+Legacy Telegram environment variables remain compatible: `PICOCLAW_CHANNELS_TELEGRAM_STREAMING_ENABLED`, `PICOCLAW_CHANNELS_TELEGRAM_STREAMING_THROTTLE_SECONDS`, and `PICOCLAW_CHANNELS_TELEGRAM_STREAMING_MIN_GROWTH_CHARS`.
 
 Failure behavior is intentionally conservative: if streaming fails before any visible chunk is sent, PicoClaw retries once through the normal `Chat()` path. If a chunk has already been shown to the user, PicoClaw does not send a second non-streaming answer, because that would duplicate visible output.
 

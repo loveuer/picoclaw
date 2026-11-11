@@ -203,8 +203,8 @@ func TestTurnProfile_ProcessMessageUsesEnabledTurnProfile(t *testing.T) {
 
 	_, err := al.processMessage(context.Background(), bus.InboundMessage{
 		Context: bus.InboundContext{
-			Channel:  "pico",
-			ChatID:   "pico:sess-1",
+			Channel:  "telegram",
+			ChatID:   "telegram:sess-1",
 			ChatType: "direct",
 			SenderID: "pico-user",
 		},
@@ -251,8 +251,8 @@ func TestTurnProfile_BtwCommandUsesEnabledTurnProfile(t *testing.T) {
 
 	_, err := al.processMessage(context.Background(), bus.InboundMessage{
 		Context: bus.InboundContext{
-			Channel:  "pico",
-			ChatID:   "pico:btw",
+			Channel:  "telegram",
+			ChatID:   "telegram:btw",
 			ChatType: "direct",
 			SenderID: "pico-user",
 		},
@@ -313,8 +313,8 @@ func TestTurnProfile_BtwCommandDoesNotAddToolFallbackWhenSystemPromptOff(t *test
 
 	_, err := al.processMessage(context.Background(), bus.InboundMessage{
 		Context: bus.InboundContext{
-			Channel:  "pico",
-			ChatID:   "pico:btw-system-off",
+			Channel:  "telegram",
+			ChatID:   "telegram:btw-system-off",
 			ChatType: "direct",
 			SenderID: "pico-user",
 		},
@@ -361,8 +361,8 @@ func TestTurnProfile_BtwHookCannotReenableNativeSearchWhenToolsOff(t *testing.T)
 
 	_, err := al.processMessage(context.Background(), bus.InboundMessage{
 		Context: bus.InboundContext{
-			Channel:  "pico",
-			ChatID:   "pico:btw-native-search",
+			Channel:  "telegram",
+			ChatID:   "telegram:btw-native-search",
 			ChatType: "direct",
 			SenderID: "pico-user",
 		},

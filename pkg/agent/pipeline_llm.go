@@ -551,33 +551,12 @@ func (p *Pipeline) CallLLM(
 		exec.response.ReasoningDetails = nil
 	}
 	reasoningContent := responseReasoningContent(exec.response)
-	shouldPublishPicoToolCallInterim := ts.channel == "pico" && len(exec.response.ToolCalls) > 0
-	if shouldPublishPicoToolCallInterim {
-		// Pico tool-call turns publish their reasoning/content/tool summary as a
-		// structured sequence after the tool-call payload is normalized below.
-	} else if ts.channel == "pico" {
-		if exec.streamingPublisher != nil && exec.streamingPublisher.ReasoningPublished() {
-			if err := exec.streamingPublisher.FinalizeReasoning(turnCtx, reasoningContent); err != nil {
-				logger.WarnCF("agent", "Failed to finalize streamed pico reasoning", map[string]any{
-					"channel": ts.channel,
-					"chat_id": ts.chatID,
-					"error":   err.Error(),
-				})
-			}
-		} else {
-			// Publish pico thoughts before the turn context is canceled at return time.
-			// The async variant can race with turn teardown and intermittently drop the
-			// thought message in CI even though the LLM produced reasoning content.
-			al.publishPicoReasoning(turnCtx, reasoningContent, ts.chatID, ts.sessionKey, exec.llmModelName)
-		}
-	} else {
-		go al.handleReasoning(
-			turnCtx,
-			reasoningContent,
-			ts.channel,
-			al.targetReasoningChannelID(ts.channel),
-		)
-	}
+	go al.handleReasoning(
+		turnCtx,
+		reasoningContent,
+		ts.channel,
+		al.targetReasoningChannelID(ts.channel),
+	)
 	al.emitEvent(
 		runtimeevents.KindAgentLLMResponse,
 		ts.eventMeta("runTurn", "turn.llm.response"),
@@ -607,7 +586,7 @@ func (p *Pipeline) CallLLM(
 	// No-tool-call path: steering check and direct response
 	if len(exec.response.ToolCalls) == 0 || exec.gracefulTerminal {
 		responseContent := exec.response.Content
-		if responseContent == "" && exec.response.ReasoningContent != "" && ts.channel != "pico" {
+		if responseContent == "" && exec.response.ReasoningContent != "" {
 			responseContent = exec.response.ReasoningContent
 		}
 		if steerMsgs := al.dequeueSteeringMessagesForScope(ts.sessionKey); len(steerMsgs) > 0 {
@@ -694,16 +673,6 @@ func (p *Pipeline) CallLLM(
 		ts.agent.Sessions.AddFullMessage(ts.sessionKey, assistantMsg)
 		ts.recordPersistedMessage(assistantMsg)
 		ts.ingestMessage(turnCtx, al, assistantMsg)
-	}
-	if shouldPublishPicoToolCallInterim {
-		al.publishPicoToolCallInterim(
-			turnCtx,
-			ts,
-			exec.llmModelName,
-			reasoningContent,
-			exec.response.Content,
-			assistantMsg.ToolCalls,
-		)
 	}
 
 	return ControlToolLoop, nil

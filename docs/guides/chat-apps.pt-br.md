@@ -4,7 +4,7 @@
 
 ## 💬 Aplicativos de Chat
 
-Converse com seu picoclaw através do Telegram, Discord, WhatsApp, Matrix, QQ, DingTalk, LINE, WeCom, Feishu, Slack, IRC, OneBot, MQTT ou MaixCam
+Converse com seu picoclaw através do Telegram, Discord, WhatsApp, Matrix, QQ, DingTalk, LINE, WeCom, Feishu, Slack, IRC, OneBot, MQTT
 
 > **Nota**: Todos os canais baseados em webhook (LINE, WeCom, etc.) são servidos em um único servidor HTTP Gateway compartilhado (`gateway.host`:`gateway.port`, padrão `127.0.0.1:18790`). Não há portas por canal para configurar. Nota: Feishu usa o modo WebSocket/SDK e não utiliza o servidor HTTP webhook compartilhado.
 
@@ -24,8 +24,6 @@ Converse com seu picoclaw através do Telegram, Discord, WhatsApp, Matrix, QQ, D
 | **IRC**              | ⭐⭐ Médio         | Servidor + configuração TLS                           | [Documentação](#irc) |
 | **OneBot**           | ⭐⭐ Médio         | Compatível com NapCat/Go-CQHTTP, ecossistema comunitário | [Documentação](../channels/onebot/README.pt-br.md)                                                           |
 | **MQTT**             | ⭐ Fácil           | Qualquer cliente MQTT via broker pub/sub             | [Documentação](../channels/mqtt/README.pt-br.md)                                                            |
-| **MaixCam**          | ⭐ Fácil           | Canal de integração de hardware para câmeras AI Sipeed | [Documentação](../channels/maixcam/README.pt-br.md)                                                            |
-| **Pico**             | ⭐ Fácil           | Canal de protocolo nativo PicoClaw                    |                                                                                                                  |
 
 <a id="telegram"></a>
 <details>
@@ -296,30 +294,6 @@ picoclaw gateway
 ```
 
 </details>
-
-<a id="maixcam"></a>
-<details>
-<summary><b>MaixCam</b></summary>
-
-Canal de integração projetado especificamente para hardware de câmera AI Sipeed.
-
-```json
-{
-  "channel_list": {
-    "maixcam": {
-      "enabled": true,
-      "type": "maixcam"
-    }
-  }
-}
-```
-
-```bash
-picoclaw gateway
-```
-
-</details>
-
 
 <a id="matrix"></a>
 <details>
@@ -668,28 +642,6 @@ Instale e execute um framework de bot QQ compatível com OneBot v11. Habilite se
 | `reconnect_interval` | Intervalo de reconexão em segundos (padrão: 5) |
 
 **3. Executar**
-
-```bash
-picoclaw gateway
-```
-
-</details>
-
-<details>
-<summary><b>MaixCam</b></summary>
-
-Canal de integração projetado especificamente para hardware de câmera AI Sipeed.
-
-```json
-{
-  "channel_list": {
-    "maixcam": {
-      "enabled": true,
-      "type": "maixcam"
-    }
-  }
-}
-```
 
 ```bash
 picoclaw gateway

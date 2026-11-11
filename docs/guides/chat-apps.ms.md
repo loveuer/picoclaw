@@ -4,7 +4,7 @@
 
 ## 💬 Aplikasi Sembang
 
-Berbual dengan picoclaw anda melalui Telegram, Discord, WhatsApp, Matrix, QQ, DingTalk, LINE, WeCom, Feishu, Slack, IRC, OneBot, MQTT, MaixCam, atau Pico (protokol asli)
+Berbual dengan picoclaw anda melalui Telegram, Discord, WhatsApp, Matrix, QQ, DingTalk, LINE, WeCom, Feishu, Slack, IRC, OneBot, MQTT
 
 > **Nota**: Semua saluran berasaskan webhook (LINE, WeCom, dan sebagainya) diservis pada satu pelayan HTTP Gateway yang dikongsi (`gateway.host`:`gateway.port`, lalai `127.0.0.1:18790`). Tiada port khusus per saluran untuk dikonfigurasikan. Nota: Feishu menggunakan mod WebSocket/SDK dan tidak menggunakan pelayan HTTP webhook yang dikongsi.
 
@@ -23,8 +23,6 @@ Berbual dengan picoclaw anda melalui Telegram, Discord, WhatsApp, Matrix, QQ, Di
 | **IRC**          | Sederhana (pelayan + konfigurasi TLS)      |
 | **OneBot**       | Sederhana (QQ melalui protokol OneBot)     |
 | **MQTT**         | Mudah (broker + agent_id)                  |
-| **MaixCam**      | Mudah (integrasi perkakasan Sipeed)        |
-| **Pico**         | Protokol PicoClaw asli                     |
 
 <details>
 <summary><b>Telegram</b> (Disyorkan)</summary>

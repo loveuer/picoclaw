@@ -27,10 +27,6 @@ var rrCounter atomic.Uint64
 // CurrentVersion is the latest config schema version
 const CurrentVersion = 3
 
-func init() {
-	initChannel()
-}
-
 // Config is the current config structure with version support.
 type Config struct {
 	// Config schema version for migration.
@@ -565,11 +561,6 @@ type DiscordSettings struct {
 	MentionOnly bool         `json:"mention_only"   yaml:"-"               env:"PICOCLAW_CHANNELS_DISCORD_MENTION_ONLY"`
 }
 
-type MaixCamSettings struct {
-	Host string `json:"host" yaml:"-" env:"PICOCLAW_CHANNELS_MAIXCAM_HOST"`
-	Port int    `json:"port" yaml:"-" env:"PICOCLAW_CHANNELS_MAIXCAM_PORT"`
-}
-
 type QQSettings struct {
 	AppID                string       `json:"app_id"                   yaml:"-"                    env:"PICOCLAW_CHANNELS_QQ_APP_ID"`
 	AppSecret            SecureString `json:"app_secret,omitzero"      yaml:"app_secret,omitempty" env:"PICOCLAW_CHANNELS_QQ_APP_SECRET"`
@@ -666,30 +657,6 @@ type WeixinSettings struct {
 // SetToken sets the Weixin token and marks it as dirty for security saving
 func (c *WeixinSettings) SetToken(token string) {
 	c.Token = *NewSecureString(token)
-}
-
-type PicoSettings struct {
-	Token           SecureString    `json:"token,omitzero"              yaml:"token,omitempty" env:"PICOCLAW_CHANNELS_PICO_TOKEN"`
-	AllowTokenQuery bool            `json:"allow_token_query,omitempty" yaml:"-"`
-	AllowOrigins    []string        `json:"allow_origins,omitempty"     yaml:"-"`
-	Streaming       StreamingConfig `json:"streaming,omitzero"          yaml:"-"`
-	PingInterval    int             `json:"ping_interval,omitempty"     yaml:"-"`
-	ReadTimeout     int             `json:"read_timeout,omitempty"      yaml:"-"`
-	WriteTimeout    int             `json:"write_timeout,omitempty"     yaml:"-"`
-	MaxConnections  int             `json:"max_connections,omitempty"   yaml:"-"`
-}
-
-// SetToken sets the Pico token and marks it as dirty for security saving
-func (c *PicoSettings) SetToken(token string) {
-	c.Token = *NewSecureString(token)
-}
-
-type PicoClientSettings struct {
-	URL          string       `json:"url"                     yaml:"-"               env:"PICOCLAW_CHANNELS_PICO_CLIENT_URL"`
-	Token        SecureString `json:"token,omitzero"          yaml:"token,omitempty" env:"PICOCLAW_CHANNELS_PICO_CLIENT_TOKEN"`
-	SessionID    string       `json:"session_id,omitempty"    yaml:"-"`
-	PingInterval int          `json:"ping_interval,omitempty" yaml:"-"`
-	ReadTimeout  int          `json:"read_timeout,omitempty"  yaml:"-"`
 }
 
 type IRCSettings struct {

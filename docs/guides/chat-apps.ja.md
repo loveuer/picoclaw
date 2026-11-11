@@ -26,8 +26,6 @@ PicoClaw は複数のチャットプラットフォームをサポートして�
 | **IRC**              | ⭐⭐ 中程度        | サーバー + TLS 設定                        | [ドキュメント](#irc) |
 | **OneBot**           | ⭐⭐ 中程度        | NapCat/Go-CQHTTP 互換、コミュニティエコシステム充実 | [ドキュメント](../channels/onebot/README.ja.md)                                                               |
 | **MQTT**             | ⭐ 簡単            | ブローカー経由で任意の MQTT クライアントと通信 | [ドキュメント](../channels/mqtt/README.ja.md)                                                                 |
-| **MaixCam**          | ⭐ 簡単            | Sipeed AI カメラハードウェア統合チャネル   | [ドキュメント](../channels/maixcam/README.ja.md)                                                              |
-| **Pico**             | ⭐ 簡単            | PicoClaw ネイティブプロトコルチャネル     |                                                                                                               |
 
 ---
 
@@ -642,29 +640,6 @@ OneBot v11 互換の QQ ボットフレームワークをインストールし�
 | `reconnect_interval` | 再接続間隔（秒）（デフォルト：5） |
 
 **3. 実行**
-
-```bash
-picoclaw gateway
-```
-
-</details>
-
-<a id="maixcam"></a>
-<details>
-<summary><b>MaixCam</b></summary>
-
-Sipeed AI カメラハードウェア向けの統合チャネルです。
-
-```json
-{
-  "channel_list": {
-    "maixcam": {
-      "enabled": true,
-      "type": "maixcam"
-    }
-  }
-}
-```
 
 ```bash
 picoclaw gateway

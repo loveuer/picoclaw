@@ -148,7 +148,7 @@ func TestPublishInbound_BackfillsContextFromLegacyFields(t *testing.T) {
 	defer mb.Close()
 
 	msg := InboundMessage{
-		Channel:   "pico",
+		Channel:   "telegram",
 		ChatID:    "session-1",
 		SenderID:  "user-1",
 		MessageID: "msg-1",
@@ -160,7 +160,7 @@ func TestPublishInbound_BackfillsContextFromLegacyFields(t *testing.T) {
 	}
 
 	got := <-mb.InboundChan()
-	if got.Context.Channel != "pico" {
+	if got.Context.Channel != "telegram" {
 		t.Fatalf("expected context channel pico, got %q", got.Context.Channel)
 	}
 	if got.Context.ChatID != "session-1" {

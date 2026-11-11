@@ -46,10 +46,6 @@ func hiddenValues(key string, value map[string]any, ch *config.Channel) {
 		return
 	}
 	switch key {
-	case "pico":
-		if settings, ok := v.(*config.PicoSettings); ok {
-			value["token"] = settings.Token.String()
-		}
 	case "telegram":
 		if settings, ok := v.(*config.TelegramSettings); ok {
 			value["token"] = settings.Token.String()

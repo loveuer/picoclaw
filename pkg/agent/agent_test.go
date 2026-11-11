@@ -453,7 +453,7 @@ func TestPublishResponseIfNeeded_MarksFinalOutbound(t *testing.T) {
 	defer cleanup()
 	_ = provider
 
-	al.PublishResponseIfNeeded(context.Background(), "pico", "pico:session-1", "session-1", "final reply")
+	al.PublishResponseIfNeeded(context.Background(), "telegram", "telegram:session-1", "session-1", "final reply")
 
 	select {
 	case outbound := <-msgBus.OutboundChan():
@@ -468,32 +468,6 @@ func TestPublishResponseIfNeeded_MarksFinalOutbound(t *testing.T) {
 		}
 	case <-time.After(time.Second):
 		t.Fatal("expected final outbound")
-	}
-}
-
-func TestPublishPicoReasoningIncludesSessionKey(t *testing.T) {
-	al, _, msgBus, provider, cleanup := newTestAgentLoop(t)
-	defer cleanup()
-	_ = provider
-
-	al.publishPicoReasoning(context.Background(), "reasoning", "pico-chat", "session-1", "")
-
-	select {
-	case outbound := <-msgBus.OutboundChan():
-		if outbound.Channel != "pico" || outbound.ChatID != "pico-chat" {
-			t.Fatalf("unexpected outbound target: %+v", outbound)
-		}
-		if outbound.Content != "reasoning" {
-			t.Fatalf("outbound content = %q, want reasoning", outbound.Content)
-		}
-		if outbound.SessionKey != "session-1" {
-			t.Fatalf("outbound session key = %q, want session-1", outbound.SessionKey)
-		}
-		if outbound.Context.Raw[metadataKeyMessageKind] != messageKindThought {
-			t.Fatalf("message kind = %q, want %q", outbound.Context.Raw[metadataKeyMessageKind], messageKindThought)
-		}
-	case <-time.After(time.Second):
-		t.Fatal("expected pico reasoning outbound")
 	}
 }
 
@@ -566,7 +540,7 @@ func TestProcessMessage_DoesNotPassImplicitThinkingOffToCapableProvider(t *testi
 	al := NewAgentLoop(cfg, bus.NewMessageBus(), provider)
 
 	response, err := al.processMessage(context.Background(), testInboundMessage(bus.InboundMessage{
-		Channel: "pico",
+		Channel: "telegram",
 		ChatID:  "chat-1",
 		Content: "hello",
 	}))
@@ -602,7 +576,7 @@ func TestProcessMessage_PassesExplicitThinkingOffToCapableProvider(t *testing.T)
 	al := NewAgentLoop(cfg, bus.NewMessageBus(), provider)
 
 	response, err := al.processMessage(context.Background(), testInboundMessage(bus.InboundMessage{
-		Channel: "pico",
+		Channel: "telegram",
 		ChatID:  "chat-1",
 		Content: "hello",
 	}))
@@ -638,7 +612,7 @@ func TestProcessMessage_PassesExplicitThinkingOffToProviderWithoutThinkingCapabi
 	al := NewAgentLoop(cfg, bus.NewMessageBus(), provider)
 
 	response, err := al.processMessage(context.Background(), testInboundMessage(bus.InboundMessage{
-		Channel: "pico",
+		Channel: "telegram",
 		ChatID:  "chat-1",
 		Content: "hello",
 	}))
@@ -675,7 +649,7 @@ func TestProcessMessage_PassesDeepSeekThinkingLevelToThinkingCapableProvider(t *
 	al := NewAgentLoop(cfg, bus.NewMessageBus(), provider)
 
 	response, err := al.processMessage(context.Background(), testInboundMessage(bus.InboundMessage{
-		Channel: "pico",
+		Channel: "telegram",
 		ChatID:  "chat-1",
 		Content: "hello",
 	}))
@@ -714,8 +688,8 @@ func TestProcessMessage_SuppressesReasoningWhenThinkingOff(t *testing.T) {
 		context.Background(),
 		al.GetRegistry().GetDefaultAgent(),
 		processOptions{
-			SessionKey:      "agent:main:pico:chat-1",
-			Channel:         "pico",
+			SessionKey:      "agent:main:telegram:chat-1",
+			Channel:         "telegram",
 			ChatID:          "chat-1",
 			UserMessage:     "hello",
 			SendResponse:    false,
@@ -767,9 +741,9 @@ func TestProcessMessage_BeforeLLMModelRewriteReevaluatesThinkingOff(t *testing.T
 	}
 
 	response, err := al.processMessage(context.Background(), bus.InboundMessage{
-		Channel:  "pico",
+		Channel:  "telegram",
 		SenderID: "user1",
-		ChatID:   "pico:test-session",
+		ChatID:   "telegram:test-session",
 		Content:  "hello",
 	})
 	if err != nil {
@@ -814,14 +788,21 @@ func TestProcessMessage_BeforeLLMModelRewriteDoesNotLeakThinkingOff(t *testing.T
 	msgBus := bus.NewMessageBus()
 	provider := &reasoningOptionRecordingProvider{}
 	al := NewAgentLoop(cfg, msgBus, provider)
+
+	chManager, err := channels.NewManager(&config.Config{}, msgBus, nil)
+	if err != nil {
+		t.Fatalf("Failed to create channel manager: %v", err)
+	}
+	chManager.RegisterChannel("telegram", &fakeChannel{id: "reason-chat"})
+	al.SetChannelManager(chManager)
 	if err := al.MountHook(NamedHook("rewrite-model", modelRewriteHook{model: "plain-model"})); err != nil {
 		t.Fatalf("MountHook failed: %v", err)
 	}
 
 	response, err := al.processMessage(context.Background(), bus.InboundMessage{
-		Channel:  "pico",
+		Channel:  "telegram",
 		SenderID: "user1",
-		ChatID:   "pico:test-session",
+		ChatID:   "telegram:test-session",
 		Content:  "hello",
 	})
 	if err != nil {
@@ -2833,77 +2814,6 @@ func TestToolFeedbackArgsPreview_UsesJSONAndTruncates(t *testing.T) {
 	if got != want {
 		t.Fatalf("toolFeedbackArgsPreview() = %q, want %q", got, want)
 	}
-}
-
-type picoInterleavedContentProvider struct {
-	calls int
-}
-
-func (m *picoInterleavedContentProvider) Chat(
-	ctx context.Context,
-	messages []providers.Message,
-	tools []providers.ToolDefinition,
-	model string,
-	opts map[string]any,
-) (*providers.LLMResponse, error) {
-	m.calls++
-	if m.calls == 1 {
-		return &providers.LLMResponse{
-			Content: "intermediate model text",
-			ToolCalls: []providers.ToolCall{{
-				ID:        "call_tool_limit_test",
-				Type:      "function",
-				Name:      "tool_limit_test_tool",
-				Arguments: map[string]any{"value": "x"},
-			}},
-		}, nil
-	}
-
-	return &providers.LLMResponse{
-		Content:   "final model text",
-		ToolCalls: []providers.ToolCall{},
-	}, nil
-}
-
-func (m *picoInterleavedContentProvider) GetDefaultModel() string {
-	return "pico-interleaved-content-model"
-}
-
-type picoDistinctToolCallContentProvider struct {
-	calls int
-}
-
-func (m *picoDistinctToolCallContentProvider) Chat(
-	ctx context.Context,
-	messages []providers.Message,
-	tools []providers.ToolDefinition,
-	model string,
-	opts map[string]any,
-) (*providers.LLMResponse, error) {
-	m.calls++
-	if m.calls == 1 {
-		return &providers.LLMResponse{
-			Content: "intermediate model text",
-			ToolCalls: []providers.ToolCall{{
-				ID:        "call_tool_limit_test",
-				Type:      "function",
-				Name:      "tool_limit_test_tool",
-				Arguments: map[string]any{"value": "x"},
-				ExtraContent: &providers.ExtraContent{
-					ToolFeedbackExplanation: "Read the file before replying.",
-				},
-			}},
-		}, nil
-	}
-
-	return &providers.LLMResponse{
-		Content:   "final model text",
-		ToolCalls: []providers.ToolCall{},
-	}, nil
-}
-
-func (m *picoDistinctToolCallContentProvider) GetDefaultModel() string {
-	return "pico-distinct-tool-call-content-model"
 }
 
 type toolLimitOnlyProvider struct{}
@@ -5623,7 +5533,7 @@ func TestTargetReasoningChannelID_AllChannels(t *testing.T) {
 		"telegram": "rid-telegram",
 		"feishu":   "rid-feishu",
 		"discord":  "rid-discord",
-		"maixcam":  "rid-maixcam",
+		"mqtt":     "rid-mqtt",
 		"qq":       "rid-qq",
 		"dingtalk": "rid-dingtalk",
 		"slack":    "rid-slack",
@@ -5642,7 +5552,7 @@ func TestTargetReasoningChannelID_AllChannels(t *testing.T) {
 		{channel: "telegram", wantID: "rid-telegram"},
 		{channel: "feishu", wantID: "rid-feishu"},
 		{channel: "discord", wantID: "rid-discord"},
-		{channel: "maixcam", wantID: "rid-maixcam"},
+		{channel: "mqtt", wantID: "rid-mqtt"},
 		{channel: "qq", wantID: "rid-qq"},
 		{channel: "dingtalk", wantID: "rid-dingtalk"},
 		{channel: "slack", wantID: "rid-slack"},
@@ -5892,66 +5802,6 @@ func TestProcessMessage_PublishesReasoningContentToReasoningChannel(t *testing.T
 	}
 }
 
-func TestProcessMessage_PicoPublishesReasoningAsThoughtMessage(t *testing.T) {
-	tmpDir := t.TempDir()
-	cfg := &config.Config{
-		Agents: config.AgentsConfig{
-			Defaults: config.AgentDefaults{
-				Workspace:         tmpDir,
-				ModelName:         "test-model",
-				MaxTokens:         4096,
-				MaxToolIterations: 10,
-			},
-		},
-	}
-
-	msgBus := bus.NewMessageBus()
-	provider := &reasoningContentProvider{
-		response:         "final answer",
-		reasoningContent: "thinking trace",
-	}
-	al := NewAgentLoop(cfg, msgBus, provider)
-
-	response, err := al.processMessage(context.Background(), bus.InboundMessage{
-		Channel:  "pico",
-		SenderID: "user1",
-		ChatID:   "pico:test-session",
-		Content:  "hello",
-	})
-	if err != nil {
-		t.Fatalf("processMessage() error = %v", err)
-	}
-	if response != "final answer" {
-		t.Fatalf("processMessage() response = %q, want %q", response, "final answer")
-	}
-
-	var thoughtMsg *bus.OutboundMessage
-	deadline := time.After(3 * time.Second)
-
-	for thoughtMsg == nil {
-		select {
-		case outbound := <-msgBus.OutboundChan():
-			msg := outbound
-			if msg.Content == "thinking trace" {
-				thoughtMsg = &msg
-			}
-		case <-deadline:
-			t.Fatal("expected thought outbound message for pico")
-		}
-	}
-
-	if thoughtMsg.Channel != "pico" || thoughtMsg.ChatID != "pico:test-session" {
-		t.Fatalf("thought message route = %s/%s, want pico/pico:test-session", thoughtMsg.Channel, thoughtMsg.ChatID)
-	}
-	if thoughtMsg.Context.Raw[metadataKeyMessageKind] != messageKindThought {
-		t.Fatalf(
-			"thought metadata kind = %q, want %q",
-			thoughtMsg.Context.Raw[metadataKeyMessageKind],
-			messageKindThought,
-		)
-	}
-}
-
 func TestProcessHeartbeat_DoesNotPublishToolFeedback(t *testing.T) {
 	tmpDir := t.TempDir()
 	heartbeatFile := filepath.Join(tmpDir, "heartbeat-task.txt")
@@ -6107,9 +5957,9 @@ func TestProcessMessage_PersistsReasoningContentInSessionHistory(t *testing.T) {
 	al := NewAgentLoop(cfg, msgBus, provider)
 
 	response, err := al.processMessage(context.Background(), bus.InboundMessage{
-		Channel:  "pico",
+		Channel:  "telegram",
 		SenderID: "user1",
-		ChatID:   "pico:test-session",
+		ChatID:   "telegram:test-session",
 		Content:  "hello",
 	})
 	if err != nil {
@@ -6437,224 +6287,6 @@ func TestProcessMessage_MessageToolPublishesOutboundWithTurnMetadata(t *testing.
 		}
 	case <-time.After(2 * time.Second):
 		t.Fatal("expected message tool outbound")
-	}
-}
-
-func TestRun_PicoPublishesAssistantContentDuringToolCallsWithoutFinalDuplicate(t *testing.T) {
-	tmpDir := t.TempDir()
-
-	cfg := &config.Config{
-		Agents: config.AgentsConfig{
-			Defaults: config.AgentDefaults{
-				Workspace:         tmpDir,
-				ModelName:         "test-model",
-				MaxTokens:         4096,
-				MaxToolIterations: 10,
-			},
-		},
-	}
-
-	msgBus := bus.NewMessageBus()
-	provider := &picoDistinctToolCallContentProvider{}
-	al := NewAgentLoop(cfg, msgBus, provider)
-
-	agent := al.GetRegistry().GetDefaultAgent()
-	if agent == nil {
-		t.Fatal("expected default agent")
-	}
-	agent.Tools.Register(&toolLimitTestTool{})
-
-	runCtx, runCancel := context.WithCancel(context.Background())
-	defer runCancel()
-
-	runDone := make(chan error, 1)
-	go func() {
-		runDone <- al.Run(runCtx)
-	}()
-
-	if err := msgBus.PublishInbound(context.Background(), bus.InboundMessage{
-		Channel:  "pico",
-		SenderID: "user-1",
-		ChatID:   "session-1",
-		Content:  "run with tools",
-	}); err != nil {
-		t.Fatalf("PublishInbound() error = %v", err)
-	}
-
-	outputs := make([]bus.OutboundMessage, 0, 3)
-	deadline := time.After(2 * time.Second)
-	for len(outputs) < 3 {
-		select {
-		case outbound := <-msgBus.OutboundChan():
-			outputs = append(outputs, outbound)
-		case <-deadline:
-			t.Fatalf("timed out waiting for pico outputs, got %v", outputs)
-		}
-	}
-
-	if outputs[0].Content != "intermediate model text" {
-		t.Fatalf("first outbound content = %q, want %q", outputs[0].Content, "intermediate model text")
-	}
-	if outputs[1].Context.Raw[metadataKeyMessageKind] != messageKindToolCalls {
-		t.Fatalf("second outbound = %+v, want tool_calls message", outputs[1])
-	}
-	if !strings.Contains(outputs[1].Context.Raw[metadataKeyToolCalls], "tool_limit_test_tool") {
-		t.Fatalf("second outbound tool_calls = %q, want tool name", outputs[1].Context.Raw[metadataKeyToolCalls])
-	}
-	if outputs[2].Content != "final model text" {
-		t.Fatalf("third outbound content = %q, want %q", outputs[2].Content, "final model text")
-	}
-
-	runCancel()
-	select {
-	case err := <-runDone:
-		if err != nil {
-			t.Fatalf("Run() error = %v", err)
-		}
-	case <-time.After(2 * time.Second):
-		t.Fatal("timed out waiting for Run() to exit")
-	}
-
-	select {
-	case outbound := <-msgBus.OutboundChan():
-		if outbound.Content == "final model text" {
-			t.Fatalf("unexpected duplicate final pico output: %+v", outbound)
-		}
-	case <-time.After(200 * time.Millisecond):
-	}
-}
-
-func TestRunAgentLoop_PicoSkipsInterimPublishWhenNotAllowed(t *testing.T) {
-	tmpDir := t.TempDir()
-
-	cfg := &config.Config{
-		Agents: config.AgentsConfig{
-			Defaults: config.AgentDefaults{
-				Workspace:         tmpDir,
-				ModelName:         "test-model",
-				MaxTokens:         4096,
-				MaxToolIterations: 10,
-			},
-		},
-	}
-
-	msgBus := bus.NewMessageBus()
-	provider := &picoInterleavedContentProvider{}
-	al := NewAgentLoop(cfg, msgBus, provider)
-
-	agent := al.GetRegistry().GetDefaultAgent()
-	if agent == nil {
-		t.Fatal("expected default agent")
-	}
-	agent.Tools.Register(&toolLimitTestTool{})
-
-	response, err := al.runAgentLoop(context.Background(), agent, processOptions{
-		SessionKey:              "agent:main:pico:session-1",
-		Channel:                 "pico",
-		ChatID:                  "session-1",
-		UserMessage:             "run with tools",
-		DefaultResponse:         defaultResponse,
-		EnableSummary:           false,
-		SendResponse:            false,
-		AllowInterimPicoPublish: false,
-		SuppressToolFeedback:    true,
-	})
-	if err != nil {
-		t.Fatalf("runAgentLoop() error = %v", err)
-	}
-	if response != "final model text" {
-		t.Fatalf("runAgentLoop() response = %q, want %q", response, "final model text")
-	}
-
-	select {
-	case outbound := <-msgBus.OutboundChan():
-		t.Fatalf("unexpected outbound message when interim publish disabled: %+v", outbound)
-	case <-time.After(200 * time.Millisecond):
-	}
-}
-
-func TestRun_PicoToolFeedbackSuppressesDuplicateInterimAssistantContent(t *testing.T) {
-	tmpDir := t.TempDir()
-
-	cfg := &config.Config{
-		Agents: config.AgentsConfig{
-			Defaults: config.AgentDefaults{
-				Workspace:         tmpDir,
-				ModelName:         "test-model",
-				MaxTokens:         4096,
-				MaxToolIterations: 10,
-				ToolFeedback: config.ToolFeedbackConfig{
-					Enabled: true,
-				},
-			},
-		},
-	}
-
-	msgBus := bus.NewMessageBus()
-	provider := &picoInterleavedContentProvider{}
-	al := NewAgentLoop(cfg, msgBus, provider)
-
-	agent := al.GetRegistry().GetDefaultAgent()
-	if agent == nil {
-		t.Fatal("expected default agent")
-	}
-	agent.Tools.Register(&toolLimitTestTool{})
-
-	runCtx, runCancel := context.WithCancel(context.Background())
-	defer runCancel()
-
-	runDone := make(chan error, 1)
-	go func() {
-		runDone <- al.Run(runCtx)
-	}()
-
-	if err := msgBus.PublishInbound(context.Background(), bus.InboundMessage{
-		Channel:  "pico",
-		SenderID: "user-1",
-		ChatID:   "session-1",
-		Content:  "run with tools",
-	}); err != nil {
-		t.Fatalf("PublishInbound() error = %v", err)
-	}
-
-	outputs := make([]bus.OutboundMessage, 0, 3)
-	deadline := time.After(2 * time.Second)
-	for len(outputs) < 2 {
-		select {
-		case outbound := <-msgBus.OutboundChan():
-			outputs = append(outputs, outbound)
-		case <-deadline:
-			t.Fatalf("timed out waiting for pico outputs, got %v", outputs)
-		}
-	}
-
-	if outputs[0].Context.Raw[metadataKeyMessageKind] != messageKindToolCalls {
-		t.Fatalf("first outbound = %+v, want tool_calls message", outputs[0])
-	}
-	if outputs[0].Content != "" {
-		t.Fatalf("first outbound content = %q, want empty tool_calls content", outputs[0].Content)
-	}
-	if !strings.Contains(outputs[0].Context.Raw[metadataKeyToolCalls], "tool_limit_test_tool") {
-		t.Fatalf("first outbound tool_calls = %q, want tool name", outputs[0].Context.Raw[metadataKeyToolCalls])
-	}
-	if outputs[1].Content != "final model text" {
-		t.Fatalf("second outbound content = %q, want %q", outputs[1].Content, "final model text")
-	}
-
-	runCancel()
-	select {
-	case err := <-runDone:
-		if err != nil {
-			t.Fatalf("Run() error = %v", err)
-		}
-	case <-time.After(2 * time.Second):
-		t.Fatal("timed out waiting for Run() to exit")
-	}
-
-	select {
-	case outbound := <-msgBus.OutboundChan():
-		t.Fatalf("unexpected extra pico output after tool feedback + final reply: %+v", outbound)
-	case <-time.After(200 * time.Millisecond):
 	}
 }
 
@@ -7330,7 +6962,7 @@ func TestProcessMessage_NativeSearchHandlesHookClearingOptions(t *testing.T) {
 	}
 
 	response, err := al.processMessage(context.Background(), bus.InboundMessage{
-		Channel: "pico",
+		Channel: "telegram",
 		ChatID:  "native-search-hook",
 		Content: "search",
 	})

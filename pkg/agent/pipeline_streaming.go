@@ -274,7 +274,7 @@ func (p *Pipeline) configuredStreamingEligible(ts *turnState, exec *turnExecutio
 		})
 		return false
 	}
-	if !ts.opts.SendResponse && !ts.opts.AllowInterimPicoPublish {
+	if !ts.opts.SendResponse && !ts.opts.AllowStreaming {
 		logger.DebugCF("agent", "configured streaming not used", map[string]any{
 			"agent_id": ts.agent.ID,
 			"channel":  ts.channel,
@@ -370,14 +370,13 @@ func streamingConfigFromDecodedSettings(decoded any) (config.StreamingConfig, bo
 }
 
 type streamingChunkPublisher struct {
-	streamer           bus.Streamer
-	channel            string
-	chatID             string
-	modelName          string
-	published          bool
-	reasoningPublished bool
-	err                error
-	ts                 *turnState
+	streamer  bus.Streamer
+	channel   string
+	chatID    string
+	modelName string
+	published bool
+	err       error
+	ts        *turnState
 }
 
 func (p *streamingChunkPublisher) Update(ctx context.Context, accumulated string) {
@@ -419,15 +418,10 @@ func (p *streamingChunkPublisher) UpdateReasoning(ctx context.Context, accumulat
 		})
 		return
 	}
-	p.reasoningPublished = true
 }
 
 func (p *streamingChunkPublisher) Published() bool {
 	return p != nil && p.published
-}
-
-func (p *streamingChunkPublisher) ReasoningPublished() bool {
-	return p != nil && p.reasoningPublished
 }
 
 func (p *streamingChunkPublisher) Err() error {
@@ -462,20 +456,6 @@ func (p *streamingChunkPublisher) Finalize(ctx context.Context, content string, 
 		return fmt.Errorf("stream finalize: %w", err)
 	}
 	p.published = true
-	return nil
-}
-
-func (p *streamingChunkPublisher) FinalizeReasoning(ctx context.Context, content string) error {
-	if p == nil || p.streamer == nil || !p.reasoningPublished || strings.TrimSpace(content) == "" {
-		return nil
-	}
-	reasoningStreamer, ok := p.streamer.(bus.ReasoningStreamer)
-	if !ok {
-		return nil
-	}
-	if err := reasoningStreamer.FinalizeReasoning(ctx, content); err != nil {
-		return fmt.Errorf("stream reasoning finalize: %w", err)
-	}
 	return nil
 }
 

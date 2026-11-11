@@ -17,8 +17,6 @@ import (
 
 // Channel type constants — single source of truth for all channel type names.
 const (
-	ChannelPico           = "pico"
-	ChannelPicoClient     = "pico_client"
 	ChannelTelegram       = "telegram"
 	ChannelDiscord        = "discord"
 	ChannelFeishu         = "feishu"
@@ -33,34 +31,12 @@ const (
 	ChannelQQ             = "qq"
 	ChannelIRC            = "irc"
 	ChannelVK             = "vk"
-	ChannelMaixCam        = "maixcam"
 	ChannelWhatsApp       = "whatsapp"
 	ChannelWhatsAppNative = "whatsapp_native"
 	ChannelTeamsWebHook   = "teams_webhook"
 	ChannelMQTT           = "mqtt"
 	ChannelSlackWebHook   = "slack_webhook"
 )
-
-func initChannel() {
-	registerSingletonChannel(ChannelPico)
-	registerSingletonChannel(ChannelPicoClient)
-}
-
-// singletonRegistry stores which channel types are singletons (only allow one instance).
-// Each channel type should call registerSingletonChannel in its init() if it's a singleton.
-var singletonRegistry = make(map[string]struct{})
-
-// registerSingletonChannel marks a channel type as singleton (only one instance allowed).
-// Should be called from the channel type's init() function.
-func registerSingletonChannel(channelType string) {
-	singletonRegistry[channelType] = struct{}{}
-}
-
-// IsSingletonChannel returns true if the channel type only allows one instance.
-func IsSingletonChannel(channelType string) bool {
-	_, ok := singletonRegistry[channelType]
-	return ok
-}
 
 // RawNode stores raw configuration data as JSON bytes, supporting both JSON and YAML.
 // Internally uses json.RawMessage, so Decode always uses json.Unmarshal
@@ -506,37 +482,6 @@ func (c ChannelsConfig) SetEnabled(name string, enabled bool) bool {
 	return true
 }
 
-// validateSingletonChannels checks that singleton channel types have at most
-// one enabled instance. Returns an error if a singleton type has multiple enabled channels.
-func validateSingletonChannels(channels ChannelsConfig) error {
-	typeCount := make(map[string]int)
-	typeNames := make(map[string][]string)
-	for name, bc := range channels {
-		if !bc.Enabled {
-			continue
-		}
-		t := bc.Type
-		if t == "" {
-			t = name
-		}
-		if IsSingletonChannel(t) {
-			typeCount[t]++
-			typeNames[t] = append(typeNames[t], name)
-		}
-	}
-	for t, count := range typeCount {
-		if count > 1 {
-			return fmt.Errorf(
-				"channel type %q is singleton and does not support multiple instances, found %d enabled instances: %v",
-				t,
-				count,
-				typeNames[t],
-			)
-		}
-	}
-	return nil
-}
-
 // BaseFieldNames are JSON keys that belong to Channel, not to channel-specific settings.
 var BaseFieldNames = map[string]struct{}{
 	"enabled":              {},
@@ -660,8 +605,6 @@ func filterSecureFields(r RawNode, secureFields map[string]struct{}) RawNode {
 var channelSettingsMu sync.RWMutex
 
 var channelSettingsFactory = map[string]any{
-	ChannelPico:           (PicoSettings{}),
-	ChannelPicoClient:     (PicoClientSettings{}),
 	ChannelTelegram:       (TelegramSettings{}),
 	ChannelDiscord:        (DiscordSettings{}),
 	ChannelFeishu:         (FeishuSettings{}),
@@ -676,7 +619,6 @@ var channelSettingsFactory = map[string]any{
 	ChannelQQ:             (QQSettings{}),
 	ChannelIRC:            (IRCSettings{}),
 	ChannelVK:             (VKSettings{}),
-	ChannelMaixCam:        (MaixCamSettings{}),
 	ChannelWhatsApp:       (WhatsAppSettings{}),
 	ChannelWhatsAppNative: (WhatsAppSettings{}),
 	ChannelTeamsWebHook:   (TeamsWebhookSettings{}),
@@ -717,16 +659,15 @@ func isValidChannelType(channelType string) bool {
 }
 
 // InitChannelList validates and initializes all channels in the ChannelsConfig.
-// It performs three steps:
+// It performs two steps:
 //  1. Validates that each channel has a non-empty Type
-//  2. Validates singleton constraints
-//  3. Decodes Settings into the correct typed struct based on Type,
-//     so that b.extend contains the actual settings (e.g., PicoSettings)
+//  2. Decodes Settings into the correct typed struct based on Type,
+//     so that b.extend contains the actual settings (e.g., TelegramSettings)
 //
 // After calling this method, callers can safely use b.extend via Decode()
 // without re-parsing raw Settings.
 func InitChannelList(channels ChannelsConfig) error {
-	// Step 1 & 3: validate type and decode into typed settings
+	// Validate type and decode into typed settings.
 	for name, bc := range channels {
 		if bc == nil {
 			delete(channels, name)
@@ -755,11 +696,6 @@ func InitChannelList(channels ChannelsConfig) error {
 				return err
 			}
 		}
-	}
-
-	// Step 2: validate singleton constraints
-	if err := validateSingletonChannels(channels); err != nil {
-		return err
 	}
 
 	return nil
@@ -791,8 +727,6 @@ func applyTelegramStreamingEnvCompat(target any) {
 func validateChannelStreamingConfig(channelName string, target any) error {
 	var streaming StreamingConfig
 	switch settings := target.(type) {
-	case *PicoSettings:
-		streaming = settings.Streaming
 	case *TelegramSettings:
 		streaming = settings.Streaming
 	case *WeComSettings:

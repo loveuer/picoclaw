@@ -574,8 +574,6 @@ Agent 读取 HEARTBEAT.md
 
 Provider 流式输出采用双开关，默认关闭。只有当前 channel 的 `settings.streaming.enabled` 和当前模型条目的 `streaming.enabled` 都为 `true`，并且 provider 与 channel 都支持流式能力时，Agent 才会尝试流式请求；任一条件不满足时仍使用普通非流式请求。
 
-当前完整落地的是 Pico。Pico 使用已有的 `message.create` 创建第一条 assistant 消息，随后用 `message.update` 更新同一条消息，不新增协议消息类型。
-
 不需要流式时请省略 `streaming` 配置块。省略表示关闭，不需要写 `"streaming": {"enabled": false}`。
 
 开启示例：
@@ -594,11 +592,11 @@ Provider 流式输出采用双开关，默认关闭。只有当前 channel 的 `
     }
   ],
   "channel_list": {
-    "pico": {
+    "telegram": {
       "enabled": true,
-      "type": "pico",
+      "type": "telegram",
       "settings": {
-        "token": "YOUR_PICO_TOKEN",
+        "token": "YOUR_TELEGRAM_TOKEN",
         "streaming": {
           "enabled": true
         }
@@ -611,11 +609,11 @@ Provider 流式输出采用双开关，默认关闭。只有当前 channel 的 `
 | 字段 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
 | `channel_list.<name>.settings.streaming.enabled` | bool | `false` | 是否允许该 channel 尝试展示 provider 流式输出 |
-| `channel_list.<name>.settings.streaming.throttle_seconds` | int | Pico 开启后默认 `0` | 中间更新的最小时间间隔，最终内容不受此限制 |
-| `channel_list.<name>.settings.streaming.min_growth_chars` | int | Pico 开启后默认 `1` | 中间更新相比上次发送至少增长的字符数，最终内容不受此限制 |
+| `channel_list.<name>.settings.streaming.throttle_seconds` | int | Telegram: `3` | 中间更新的最小时间间隔，最终内容不受此限制 |
+| `channel_list.<name>.settings.streaming.min_growth_chars` | int | Telegram: `200` | 中间更新相比上次发送至少增长的字符数，最终内容不受此限制 |
 | `model_list[].streaming.enabled` | bool | `false` | 是否允许该模型条目尝试 provider 流式请求 |
 
-Telegram 旧环境变量仍兼容：`PICOCLAW_CHANNELS_TELEGRAM_STREAMING_ENABLED`、`PICOCLAW_CHANNELS_TELEGRAM_STREAMING_THROTTLE_SECONDS`、`PICOCLAW_CHANNELS_TELEGRAM_STREAMING_MIN_GROWTH_CHARS`。这些环境变量只作用于 Telegram settings，不会开启或修改 Pico 的 `settings.streaming`。
+Telegram 旧环境变量仍兼容：`PICOCLAW_CHANNELS_TELEGRAM_STREAMING_ENABLED`、`PICOCLAW_CHANNELS_TELEGRAM_STREAMING_THROTTLE_SECONDS`、`PICOCLAW_CHANNELS_TELEGRAM_STREAMING_MIN_GROWTH_CHARS`.
 
 失败处理保持保守：如果还没有任何可见 chunk 就失败，PicoClaw 会回退到普通 `Chat()` 路径重试一次；如果已经有 chunk 展示给用户，则不会再发送一条非流式最终答案，避免界面重复输出。
 

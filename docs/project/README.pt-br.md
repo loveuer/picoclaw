@@ -150,7 +150,6 @@ O PicoClaw pode ser implantado em praticamente qualquer dispositivo Linux!
 
 - $9,9 [LicheeRV-Nano](https://www.aliexpress.com/item/1005006519668532.html) edição E(Ethernet) ou W(WiFi6), para um assistente doméstico mínimo
 - $30~50 [NanoKVM](https://www.aliexpress.com/item/1005007369816019.html), ou $100 [NanoKVM-Pro](https://www.aliexpress.com/item/1005010048471263.html), para operações automatizadas de servidor
-- $50 [MaixCAM](https://www.aliexpress.com/item/1005008053333693.html) ou $100 [MaixCAM2](https://www.kickstarter.com/projects/zepan/maixcam2-build-your-next-gen-4k-ai-camera), para vigilância inteligente
 
 <https://private-user-images.githubusercontent.com/83055338/547056448-e7b031ff-d6f5-4468-bcca-5726b6fecb5c.mp4>
 
@@ -378,9 +377,6 @@ Converse com seu PicoClaw por meio de mais de 17 plataformas de mensagens:
 | **WeCom** | Fácil (login QR ou manual) | WebSocket | [Guia](../channels/wecom/README.pt-br.md) |
 | **IRC** | Médio (servidor + nick) | Protocolo IRC | [Guia](../guides/chat-apps.pt-br.md#irc) |
 | **OneBot** | Médio (WebSocket URL) | OneBot v11 | [Guia](../channels/onebot/README.pt-br.md) |
-| **MaixCam** | Fácil (habilitar) | TCP socket | [Guia](../channels/maixcam/README.pt-br.md) |
-| **Pico** | Fácil (habilitar) | Protocolo nativo | Integrado |
-| **Pico Client** | Fácil (WebSocket URL) | WebSocket | Integrado |
 
 > Todos os channels baseados em webhook compartilham um único servidor HTTP do Gateway (`gateway.host`:`gateway.port`, padrão `127.0.0.1:18790`). O Feishu usa modo WebSocket/SDK e não utiliza o servidor HTTP compartilhado.
 

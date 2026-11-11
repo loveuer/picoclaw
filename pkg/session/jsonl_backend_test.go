@@ -264,13 +264,13 @@ func TestJSONLBackend_EnsureSessionMetadata_PromotesLegacyAliasHistory(t *testin
 func TestJSONLBackend_EnsureSessionMetadata_PromotesLegacyPicoDirectAliasHistory(t *testing.T) {
 	b := newBackend(t)
 
-	legacyKey := "agent:main:pico:direct:pico:session-123"
+	legacyKey := "agent:main:telegram:direct:telegram:session-123"
 	b.AddMessage(legacyKey, "user", "legacy pico history")
 
 	scope := &session.SessionScope{
 		Version:    session.ScopeVersionV1,
 		AgentID:    "main",
-		Channel:    "pico",
+		Channel:    "telegram",
 		Account:    "default",
 		Dimensions: []string{"sender"},
 		Values: map[string]string{
@@ -280,9 +280,9 @@ func TestJSONLBackend_EnsureSessionMetadata_PromotesLegacyPicoDirectAliasHistory
 	allocation := session.AllocateRouteSession(session.AllocationInput{
 		AgentID: "main",
 		Context: bus.InboundContext{
-			Channel:  "pico",
+			Channel:  "telegram",
 			Account:  "default",
-			ChatID:   "pico:session-123",
+			ChatID:   "telegram:session-123",
 			ChatType: "direct",
 			SenderID: "pico-user",
 		},

@@ -35,8 +35,6 @@ PICOCLAW_HOME=/srv/picoclaw PICOCLAW_CONFIG=/srv/picoclaw/main.json picoclaw gat
 
 Provider streaming menggunakan double opt-in dan dimatikan secara lalai. Agent hanya mencuba streaming apabila saluran semasa mempunyai `settings.streaming.enabled: true`, entry model aktif mempunyai `streaming.enabled: true`, dan kedua-dua provider serta saluran menyokong streaming. Jika mana-mana syarat tiada, PicoClaw menggunakan laluan permintaan bukan streaming biasa.
 
-Pico ialah saluran pertama yang disambungkan sepenuhnya. Pico mencipta mesej assistant pertama dengan wire message sedia ada `message.create`, kemudian mengemas kini mesej yang sama dengan `message.update`; tiada jenis wire message Pico baharu ditambah.
-
 Biarkan `streaming` tidak ditetapkan jika anda tidak mahu streaming. Blok `streaming` yang tiada bermaksud dimatikan; anda tidak perlu menulis `"streaming": {"enabled": false}`.
 
 Contoh mengaktifkan streaming:
@@ -55,11 +53,11 @@ Contoh mengaktifkan streaming:
     }
   ],
   "channel_list": {
-    "pico": {
+    "telegram": {
       "enabled": true,
-      "type": "pico",
+      "type": "telegram",
       "settings": {
-        "token": "YOUR_PICO_TOKEN",
+        "token": "YOUR_TELEGRAM_TOKEN",
         "streaming": {
           "enabled": true
         }
@@ -72,11 +70,11 @@ Contoh mengaktifkan streaming:
 | Kunci | Jenis | Lalai | Penerangan |
 | ----- | ----- | ----- | ---------- |
 | `channel_list.<name>.settings.streaming.enabled` | bool | `false` | Membenarkan saluran ini memaparkan output streaming provider |
-| `channel_list.<name>.settings.streaming.throttle_seconds` | int | Lalai Pico selepas diaktifkan: `0` | Jarak masa minimum antara kemas kini pertengahan; kandungan akhir sentiasa dihantar |
-| `channel_list.<name>.settings.streaming.min_growth_chars` | int | Lalai Pico selepas diaktifkan: `1` | Pertambahan aksara minimum sebelum menghantar kemas kini pertengahan; kandungan akhir sentiasa dihantar |
+| `channel_list.<name>.settings.streaming.throttle_seconds` | int | Telegram: `3` | Jarak masa minimum antara kemas kini pertengahan; kandungan akhir sentiasa dihantar |
+| `channel_list.<name>.settings.streaming.min_growth_chars` | int | Telegram: `200` | Pertambahan aksara minimum sebelum menghantar kemas kini pertengahan; kandungan akhir sentiasa dihantar |
 | `model_list[].streaming.enabled` | bool | `false` | Membenarkan entry model ini mencuba permintaan provider streaming |
 
-Pemboleh ubah persekitaran Telegram lama masih serasi: `PICOCLAW_CHANNELS_TELEGRAM_STREAMING_ENABLED`, `PICOCLAW_CHANNELS_TELEGRAM_STREAMING_THROTTLE_SECONDS`, dan `PICOCLAW_CHANNELS_TELEGRAM_STREAMING_MIN_GROWTH_CHARS`. Ia hanya digunakan untuk settings Telegram dan tidak mengaktifkan atau mengubah `settings.streaming` Pico.
+Pemboleh ubah persekitaran Telegram lama masih serasi: `PICOCLAW_CHANNELS_TELEGRAM_STREAMING_ENABLED`, `PICOCLAW_CHANNELS_TELEGRAM_STREAMING_THROTTLE_SECONDS`, dan `PICOCLAW_CHANNELS_TELEGRAM_STREAMING_MIN_GROWTH_CHARS`.
 
 Tingkah laku kegagalan adalah konservatif: jika streaming gagal sebelum mana-mana chunk kelihatan dihantar, PicoClaw mencuba semula sekali melalui laluan `Chat()` biasa. Jika chunk sudah dipaparkan kepada pengguna, PicoClaw tidak menghantar jawapan bukan streaming kedua untuk mengelakkan output berganda.
 

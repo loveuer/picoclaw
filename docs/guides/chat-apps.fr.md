@@ -4,7 +4,7 @@
 
 ## 💬 Applications de Chat
 
-Communiquez avec votre PicoClaw via Telegram, Discord, WhatsApp, Matrix, QQ, DingTalk, LINE, WeCom, Feishu, Slack, IRC, OneBot, MQTT ou MaixCam.
+Communiquez avec votre PicoClaw via Telegram, Discord, WhatsApp, Matrix, QQ, DingTalk, LINE, WeCom, Feishu, Slack, IRC, OneBot, MQTT.
 
 > **Note** : Tous les canaux basés sur les webhooks (LINE, WeCom, etc.) sont servis sur un seul serveur HTTP Gateway partagé (`gateway.host`:`gateway.port`, par défaut `127.0.0.1:18790`). Il n'y a pas de ports par canal à configurer. Note : Feishu utilise le mode WebSocket/SDK et n'utilise pas le serveur HTTP webhook partagé.
 
@@ -24,8 +24,6 @@ Communiquez avec votre PicoClaw via Telegram, Discord, WhatsApp, Matrix, QQ, Din
 | **IRC**              | ⭐⭐ Moyen         | Serveur + configuration TLS                           | [Documentation](#irc) |
 | **OneBot**           | ⭐⭐ Moyen         | Compatible NapCat/Go-CQHTTP, écosystème communautaire | [Documentation](../channels/onebot/README.fr.md)                                                                |
 | **MQTT**             | ⭐ Facile          | N'importe quel client MQTT via broker pub/sub         | [Documentation](../channels/mqtt/README.fr.md)                                                                  |
-| **MaixCam**          | ⭐ Facile          | Canal d'intégration matérielle pour caméras AI Sipeed | [Documentation](../channels/maixcam/README.fr.md)                                                               |
-| **Pico**             | ⭐ Facile          | Canal protocole natif PicoClaw                        |                                                                                                                  |
 
 <a id="telegram"></a>
 <details>
@@ -642,38 +640,6 @@ Installez et exécutez un framework de bot QQ compatible OneBot v11. Activez son
 | `ws_url` | URL WebSocket de l'implémentation OneBot |
 | `access_token` | Token d'accès pour l'authentification (si configuré dans OneBot) |
 | `reconnect_interval` | Intervalle de reconnexion en secondes (par défaut : 5) |
-
-**3. Lancer**
-
-```bash
-picoclaw gateway
-```
-
-</details>
-
-<a id="maixcam"></a>
-<details>
-<summary><b>MaixCam</b></summary>
-
-**1. Préparer le matériel**
-
-* Obtenez un appareil [Sipeed MaixCam](https://wiki.sipeed.com/maixcam)
-
-**2. Configurer**
-
-```json
-{
-  "channel_list": {
-    "maixcam": {
-      "enabled": true,
-      "type": "maixcam",
-      "allow_from": []
-    }
-  }
-}
-```
-
-> MaixCam est une intégration matérielle Sipeed pour l'interaction IA embarquée.
 
 **3. Lancer**
 

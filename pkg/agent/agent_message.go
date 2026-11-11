@@ -186,12 +186,12 @@ func (al *AgentLoop) processMessage(ctx context.Context, msg bus.InboundMessage)
 			UserMessage:    msg.Content,
 			Media:          append([]string(nil), msg.Media...),
 		},
-		SenderID:                msg.SenderID,
-		SenderDisplayName:       msg.Sender.DisplayName,
-		DefaultResponse:         defaultResponse,
-		EnableSummary:           true,
-		SendResponse:            false,
-		AllowInterimPicoPublish: true,
+		SenderID:          msg.SenderID,
+		SenderDisplayName: msg.Sender.DisplayName,
+		DefaultResponse:   defaultResponse,
+		EnableSummary:     true,
+		SendResponse:      false,
+		AllowStreaming:    true,
 	}
 	var err error
 	opts, err = resolveTurnProfileOptions(al.GetConfig(), opts)

@@ -128,7 +128,6 @@ type OpenClawChannels struct {
 	BlueBubbles *OpenClawBlueBubblesConfig `json:"bluebubbles"`
 	QQ          *OpenClawQQConfig          `json:"qq"`
 	DingTalk    *OpenClawDingTalkConfig    `json:"dingtalk"`
-	MaixCam     *OpenClawMaixCamConfig     `json:"maixcam"`
 }
 
 type OpenClawTelegramConfig struct {
@@ -262,14 +261,6 @@ type OpenClawQQConfig struct {
 type OpenClawDingTalkConfig struct {
 	AppID     *string  `json:"appId"`
 	AppSecret *string  `json:"appSecret"`
-	DmPolicy  *string  `json:"dmPolicy"`
-	AllowFrom []string `json:"allowFrom"`
-	Enabled   *bool    `json:"enabled"`
-}
-
-type OpenClawMaixCamConfig struct {
-	Host      *string  `json:"host"`
-	Port      *int     `json:"port"`
 	DmPolicy  *string  `json:"dmPolicy"`
 	AllowFrom []string `json:"allowFrom"`
 	Enabled   *bool    `json:"enabled"`
@@ -631,7 +622,6 @@ type ChannelsConfig struct {
 	Telegram TelegramConfig `json:"telegram"`
 	Feishu   FeishuConfig   `json:"feishu"`
 	Discord  DiscordConfig  `json:"discord"`
-	MaixCam  MaixCamConfig  `json:"maixcam"`
 	QQ       QQConfig       `json:"qq"`
 	DingTalk DingTalkConfig `json:"dingtalk"`
 	Slack    SlackConfig    `json:"slack"`
@@ -667,13 +657,6 @@ type DiscordConfig struct {
 	Token       string   `json:"token"`
 	MentionOnly bool     `json:"mention_only"`
 	AllowFrom   []string `json:"allow_from"`
-}
-
-type MaixCamConfig struct {
-	Enabled   bool     `json:"enabled"`
-	Host      string   `json:"host"`
-	Port      int      `json:"port"`
-	AllowFrom []string `json:"allow_from"`
 }
 
 type QQConfig struct {
@@ -872,19 +855,6 @@ func (c *OpenClawConfig) convertChannels(warnings *[]string) ChannelsConfig {
 		}
 	}
 
-	if c.Channels.MaixCam != nil && supportedChannels["maixcam"] {
-		channels.MaixCam = MaixCamConfig{
-			Enabled:   true,
-			AllowFrom: c.Channels.MaixCam.AllowFrom,
-		}
-		if c.Channels.MaixCam.Host != nil {
-			channels.MaixCam.Host = *c.Channels.MaixCam.Host
-		}
-		if c.Channels.MaixCam.Port != nil {
-			channels.MaixCam.Port = *c.Channels.MaixCam.Port
-		}
-	}
-
 	if c.Channels.Matrix != nil && supportedChannels["matrix"] {
 		enabled := c.Channels.Matrix.Enabled == nil || *c.Channels.Matrix.Enabled
 		channels.Matrix = MatrixConfig{
@@ -1063,12 +1033,6 @@ func (c ChannelsConfig) ToStandardChannels() config.ChannelsConfig {
 		}
 		return m
 	}())
-
-	setChannel(channels, "maixcam", map[string]any{
-		"enabled": c.MaixCam.Enabled,
-		"host":    c.MaixCam.Host,
-		"port":    c.MaixCam.Port,
-	})
 
 	setChannel(channels, "qq", func() map[string]any {
 		m := map[string]any{

@@ -150,7 +150,6 @@ PicoClaw boleh digunakan pada hampir mana-mana peranti Linux!
 
 - $9.9 [LicheeRV-Nano](https://www.aliexpress.com/item/1005006519668532.html) untuk pembantu rumah minimal
 - $30~50 [NanoKVM](https://www.aliexpress.com/item/1005007369816019.html) untuk operasi pelayan automatik
-- $50 [MaixCAM](https://www.aliexpress.com/item/1005008053333693.html) untuk pengawasan pintar
 
 <https://private-user-images.githubusercontent.com/83055338/547056448-e7b031ff-d6f5-4468-bcca-5726b6fecb5c.mp4>
 
@@ -378,9 +377,6 @@ Bercakap dengan PicoClaw anda melalui 17+ platform pemesejan:
 | **WeCom** | Mudah (log masuk QR atau manual) | WebSocket | [Panduan](../channels/wecom/README.md) |
 | **IRC** | Sederhana (pelayan + nick) | Protokol IRC | [Panduan](../guides/chat-apps.ms.md#irc) |
 | **OneBot** | Sederhana (URL WebSocket) | OneBot v11 | [Panduan](../channels/onebot/README.md) |
-| **MaixCam** | Mudah (aktifkan) | TCP socket | [Panduan](../channels/maixcam/README.md) |
-| **Pico** | Mudah (aktifkan) | Protokol natif | Terbina dalam |
-| **Pico Client** | Mudah (URL WebSocket) | WebSocket | Terbina dalam |
 
 > Semua saluran berasaskan webhook berkongsi satu pelayan HTTP Gateway (`gateway.host`:`gateway.port`, lalai `127.0.0.1:18790`). Feishu menggunakan mod WebSocket/SDK dan tidak menggunakan pelayan HTTP yang dikongsi.
 

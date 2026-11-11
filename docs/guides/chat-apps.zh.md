@@ -4,7 +4,7 @@
 
 ## 💬 聊天应用集成 (Chat Apps)
 
-PicoClaw 支持多种聊天平台，使您的 Agent 能够连接到任何地方，包括 Telegram、Discord、WhatsApp、微信、QQ、钉钉、LINE、企业微信、飞书、Slack、IRC、OneBot、MQTT、MaixCam 等。
+PicoClaw 支持多种聊天平台，使您的 Agent 能够连接到任何地方，包括 Telegram、Discord、WhatsApp、微信、QQ、钉钉、LINE、企业微信、飞书、Slack、IRC、OneBot、MQTT 等。
 
 > **注意**: 依赖 HTTP 回调的渠道共用同一个 Gateway HTTP 服务器（`gateway.host`:`gateway.port`，默认 `127.0.0.1:18790`），无需为每个渠道单独配置端口。飞书、钉钉、企业微信这类 Socket/Stream 模式渠道不依赖共享 webhook 服务器来接收入站消息。
 
@@ -26,8 +26,6 @@ PicoClaw 支持多种聊天平台，使您的 Agent 能够连接到任何地方�
 | **IRC**              | ⭐⭐ 中等   | 服务器 + TLS 配置                         | [查看文档](#irc) |
 | **OneBot**           | ⭐⭐ 中等   | 兼容 NapCat/Go-CQHTTP，社区生态丰富       | [查看文档](../channels/onebot/README.zh.md)                                                                   |
 | **MQTT**             | ⭐ 简单     | 任意 MQTT 客户端通过 Broker 收发消息      | [查看文档](../channels/mqtt/README.zh.md)                                                                     |
-| **MaixCam**          | ⭐ 简单     | 专为 AI 摄像头设计的硬件集成通道          | [查看文档](../channels/maixcam/README.zh.md)                                                                  |
-| **Pico**             | ⭐ 简单     | PicoClaw 原生协议通道                     |                                                                                                               |
 
 ---
 
@@ -582,29 +580,6 @@ OneBot 是 QQ 机器人的开放协议。PicoClaw 通过 WebSocket 连接任何 
 | `reconnect_interval` | 重连间隔（秒）（默认：5） |
 
 **3. 运行**
-
-```bash
-picoclaw gateway
-```
-
-</details>
-
-<a id="maixcam"></a>
-<details>
-<summary><b>MaixCam</b></summary>
-
-专为 Sipeed AI 摄像头硬件设计的集成通道。
-
-```json
-{
-  "channel_list": {
-    "maixcam": {
-      "enabled": true,
-      "type": "maixcam"
-    }
-  }
-}
-```
 
 ```bash
 picoclaw gateway

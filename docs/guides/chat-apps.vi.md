@@ -4,7 +4,7 @@
 
 ## 💬 Ứng Dụng Chat
 
-Trò chuyện với picoclaw của bạn qua Telegram, Discord, WhatsApp, Matrix, QQ, DingTalk, LINE, WeCom, Feishu, Slack, IRC, OneBot, MQTT hoặc MaixCam
+Trò chuyện với picoclaw của bạn qua Telegram, Discord, WhatsApp, Matrix, QQ, DingTalk, LINE, WeCom, Feishu, Slack, IRC, OneBot, MQTT
 
 > **Lưu ý**: Tất cả các kênh dựa trên webhook (LINE, WeCom, v.v.) được phục vụ trên một máy chủ HTTP Gateway chung (`gateway.host`:`gateway.port`, mặc định `127.0.0.1:18790`). Không có port riêng cho từng kênh. Lưu ý: Feishu sử dụng chế độ WebSocket/SDK và không sử dụng máy chủ HTTP webhook chung.
 
@@ -24,8 +24,6 @@ Trò chuyện với picoclaw của bạn qua Telegram, Discord, WhatsApp, Matrix
 | **IRC**              | ⭐⭐ Trung bình    | Máy chủ + cấu hình TLS                                | [Tài liệu](#irc) |
 | **OneBot**           | ⭐⭐ Trung bình    | Tương thích NapCat/Go-CQHTTP, hệ sinh thái cộng đồng  | [Tài liệu](../channels/onebot/README.vi.md)                                                                     |
 | **MQTT**             | ⭐ Dễ              | Bất kỳ client MQTT nào qua broker pub/sub            | [Tài liệu](../channels/mqtt/README.vi.md)                                                                    |
-| **MaixCam**          | ⭐ Dễ              | Kênh tích hợp phần cứng cho camera AI Sipeed          | [Tài liệu](../channels/maixcam/README.vi.md)                                                                    |
-| **Pico**             | ⭐ Dễ              | Kênh giao thức bản địa PicoClaw                       |                                                                                                                  |
 
 <a id="telegram"></a>
 <details>
@@ -296,30 +294,6 @@ picoclaw gateway
 ```
 
 </details>
-
-<a id="maixcam"></a>
-<details>
-<summary><b>MaixCam</b></summary>
-
-Kênh tích hợp được thiết kế đặc biệt cho phần cứng camera AI Sipeed.
-
-```json
-{
-  "channel_list": {
-    "maixcam": {
-      "enabled": true,
-      "type": "maixcam"
-    }
-  }
-}
-```
-
-```bash
-picoclaw gateway
-```
-
-</details>
-
 
 <a id="matrix"></a>
 <details>
@@ -669,28 +643,6 @@ Cài đặt và chạy framework bot QQ tương thích OneBot v11. Bật máy ch
 | `reconnect_interval` | Khoảng thời gian kết nối lại tính bằng giây (mặc định: 5) |
 
 **3. Chạy**
-
-```bash
-picoclaw gateway
-```
-
-</details>
-
-<details>
-<summary><b>MaixCam</b></summary>
-
-Kênh tích hợp được thiết kế đặc biệt cho phần cứng camera AI Sipeed.
-
-```json
-{
-  "channel_list": {
-    "maixcam": {
-      "enabled": true,
-      "type": "maixcam"
-    }
-  }
-}
-```
 
 ```bash
 picoclaw gateway

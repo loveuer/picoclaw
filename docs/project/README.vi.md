@@ -150,7 +150,6 @@ PicoClaw có thể được triển khai trên hầu hết mọi thiết bị Li
 
 - $9.9 [LicheeRV-Nano](https://www.aliexpress.com/item/1005006519668532.html) phiên bản E(Ethernet) hoặc W(WiFi6), cho trợ lý gia đình tối giản
 - $30~50 [NanoKVM](https://www.aliexpress.com/item/1005007369816019.html), hoặc $100 [NanoKVM-Pro](https://www.aliexpress.com/item/1005010048471263.html), cho vận hành máy chủ tự động
-- $50 [MaixCAM](https://www.aliexpress.com/item/1005008053333693.html) hoặc $100 [MaixCAM2](https://www.kickstarter.com/projects/zepan/maixcam2-build-your-next-gen-4k-ai-camera), cho giám sát thông minh
 
 <https://private-user-images.githubusercontent.com/83055338/547056448-e7b031ff-d6f5-4468-bcca-5726b6fecb5c.mp4>
 
@@ -378,9 +377,6 @@ Trò chuyện với PicoClaw của bạn qua 17+ nền tảng nhắn tin:
 | **WeCom** | Dễ (đăng nhập QR hoặc thủ công) | WebSocket | [Hướng dẫn](../channels/wecom/README.vi.md) |
 | **IRC** | Trung bình (server + nick) | IRC protocol | [Hướng dẫn](../guides/chat-apps.vi.md#irc) |
 | **OneBot** | Trung bình (WebSocket URL) | OneBot v11 | [Hướng dẫn](../channels/onebot/README.vi.md) |
-| **MaixCam** | Dễ (bật) | TCP socket | [Hướng dẫn](../channels/maixcam/README.vi.md) |
-| **Pico** | Dễ (bật) | Native protocol | Tích hợp sẵn |
-| **Pico Client** | Dễ (WebSocket URL) | WebSocket | Tích hợp sẵn |
 
 > Tất cả các Channel dựa trên webhook dùng chung một Gateway HTTP server (`gateway.host`:`gateway.port`, mặc định `127.0.0.1:18790`). Feishu sử dụng chế độ WebSocket/SDK và không dùng HTTP server chung.
 

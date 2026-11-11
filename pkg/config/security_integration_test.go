@@ -250,9 +250,6 @@ func TestAllSecurityKeysAccessible(t *testing.T) {
       "enabled": true,
       "bot_id": "test_wecom_bot_id"
     },
-    "pico": {
-      "enabled": true
-    },
     "irc": {
       "enabled": true,
       "server": "irc.example.com",
@@ -319,8 +316,6 @@ channels:
     access_token: "onebot_test_access_token"
   wecom:
     secret: "wecom_test_secret"
-  pico:
-    token: "pico_test_token"
   irc:
     password: "irc_test_password"
     nickserv_password: "irc_test_nickserv_password"
@@ -436,11 +431,6 @@ skills:
 		assert.Equal(t, "wecom_test_secret", secureStr(wcSec.(*WeComSettings).Secret))
 		t.Logf("WeCom BotID: %s", wcSec.(*WeComSettings).BotID)
 		t.Logf("WeCom Secret(): %s", secureStr(wcSec.(*WeComSettings).Secret))
-
-		// Pico
-		picoSec := decodeChannel("pico")
-		assert.Equal(t, "pico_test_token", secureStr(picoSec.(*PicoSettings).Token))
-		t.Logf("Pico Token(): %s", secureStr(picoSec.(*PicoSettings).Token))
 
 		// IRC
 		ircSec := decodeChannel("irc")

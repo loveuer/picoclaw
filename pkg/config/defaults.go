@@ -533,9 +533,6 @@ func defaultChannels() ChannelsConfig {
 		},
 		"feishu":  map[string]any{},
 		"discord": map[string]any{},
-		"maixcam": map[string]any{
-			"settings": map[string]any{"host": "0.0.0.0", "port": 18790},
-		},
 		"qq": map[string]any{
 			"settings": map[string]any{"max_message_length": 2000},
 		},
@@ -580,15 +577,6 @@ func defaultChannels() ChannelsConfig {
 			"settings": map[string]any{
 				"base_url":     "https://ilinkai.weixin.qq.com/",
 				"cdn_base_url": "https://novac2c.cdn.weixin.qq.com/c2c",
-			},
-		},
-		"pico": map[string]any{
-			"settings": map[string]any{
-				"ping_interval":   30,
-				"read_timeout":    60,
-				"write_timeout":   10,
-				"max_connections": 100,
-				"streaming":       map[string]any{"enabled": true},
 			},
 		},
 		"irc": map[string]any{

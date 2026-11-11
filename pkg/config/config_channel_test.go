@@ -144,30 +144,6 @@ func TestStreamingConfig_IsChannelGeneric(t *testing.T) {
 	}
 }
 
-func TestPicoSettings_StreamingConfig(t *testing.T) {
-	raw := RawNode(`{
-		"token": "test-token",
-		"streaming": {
-			"enabled": true,
-			"throttle_seconds": 2,
-			"min_growth_chars": 80
-		}
-	}`)
-	ch := &Channel{
-		Type:     ChannelPico,
-		Enabled:  true,
-		Settings: raw,
-	}
-	ch.SetName("pico")
-	var picoCfg PicoSettings
-	if err := ch.Decode(&picoCfg); err != nil {
-		t.Fatalf("Decode() error = %v", err)
-	}
-	assert.True(t, picoCfg.Streaming.Enabled)
-	assert.Equal(t, 2, picoCfg.Streaming.ThrottleSeconds)
-	assert.Equal(t, 80, picoCfg.Streaming.MinGrowthChars)
-}
-
 func TestWeComSettings_StreamingConfig(t *testing.T) {
 	raw := RawNode(`{
 		"bot_id": "bot-1",
@@ -192,7 +168,7 @@ func TestWeComSettings_StreamingConfig(t *testing.T) {
 	assert.Equal(t, 160, wecomCfg.Streaming.MinGrowthChars)
 }
 
-func TestPicoStreamingConfig_Defaults(t *testing.T) {
+func TestStreamingConfig_Defaults(t *testing.T) {
 	cfg := StreamingConfig{Enabled: true}
 	got := cfg.WithDefaults(1, 40)
 	assert.Equal(t, 1, got.ThrottleSeconds)
@@ -220,10 +196,10 @@ func TestInitChannelList_TelegramStreamingEnvCompatibility(t *testing.T) {
 			Enabled:  true,
 			Settings: RawNode(`{"token":"telegram-token"}`),
 		},
-		"pico": {
-			Type:     ChannelPico,
+		"wecom": {
+			Type:     ChannelWeCom,
 			Enabled:  true,
-			Settings: RawNode(`{"token":"pico-token"}`),
+			Settings: RawNode(`{"bot_id":"bot-1"}`),
 		},
 	}
 	if err := InitChannelList(channels); err != nil {
@@ -239,14 +215,14 @@ func TestInitChannelList_TelegramStreamingEnvCompatibility(t *testing.T) {
 	assert.Equal(t, 3, tgCfg.Streaming.ThrottleSeconds)
 	assert.Equal(t, 120, tgCfg.Streaming.MinGrowthChars)
 
-	picoDecoded, err := channels["pico"].GetDecoded()
+	wecomDecoded, err := channels["wecom"].GetDecoded()
 	if err != nil {
-		t.Fatalf("pico GetDecoded() error = %v", err)
+		t.Fatalf("wecom GetDecoded() error = %v", err)
 	}
-	picoCfg := picoDecoded.(*PicoSettings)
-	assert.False(t, picoCfg.Streaming.Enabled)
-	assert.Equal(t, 0, picoCfg.Streaming.ThrottleSeconds)
-	assert.Equal(t, 0, picoCfg.Streaming.MinGrowthChars)
+	wecomCfg := wecomDecoded.(*WeComSettings)
+	assert.False(t, wecomCfg.Streaming.Enabled)
+	assert.Equal(t, 0, wecomCfg.Streaming.ThrottleSeconds)
+	assert.Equal(t, 0, wecomCfg.Streaming.MinGrowthChars)
 }
 
 func TestInitChannelList_RejectsNegativeStreamingDeliveryValues(t *testing.T) {
@@ -255,16 +231,6 @@ func TestInitChannelList_RejectsNegativeStreamingDeliveryValues(t *testing.T) {
 		channelType string
 		settings    string
 	}{
-		{
-			name:        "pico throttle",
-			channelType: ChannelPico,
-			settings:    `{"token":"pico-token","streaming":{"enabled":true,"throttle_seconds":-1}}`,
-		},
-		{
-			name:        "pico growth",
-			channelType: ChannelPico,
-			settings:    `{"token":"pico-token","streaming":{"enabled":true,"min_growth_chars":-1}}`,
-		},
 		{
 			name:        "telegram throttle",
 			channelType: ChannelTelegram,
@@ -338,11 +304,11 @@ func TestChannel_JSON_Marshal_SecureMasked(t *testing.T) {
 func TestChannel_JSON_Marshal_OmitsUnconfiguredStreaming(t *testing.T) {
 	ch := Channel{
 		Enabled:  true,
-		Type:     ChannelPico,
-		name:     "pico",
-		Settings: mustParseRawNode(`{"ping_interval":30}`),
+		Type:     ChannelWeCom,
+		name:     "wecom",
+		Settings: mustParseRawNode(`{"bot_id":"bot-1"}`),
 	}
-	var cfg PicoSettings
+	var cfg WeComSettings
 	require.NoError(t, ch.Decode(&cfg))
 
 	data, err := json.MarshalIndent(ch, "", "  ")

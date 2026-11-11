@@ -78,10 +78,10 @@ func (p *Pipeline) Finalize(
 
 	contextUsage := computeContextUsage(ts.agent, ts.sessionKey)
 	streamErr := finalizeConfiguredStreamingLLM(turnCtx, ts, exec, finalContent, contextUsage)
-	// If streaming never became visible, keep the legacy Pico interim publish path
+	// If streaming never became visible, publish the fallback answer
 	// so the final answer is still delivered outside normal SendResponse.
 	if ((streamErr != nil && !isConfiguredStreamingVisibleError(streamErr)) || exec.streamingFallback) &&
-		!ts.opts.SendResponse && ts.opts.AllowInterimPicoPublish && finalContent != "" {
+		!ts.opts.SendResponse && ts.opts.AllowStreaming && finalContent != "" {
 		msg := outboundMessageForTurnWithOptions(ts, finalContent, outboundTurnMessageOptions{
 			modelName: exec.llmModelName,
 		})

@@ -123,9 +123,9 @@ func TestAllocateRouteSession_PicoDirectAliasesIncludeLegacyChatKey(t *testing.T
 	allocation := AllocateRouteSession(AllocationInput{
 		AgentID: "main",
 		Context: bus.InboundContext{
-			Channel:  "pico",
+			Channel:  "telegram",
 			Account:  "default",
-			ChatID:   "pico:session-123",
+			ChatID:   "telegram:session-123",
 			ChatType: "direct",
 			SenderID: "pico-user",
 		},
@@ -134,7 +134,7 @@ func TestAllocateRouteSession_PicoDirectAliasesIncludeLegacyChatKey(t *testing.T
 		},
 	})
 
-	if !containsAlias(allocation.SessionAliases, "agent:main:pico:direct:pico:session-123") {
+	if !containsAlias(allocation.SessionAliases, "agent:main:telegram:direct:telegram:session-123") {
 		t.Fatalf("SessionAliases = %v, want pico legacy alias", allocation.SessionAliases)
 	}
 }

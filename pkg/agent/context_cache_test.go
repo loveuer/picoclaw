@@ -717,7 +717,7 @@ func TestBuildMessages_IncludesMediaOnlyCurrentMessage(t *testing.T) {
 		"",
 		"",
 		[]string{"data:image/png;base64,abc123"},
-		"pico",
+		"telegram",
 		"chat-1",
 		"",
 		"",

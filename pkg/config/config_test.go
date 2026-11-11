@@ -1002,21 +1002,6 @@ func TestDefaultConfig_ChannelStreamingDisabled(t *testing.T) {
 		t.Fatal("DefaultConfig().telegram.settings.streaming.enabled should be false")
 	}
 
-	pico := cfg.Channels.Get(ChannelPico)
-	if pico == nil {
-		t.Fatal("DefaultConfig() missing pico channel")
-	}
-	decoded, err = pico.GetDecoded()
-	if err != nil {
-		t.Fatalf("pico GetDecoded() error = %v", err)
-	}
-	picoSettings, ok := decoded.(*PicoSettings)
-	if !ok {
-		t.Fatalf("pico settings type = %T, want *PicoSettings", decoded)
-	}
-	if !picoSettings.Streaming.Enabled {
-		t.Fatal("DefaultConfig().pico.settings.streaming.enabled should be true")
-	}
 }
 
 func TestDefaultConfig_DeltaChatExample(t *testing.T) {
@@ -1048,52 +1033,6 @@ func TestDefaultConfig_DeltaChatExample(t *testing.T) {
 	}
 	if settings.DisplayName == "" {
 		t.Fatal("DefaultConfig().deltachat.settings.display_name should be populated")
-	}
-}
-
-func TestValidateSingletonChannels_RejectsMultipleInstances(t *testing.T) {
-	channels := ChannelsConfig{
-		"pico1": &Channel{Enabled: true, Type: ChannelPico},
-		"pico2": &Channel{Enabled: true, Type: ChannelPico},
-	}
-	err := validateSingletonChannels(channels)
-	if err == nil {
-		t.Fatal("expected error for multiple pico channels, got nil")
-	}
-	if !strings.Contains(err.Error(), "singleton") {
-		t.Fatalf("expected singleton error, got: %v", err)
-	}
-}
-
-func TestValidateSingletonChannels_AllowsSingleInstance(t *testing.T) {
-	channels := ChannelsConfig{
-		"pico1": &Channel{Enabled: true, Type: ChannelPico},
-	}
-	err := validateSingletonChannels(channels)
-	if err != nil {
-		t.Fatalf("expected no error for single pico channel, got: %v", err)
-	}
-}
-
-func TestValidateSingletonChannels_IgnoresDisabledInstances(t *testing.T) {
-	channels := ChannelsConfig{
-		"pico1": &Channel{Enabled: true, Type: ChannelPico},
-		"pico2": &Channel{Enabled: false, Type: ChannelPico},
-	}
-	err := validateSingletonChannels(channels)
-	if err != nil {
-		t.Fatalf("expected no error when only one pico channel is enabled, got: %v", err)
-	}
-}
-
-func TestValidateSingletonChannels_AllowsMultiInstanceTypes(t *testing.T) {
-	channels := ChannelsConfig{
-		"tg1": &Channel{Enabled: true, Type: ChannelTelegram},
-		"tg2": &Channel{Enabled: true, Type: ChannelTelegram},
-	}
-	err := validateSingletonChannels(channels)
-	if err != nil {
-		t.Fatalf("telegram should allow multiple instances, got error: %v", err)
 	}
 }
 
@@ -1187,49 +1126,6 @@ func TestSaveConfig_PreservesDisabledTelegramPlaceholder(t *testing.T) {
 	bc := loaded.Channels.Get("telegram")
 	if bc != nil && bc.Placeholder.Enabled {
 		t.Fatal("telegram placeholder should remain disabled after SaveConfig/LoadConfig round-trip")
-	}
-}
-
-func TestSaveConfig_PreservesExplicitDisabledPicoStreaming(t *testing.T) {
-	tmpDir := t.TempDir()
-	path := filepath.Join(tmpDir, "config.json")
-
-	cfg := DefaultConfig()
-	pico := cfg.Channels.Get(ChannelPico)
-	if pico == nil {
-		t.Fatal("DefaultConfig() missing pico channel")
-	}
-	pico.Settings = RawNode(`{"streaming":{"enabled":false}}`)
-
-	if err := SaveConfig(path, cfg); err != nil {
-		t.Fatalf("SaveConfig failed: %v", err)
-	}
-	data, err := os.ReadFile(path)
-	if err != nil {
-		t.Fatalf("ReadFile failed: %v", err)
-	}
-	if !strings.Contains(string(data), `"streaming"`) || !strings.Contains(string(data), `"enabled": false`) {
-		t.Fatalf("saved config should preserve explicit disabled pico streaming, got:\n%s", string(data))
-	}
-
-	loaded, err := LoadConfig(path)
-	if err != nil {
-		t.Fatalf("LoadConfig failed: %v", err)
-	}
-	loadedPico := loaded.Channels.Get(ChannelPico)
-	if loadedPico == nil {
-		t.Fatal("loaded config missing pico channel")
-	}
-	decoded, err := loadedPico.GetDecoded()
-	if err != nil {
-		t.Fatalf("pico GetDecoded() error = %v", err)
-	}
-	settings, ok := decoded.(*PicoSettings)
-	if !ok {
-		t.Fatalf("pico settings type = %T, want *PicoSettings", decoded)
-	}
-	if settings.Streaming.Enabled {
-		t.Fatal("explicit disabled pico streaming should remain disabled after SaveConfig/LoadConfig round-trip")
 	}
 }
 
@@ -3251,7 +3147,6 @@ func testChannelsConfigWithTokens() ChannelsConfig {
 		{"dingtalk", DingTalkSettings{ClientSecret: *NewSecureString("dingtalk-client-secret")}},
 		{"onebot", OneBotSettings{AccessToken: *NewSecureString("onebot-access-token")}},
 		{"wecom", WeComSettings{Secret: *NewSecureString("wecom-secret")}},
-		{"pico", PicoSettings{Token: *NewSecureString("pico-token-abc123")}},
 		{
 			"irc",
 			IRCSettings{
@@ -3268,4 +3163,47 @@ func testChannelsConfigWithTokens() ChannelsConfig {
 		channels[def.name] = bc
 	}
 	return channels
+}
+
+func TestSaveConfig_PreservesExplicitDisabledTelegramStreaming(t *testing.T) {
+	tmpDir := t.TempDir()
+	path := filepath.Join(tmpDir, "config.json")
+
+	cfg := DefaultConfig()
+	telegram := cfg.Channels.Get(ChannelTelegram)
+	if telegram == nil {
+		t.Fatal("DefaultConfig() missing telegram channel")
+	}
+	telegram.Settings = RawNode(`{"streaming":{"enabled":false}}`)
+
+	if err := SaveConfig(path, cfg); err != nil {
+		t.Fatalf("SaveConfig failed: %v", err)
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("ReadFile failed: %v", err)
+	}
+	if !strings.Contains(string(data), `"streaming"`) || !strings.Contains(string(data), `"enabled": false`) {
+		t.Fatalf("saved config should preserve explicit disabled telegram streaming, got:\n%s", string(data))
+	}
+
+	loaded, err := LoadConfig(path)
+	if err != nil {
+		t.Fatalf("LoadConfig failed: %v", err)
+	}
+	loadedTelegram := loaded.Channels.Get(ChannelTelegram)
+	if loadedTelegram == nil {
+		t.Fatal("loaded config missing telegram channel")
+	}
+	decoded, err := loadedTelegram.GetDecoded()
+	if err != nil {
+		t.Fatalf("telegram GetDecoded() error = %v", err)
+	}
+	settings, ok := decoded.(*TelegramSettings)
+	if !ok {
+		t.Fatalf("telegram settings type = %T, want *TelegramSettings", decoded)
+	}
+	if settings.Streaming.Enabled {
+		t.Fatal("explicit disabled telegram streaming should remain disabled after SaveConfig/LoadConfig round-trip")
+	}
 }

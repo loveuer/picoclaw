@@ -103,7 +103,7 @@ type processOptions struct {
 	DefaultResponse         string                 // Response when LLM returns empty
 	EnableSummary           bool                   // Whether to trigger summarization
 	SendResponse            bool                   // Whether to send response via bus
-	AllowInterimPicoPublish bool                   // Whether pico tool-call interim text can be published when SendResponse is false
+	AllowStreaming          bool                   // Whether streaming output is allowed when SendResponse is false
 	SuppressToolFeedback    bool                   // Whether to suppress inline tool feedback messages
 	NoHistory               bool                   // If true, don't load session history (for heartbeat)
 	SkipInitialSteeringPoll bool                   // If true, skip the steering poll at loop start (used by Continue)
@@ -126,11 +126,8 @@ const (
 	pendingTurnPrefix          = "pending-"
 	providerReloadGracePeriod  = 30 * time.Second
 	metadataKeyMessageKind     = "message_kind"
-	metadataKeyToolCalls       = "tool_calls"
 	metadataKeyOutboundKind    = "outbound_kind"
-	messageKindThought         = "thought"
 	messageKindToolFeedback    = "tool_feedback"
-	messageKindToolCalls       = "tool_calls"
 	outboundKindFinal          = "final"
 	outboundKindCommandReply   = "command_reply"
 	metadataKeyAccountID       = "account_id"

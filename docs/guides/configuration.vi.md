@@ -413,8 +413,6 @@ Cấu hình `providers` cũ đã **bị deprecated** và đã được loại b�
 
 Provider streaming dùng cơ chế double opt-in và bị tắt theo mặc định. Agent chỉ thử streaming khi channel hiện tại có `settings.streaming.enabled: true`, entry model đang dùng có `streaming.enabled: true`, và cả provider lẫn channel đều hỗ trợ streaming. Nếu thiếu bất kỳ điều kiện nào, PicoClaw dùng đường dẫn yêu cầu không streaming thông thường.
 
-Pico là channel đầu tiên được nối đầy đủ. Pico tạo message assistant đầu tiên bằng wire message hiện có `message.create`, sau đó cập nhật chính message đó bằng `message.update`; không thêm loại wire message Pico mới.
-
 Hãy để trống `streaming` khi bạn không muốn dùng streaming. Bỏ qua block `streaming` nghĩa là đã tắt; bạn không cần viết `"streaming": {"enabled": false}`.
 
 Ví dụ bật streaming:
@@ -433,11 +431,11 @@ Ví dụ bật streaming:
     }
   ],
   "channel_list": {
-    "pico": {
+    "telegram": {
       "enabled": true,
-      "type": "pico",
+      "type": "telegram",
       "settings": {
-        "token": "YOUR_PICO_TOKEN",
+        "token": "YOUR_TELEGRAM_TOKEN",
         "streaming": {
           "enabled": true
         }
@@ -450,11 +448,11 @@ Ví dụ bật streaming:
 | Trường | Kiểu | Mặc định | Mô tả |
 | ------ | ---- | -------- | ----- |
 | `channel_list.<name>.settings.streaming.enabled` | bool | `false` | Cho phép channel này hiển thị output streaming từ provider |
-| `channel_list.<name>.settings.streaming.throttle_seconds` | int | Mặc định Pico sau khi bật: `0` | Khoảng cách tối thiểu giữa các cập nhật trung gian; nội dung cuối luôn được flush |
-| `channel_list.<name>.settings.streaming.min_growth_chars` | int | Mặc định Pico sau khi bật: `1` | Số ký tự tăng tối thiểu trước khi gửi cập nhật trung gian; nội dung cuối luôn được flush |
+| `channel_list.<name>.settings.streaming.throttle_seconds` | int | Telegram: `3` | Khoảng cách tối thiểu giữa các cập nhật trung gian; nội dung cuối luôn được flush |
+| `channel_list.<name>.settings.streaming.min_growth_chars` | int | Telegram: `200` | Số ký tự tăng tối thiểu trước khi gửi cập nhật trung gian; nội dung cuối luôn được flush |
 | `model_list[].streaming.enabled` | bool | `false` | Cho phép entry model này thử yêu cầu provider streaming |
 
-Các biến môi trường Telegram cũ vẫn tương thích: `PICOCLAW_CHANNELS_TELEGRAM_STREAMING_ENABLED`, `PICOCLAW_CHANNELS_TELEGRAM_STREAMING_THROTTLE_SECONDS`, và `PICOCLAW_CHANNELS_TELEGRAM_STREAMING_MIN_GROWTH_CHARS`. Chúng chỉ áp dụng cho Telegram settings và không bật hoặc thay đổi `settings.streaming` của Pico.
+Các biến môi trường Telegram cũ vẫn tương thích: `PICOCLAW_CHANNELS_TELEGRAM_STREAMING_ENABLED`, `PICOCLAW_CHANNELS_TELEGRAM_STREAMING_THROTTLE_SECONDS`, và `PICOCLAW_CHANNELS_TELEGRAM_STREAMING_MIN_GROWTH_CHARS`.
 
 Hành vi lỗi được giữ thận trọng: nếu streaming lỗi trước khi gửi bất kỳ chunk hiển thị nào, PicoClaw thử lại một lần qua đường dẫn `Chat()` thông thường. Nếu đã có chunk hiển thị cho người dùng, PicoClaw không gửi thêm một câu trả lời non-streaming thứ hai để tránh lặp output.
 

@@ -150,7 +150,6 @@ PicoClaw 几乎可以部署在任何 Linux 设备上！
 
 - $9.9 [LicheeRV-Nano](https://item.taobao.com/item.htm?id=764939520376) E(网口) 或 W(WiFi6) 版本，用于极简家庭助手
 - $30~50 [NanoKVM](https://item.taobao.com/item.htm?id=811206560480)，或 $100 [NanoKVM-Pro](https://item.taobao.com/item.htm?id=994419942411)，用于自动化服务器运维
-- $50 [MaixCAM](https://item.taobao.com/item.htm?id=784724795837) 或 $100 [MaixCAM2](https://item.taobao.com/item.htm?id=1050380368975)，用于智能监控
 
 <https://private-user-images.githubusercontent.com/83055338/547056448-e7b031ff-d6f5-4468-bcca-5726b6fecb5c.mp4>
 
@@ -379,9 +378,6 @@ PicoClaw 通过 `model_list` 配置支持 30+ LLM Provider，使用 `协议/模�
 | **VK** | 简单（群组 token） | Long Poll | [指南](../channels/vk/README.md) |
 | **IRC** | 中等（server + nick） | IRC 协议 | [指南](../guides/chat-apps.zh.md#irc) |
 | **OneBot** | 中等（WebSocket URL） | OneBot v11 | [指南](../channels/onebot/README.zh.md) |
-| **MaixCam** | 简单（启用即可） | TCP socket | [指南](../channels/maixcam/README.zh.md) |
-| **Pico** | 简单（启用即可） | 原生协议 | 内置 |
-| **Pico Client** | 简单（WebSocket URL） | WebSocket | 内置 |
 
 > 所有基于 Webhook 的 Channel 共用同一个 Gateway HTTP 服务器（`gateway.host`:`gateway.port`，默认 `127.0.0.1:18790`）。飞书使用 WebSocket/SDK 模式，不使用共享 HTTP 服务器。
 
