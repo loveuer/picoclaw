@@ -18,6 +18,7 @@ import (
 	"runtime"
 	"strings"
 	"time"
+	"unicode"
 
 	"github.com/minio/selfupdate"
 	"github.com/spf13/cobra"
@@ -42,11 +43,12 @@ func getWithRetry(rawURL string) (*http.Response, error) {
 	return utils.DoRequestWithRetry(httpClient, req)
 }
 
-// DownloadAndExtractRelease downloads a release archive (or uses a direct
-// asset URL) and extracts it to a temporary directory. It returns the
+// DownloadAndExtractRelease resolves a GitHub release and downloads its verified
+// archive into a temporary directory. It returns the
 // extraction directory on success. If releaseURL is empty, the latest
 // release of the current project is used. platform/arch can be used to
 // select the correct asset (e.g. "linux", "amd64").
+// Direct archive URLs are rejected because release checksum metadata is required.
 func DownloadAndExtractRelease(releaseURL, platform, arch string) (string, error) {
 	assetURL, checksum, err := findAssetInfo(releaseURL, platform, arch)
 	if err != nil {
@@ -142,6 +144,15 @@ func UpdateSelfFromRelease(releaseURL, platform, arch, programName string) error
 	if arch == "" {
 		arch = runtime.GOARCH
 	}
+	if !strings.EqualFold(platform, runtime.GOOS) || !sameArchitecture(arch, runtime.GOARCH) {
+		return fmt.Errorf(
+			"cannot self-update %s/%s with a %s/%s binary; use --check to inspect another target",
+			runtime.GOOS,
+			runtime.GOARCH,
+			platform,
+			arch,
+		)
+	}
 
 	dir, err := DownloadAndExtractRelease(releaseURL, platform, arch)
 	if err != nil {
@@ -186,42 +197,65 @@ func UpdateSelf(programName string) error {
 	return UpdateSelfFromRelease("", runtime.GOOS, runtime.GOARCH, programName)
 }
 
-// GetReleaseAPIURL returns the GitHub Releases API URL for the given repo owner.
-// Example: owner="sky5454" -> https://api.github.com/repos/sky5454/picoclaw/releases/latest
+// DefaultRepository is the release source for this fork. Never fall back to upstream.
+const DefaultRepository = "loveuer/picoclaw"
+
+// GetReleaseAPIURL returns the latest stable release API URL for another picoclaw fork.
 func GetReleaseAPIURL(owner string) string {
-	return fmt.Sprintf("https://api.github.com/repos/%s/picoclaw/releases/latest", owner)
+	return releaseAPIURL(owner+"/picoclaw", false)
 }
 
-// GetProdReleaseAPIURL returns the production release API URL (upstream).
+// GetProdReleaseAPIURL returns this fork's latest stable release API URL.
 func GetProdReleaseAPIURL() string {
-	return GetReleaseAPIURL("sipeed")
+	return releaseAPIURL(DefaultRepository, false)
 }
 
-// GetReleaseTagAPIURL returns the GitHub Releases API URL for a specific tag.
-// Example: owner="sipeed", tag="nightly" -> https://api.github.com/repos/sipeed/picoclaw/releases/tags/nightly
+// GetReleaseTagAPIURL returns the release API URL for a tag on another picoclaw fork.
 func GetReleaseTagAPIURL(owner, tag string) string {
-	return fmt.Sprintf("https://api.github.com/repos/%s/picoclaw/releases/tags/%s", owner, tag)
+	return "https://api.github.com/repos/" + owner + "/picoclaw/releases/tags/" + url.PathEscape(tag)
 }
 
-// GetNightlyReleaseAPIURL returns the nightly release API URL for the production repo.
+// GetNightlyReleaseAPIURL returns this fork's nightly release API URL.
 func GetNightlyReleaseAPIURL() string {
-	return GetReleaseTagAPIURL("sipeed", "nightly")
+	return releaseAPIURL(DefaultRepository, true)
 }
 
-// findAssetURL resolves the appropriate asset URL for the given release
-// selector. It accepts direct archive URLs as well as GitHub release URLs
-// or empty (latest release for the project).
+func releaseAPIURL(repository string, nightly bool) string {
+	suffix := "/latest"
+	if nightly {
+		suffix = "/tags/nightly"
+	}
+	return "https://api.github.com/repos/" + repository + "/releases" + suffix
+}
+
+func validRepository(repository string) bool {
+	parts := strings.Split(repository, "/")
+	if len(parts) != 2 {
+		return false
+	}
+	for _, part := range parts {
+		if part == "." || part == ".." || !regexp.MustCompile(`^[a-zA-Z0-9_.-]+$`).MatchString(part) {
+			return false
+		}
+	}
+	return true
+}
+
+// findAssetInfo resolves the appropriate asset URL for the given release
+// selector. An empty selector uses this fork; direct archives are rejected
+// because release checksum metadata is required.
 func findAssetInfo(releaseURL, platform, arch string) (string, string, error) {
 	// returns (assetURL, sha256ChecksumHex, error)
 	if looksLikeDirectAssetURL(releaseURL) {
-		return "", "", fmt.Errorf("no checksum found for asset %s", releaseURL)
+		return "", "", fmt.Errorf(
+			"direct archive URLs are unsupported: use the release page or API URL to obtain a verified checksum for %s",
+			releaseURL,
+		)
 	}
 
-	apiURL := buildReleaseAPIURL(releaseURL)
-	if apiURL == "" {
-		// If caller provided an empty releaseURL, default to the
-		// production latest release API URL (stable release).
-		apiURL = GetProdReleaseAPIURL()
+	apiURL, err := buildReleaseAPIURL(releaseURL)
+	if err != nil {
+		return "", "", err
 	}
 
 	resp, err := getWithRetry(apiURL)
@@ -229,8 +263,14 @@ func findAssetInfo(releaseURL, platform, arch string) (string, string, error) {
 		return "", "", err
 	}
 	defer resp.Body.Close()
+	if resp.StatusCode == http.StatusNotFound {
+		return "", "", fmt.Errorf(
+			"release not found at %s: publish the selected release and matching archives first; no alternate source was queried",
+			apiURL,
+		)
+	}
 	if resp.StatusCode != http.StatusOK {
-		return "", "", fmt.Errorf("failed to query releases: status %d", resp.StatusCode)
+		return "", "", fmt.Errorf("failed to query releases at %s: status %d", apiURL, resp.StatusCode)
 	}
 
 	var data struct {
@@ -261,7 +301,10 @@ func findAssetInfo(releaseURL, platform, arch string) (string, string, error) {
 	var platformIdx []int
 	for i, a := range data.Assets {
 		n := strings.ToLower(a.Name)
-		if platform == "" || strings.Contains(n, platformLower) {
+		if !(isZip(n) || isTarGz(n) || isTar(n)) {
+			continue
+		}
+		if platform == "" || assetHasToken(n, platformLower) {
 			platformIdx = append(platformIdx, i)
 		}
 	}
@@ -278,7 +321,7 @@ func findAssetInfo(releaseURL, platform, arch string) (string, string, error) {
 			for _, i := range idxs {
 				n := strings.ToLower(data.Assets[i].Name)
 				for _, ali := range aliases {
-					if strings.Contains(n, ali) {
+					if assetHasToken(n, ali) {
 						archIdx = append(archIdx, i)
 						break
 					}
@@ -331,8 +374,7 @@ func findAssetInfo(releaseURL, platform, arch string) (string, string, error) {
 		if d := strings.TrimSpace(data.Assets[idx].Digest); d != "" {
 			dLower := strings.ToLower(d)
 			if strings.HasPrefix(dLower, "sha256:") {
-				hexpart := strings.TrimPrefix(dLower, "sha256:")
-				return url, hexpart, nil
+				dLower = strings.TrimPrefix(dLower, "sha256:")
 			}
 			// If digest already looks like a 64-hex, return it
 			if ok, _ := regexp.MatchString("(?i)^[a-f0-9]{64}$", dLower); ok {
@@ -353,7 +395,7 @@ func findAssetInfo(releaseURL, platform, arch string) (string, string, error) {
 				}
 				bs, err := io.ReadAll(resp2.Body)
 				_ = resp2.Body.Close()
-				if err != nil {
+				if err != nil || resp2.StatusCode != http.StatusOK {
 					continue
 				}
 				if h, ok := findHashInChecksumContent(bs, url); ok {
@@ -386,33 +428,72 @@ func looksLikeDirectAssetURL(u string) bool {
 	return false
 }
 
-func buildReleaseAPIURL(releaseURL string) string {
+func buildReleaseAPIURL(releaseURL string) (string, error) {
 	if releaseURL == "" {
-		return ""
+		return GetProdReleaseAPIURL(), nil
 	}
-	if strings.Contains(releaseURL, "api.github.com") {
-		return releaseURL
+	invalid := func() (string, error) {
+		return "", fmt.Errorf(
+			"invalid release URL %q: use a GitHub repository, release page, or Releases API URL",
+			releaseURL,
+		)
 	}
 	u, err := url.Parse(releaseURL)
-	if err != nil {
-		return ""
+	if err != nil || (u.Scheme != "https" && u.Scheme != "http") || u.Host == "" || u.User != nil || u.RawQuery != "" ||
+		u.Fragment != "" {
+		return invalid()
 	}
-	if u.Host != "github.com" {
-		return ""
+	parts := strings.Split(strings.Trim(u.EscapedPath(), "/"), "/")
+	if u.Host == "github.com" {
+		if len(parts) < 2 || !validRepository(parts[0]+"/"+parts[1]) {
+			return invalid()
+		}
+		repository := parts[0] + "/" + parts[1]
+		switch {
+		case len(parts) == 2,
+			len(parts) == 3 && parts[2] == "releases",
+			len(parts) == 4 && parts[2] == "releases" && parts[3] == "latest":
+			return releaseAPIURL(repository, false), nil
+		case len(parts) == 5 && parts[2] == "releases" && parts[3] == "tag" && parts[4] != "":
+			return "https://api.github.com/repos/" + repository + "/releases/tags/" + parts[4], nil
+		default:
+			return invalid()
+		}
 	}
-	parts := strings.Split(strings.Trim(u.Path, "/"), "/")
-	if len(parts) < 2 {
-		return ""
+	// Explicit API endpoints also support compatible proxies and local test servers.
+	if (len(parts) == 5 && parts[4] == "latest" || len(parts) == 6 && parts[4] == "tags" && parts[5] != "") &&
+		parts[0] == "repos" &&
+		parts[3] == "releases" &&
+		validRepository(parts[1]+"/"+parts[2]) {
+		return u.String(), nil
 	}
-	owner := parts[0]
-	repo := parts[1]
-	// if tag specified
-	if len(parts) >= 5 && parts[2] == "releases" && parts[3] == "tag" {
-		tag := parts[4]
-		return fmt.Sprintf("https://api.github.com/repos/%s/%s/releases/tags/%s", owner, repo, tag)
+	return invalid()
+}
+
+// Match complete name components, so arm cannot accidentally select arm64,
+// or 386 (x86) select x86_64. Normalize the compound x86_64 spelling first.
+func assetHasToken(name, token string) bool {
+	normalize := func(value string) string {
+		return strings.NewReplacer("x86_64", "amd64", "x86-64", "amd64").Replace(strings.ToLower(value))
 	}
-	// default to latest
-	return fmt.Sprintf("https://api.github.com/repos/%s/%s/releases/latest", owner, repo)
+	token = normalize(token)
+	for _, part := range strings.FieldsFunc(normalize(name), func(r rune) bool { return !unicode.IsLetter(r) && !unicode.IsDigit(r) }) {
+		if part == token {
+			return true
+		}
+	}
+	return false
+}
+
+func sameArchitecture(a, b string) bool {
+	for _, left := range archAliases(strings.ToLower(a)) {
+		for _, right := range archAliases(strings.ToLower(b)) {
+			if left == right {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // NOTE: helper functions to compute SHA256 from URL/path were removed
@@ -507,13 +588,7 @@ func humanBytes(n int64) string {
 	}
 }
 
-// archAliases returns common name variants for an architecture string
-// so we can match release asset names like "x86_64" vs Go's "amd64".
-// archAliases returns name variants for an architecture string.
-// If `arch` is empty or matches the local runtime.GOARCH, prefer the
-// compile-time architecture aliases provided by archAliasesForLocal
-// (implemented per-architecture via build tags). For other `arch`
-// values we use a small synonyms map.
+// archAliases returns common release filename variants for a Go architecture.
 func archAliases(arch string) []string {
 	a := strings.ToLower(arch)
 	if syns, ok := archSynonyms[a]; ok {
@@ -530,7 +605,7 @@ var archSynonyms = map[string][]string{
 	"x86":     {"386", "x86"},
 	"arm64":   {"arm64", "aarch64"},
 	"aarch64": {"arm64", "aarch64"},
-	"arm":     {"arm"},
+	"arm":     {"arm", "armv6", "armv7"},
 }
 
 func extractArchive(archivePath, destDir string) error {
@@ -663,62 +738,108 @@ func extractTarFromReader(tr *tar.Reader, destDir string) error {
 }
 
 func findBinaryInDir(dir, programName string) (string, error) {
-	wanted := []string{programName}
-	if runtime.GOOS == "windows" {
-		wanted = append([]string{programName + ".exe"}, wanted...)
-	} else {
-		// also accept programs with .exe in archives targeting windows
-		wanted = append(wanted, programName+".exe")
+	names := []string{programName}
+	if programName == "picoclaw" {
+		names = append(names, "picoclaw-beta")
+	}
+	var wanted []string
+	for _, name := range names {
+		if runtime.GOOS == "windows" {
+			wanted = append(wanted, name+".exe", name)
+		} else {
+			wanted = append(wanted, name, name+".exe")
+		}
 	}
 
-	var found string
-	if err := filepath.WalkDir(dir, func(p string, d os.DirEntry, err error) error {
-		if err != nil || found != "" {
-			return err
-		}
-		if d.IsDir() {
-			return nil
-		}
-		base := filepath.Base(p)
-		for _, w := range wanted {
-			if base == w {
+	for _, wantedName := range wanted {
+		var found string
+		if err := filepath.WalkDir(dir, func(p string, d os.DirEntry, err error) error {
+			if err != nil || found != "" {
+				return err
+			}
+			if d.IsDir() {
+				return nil
+			}
+			base := filepath.Base(p)
+			if base == wantedName {
 				found = p
 				return io.EOF // use EOF to stop walking early
 			}
+			return nil
+		}); err != nil && err != io.EOF {
+			return "", err
 		}
-		return nil
-	}); err != nil && err != io.EOF {
-		return "", err
+		if found != "" {
+			return found, nil
+		}
 	}
-	if found == "" {
-		return "", fmt.Errorf("binary %q not found in archive", programName)
-	}
-	return found, nil
+	return "", fmt.Errorf("binary %q not found in archive", programName)
 }
 
 // NewUpdateCommand returns a cobra command that triggers UpdateSelfFromRelease.
 func NewUpdateCommand(binaryName string) *cobra.Command {
-	var urlStr, platform, arch string
+	var urlStr, repository, platform, arch string
+	var nightly, check bool
 	cmd := &cobra.Command{
 		Use:   "update",
-		Short: "Check and apply updates from GitHub releases",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			if platform == "" {
-				platform = runtime.GOOS
+		Short: "Check and apply updates from this fork's GitHub releases",
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			if !validRepository(repository) {
+				return fmt.Errorf("invalid repository %q: expected owner/repo", repository)
 			}
-			if arch == "" {
-				arch = runtime.GOARCH
+			selector := urlStr
+			if selector == "" {
+				selector = releaseAPIURL(repository, nightly)
 			}
-			fmt.Printf("Current version: %s\n", config.FormatVersion())
-			if err := UpdateSelfFromRelease(urlStr, platform, arch, binaryName); err != nil {
+			source, err := buildReleaseAPIURL(selector)
+			if err != nil {
 				return err
 			}
-			fmt.Println("Update applied; restart to use the new version.")
+			targetPlatform, targetArch := platform, arch
+			if targetPlatform == "" {
+				targetPlatform = runtime.GOOS
+			}
+			if targetArch == "" {
+				targetArch = runtime.GOARCH
+			}
+			fmt.Fprintf(
+				cmd.OutOrStdout(),
+				"Current version: %s\nRelease source: %s\nTarget: %s/%s\n",
+				config.FormatVersion(),
+				source,
+				targetPlatform,
+				targetArch,
+			)
+			if check {
+				asset, checksum, err := findAssetInfo(source, targetPlatform, targetArch)
+				if err != nil {
+					return err
+				}
+				fmt.Fprintf(
+					cmd.OutOrStdout(),
+					"Release asset: %s\nSHA256: %s\nCheck complete; no files changed.\n",
+					asset,
+					checksum,
+				)
+				return nil
+			}
+			if err := UpdateSelfFromRelease(source, targetPlatform, targetArch, binaryName); err != nil {
+				return err
+			}
+			fmt.Fprintln(cmd.OutOrStdout(), "Update applied to the current executable; restart to use the new version.")
 			return nil
 		},
 	}
-	cmd.Flags().StringVarP(&urlStr, "url", "u", "", "Direct URL to download release asset or release page")
-	cmd.Flags().StringVar(&platform, "platform", "", "Target platform (default: runtime.GOOS)")
-	cmd.Flags().StringVar(&arch, "arch", "", "Target arch (default: runtime.GOARCH)")
+	cmd.Flags().StringVar(&repository, "repo", DefaultRepository, "GitHub release repository (owner/repo)")
+	cmd.Flags().BoolVar(&nightly, "nightly", false, "Use the selected repository's nightly release")
+	cmd.Flags().
+		BoolVar(&check, "check", false, "Check release metadata without downloading the binary or replacing files")
+	cmd.Flags().
+		StringVarP(&urlStr, "url", "u", "", "GitHub repository, release page, or Releases API URL (archive URLs are unsupported)")
+	cmd.Flags().StringVar(&platform, "platform", "", "Target platform (cross-platform queries require --check)")
+	cmd.Flags().StringVar(&arch, "arch", "", "Target architecture (cross-architecture queries require --check)")
+	cmd.MarkFlagsMutuallyExclusive("url", "repo")
+	cmd.MarkFlagsMutuallyExclusive("url", "nightly")
 	return cmd
 }

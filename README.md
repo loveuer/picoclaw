@@ -59,6 +59,32 @@ make build GOOS=linux GOARCH=amd64 \
 # 产物：build/picoclaw-beta-linux-amd64
 ```
 
+## 自更新
+
+`update` 默认从本 fork 的 `loveuer/picoclaw` GitHub Releases 获取更新，不会自动回退到上游。
+
+```bash
+# 检查稳定版发布产物和校验信息，不下载二进制、不替换文件
+picoclaw update --check
+
+# 应用稳定版；也可将命令名换成实际安装的 picoclaw-beta
+picoclaw update
+
+# 检查 / 应用本 fork 的 nightly Release
+picoclaw update --nightly --check
+picoclaw update --nightly
+
+# 显式选择其他 fork 或固定版本
+picoclaw update --repo owner/repo --check
+picoclaw update --url https://github.com/loveuer/picoclaw/releases/tag/v1.0.0 --check
+```
+
+`--url` 支持 GitHub 仓库、Release 页面或 Releases API 地址，与 `--repo`、`--nightly` 互斥。不会把无效地址当成默认源。`--check` 检查产物可用性，不比较版本新旧；可配合 `--platform`、`--arch` 查询其他平台，实际自更新仅允许当前系统与架构。
+
+发布更新时需要先在本 fork 创建稳定版 Release 或名为 `nightly` 的 Release，并上传对应平台的 `.tar.gz`、`.tgz`、`.tar` 或 `.zip` 包。例如 `picoclaw_Linux_x86_64.tar.gz`，内部包含 `picoclaw` 或 `picoclaw-beta`（Windows 对应 `.exe`）。需要 GitHub 提供的 SHA256 digest，或包含产物文件名与 SHA256 的 checksums 文件。单独的二进制下载链接目前不支持。
+
+更新会校验下载文件并替换当前可执行文件，保留实际安装名称，需要对安装目录有写权限。沿用现有回滚机制保留旧 binary 为 `.old`；不会修改用户配置、自动重启服务或覆盖工作区 Skill。更新后按部署方式重启；需要刷新内置 Skill 时，再使用 `skills install-builtin`。
+
 ## 配置与运行
 
 ### 1. 初始化
