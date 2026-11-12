@@ -36,7 +36,7 @@ This guide explains how to configure both for real deployments.
 }
 ```
 
-### Route only Slack mentions in one workspace
+### Route only Discord mentions in one workspace
 
 ```json
 {
@@ -48,11 +48,11 @@ This guide explains how to configure both for real deployments.
     "dispatch": {
       "rules": [
         {
-          "name": "slack mentions",
+          "name": "discord mentions",
           "agent": "support",
           "when": {
-            "channel": "slack",
-            "space": "workspace:t001",
+            "channel": "discord",
+            "space": "guild:t001",
             "mentioned": true
           }
         }
@@ -109,9 +109,9 @@ If no rule matches, PicoClaw falls back to the default agent.
 
 | Field | Meaning | Example |
 | --- | --- | --- |
-| `channel` | Channel name | `telegram`, `slack`, `discord` |
+| `channel` | Channel name | `telegram`, `discord`, `feishu` |
 | `account` | Normalized account ID | `default`, `bot2` |
-| `space` | Workspace, guild, or similar container | `workspace:t001`, `guild:123456` |
+| `space` | Workspace, guild, or similar container | `guild:t001`, `guild:123456` |
 | `chat` | Direct chat, group, or channel | `direct:user123`, `group:-100123`, `channel:c123` |
 | `topic` | Thread or topic | `topic:42` |
 | `sender` | Normalized sender identity | `12345`, `john` |
@@ -202,7 +202,7 @@ Example:
 {
   "session": {
     "identity_links": {
-      "john": ["slack:u123", "legacy-user-42"]
+      "john": ["discord:u123", "legacy-user-42"]
     }
   },
   "agents": {

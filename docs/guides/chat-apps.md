@@ -4,7 +4,7 @@
 
 ## 💬 Chat Apps
 
-Talk to your picoclaw through Telegram, Discord, WhatsApp, Matrix, QQ, DingTalk, LINE, WeCom, Feishu, Slack, IRC, OneBot, MQTT
+Talk to your picoclaw through Telegram, Discord, WhatsApp, QQ, DingTalk, LINE, WeCom, Feishu, OneBot, MQTT
 
 > **Note**: Channels that rely on HTTP callbacks share a single Gateway HTTP server (`gateway.host`:`gateway.port`, default `127.0.0.1:18790`). Socket/stream-based channels such as Feishu, DingTalk, and WeCom do not rely on the shared webhook server for inbound delivery.
 
@@ -14,14 +14,11 @@ Talk to your picoclaw through Telegram, Discord, WhatsApp, Matrix, QQ, DingTalk,
 | **Discord**          | ⭐ Easy            | Socket Mode, group/DM support, rich bot ecosystem     | [Docs](../channels/discord/README.md)                                                                           |
 | **WhatsApp**         | ⭐ Easy            | Native (QR scan) or Bridge URL                        | [Docs](#whatsapp)                                                                                                |
 | **Weixin**           | ⭐ Easy            | Native QR scan (Tencent iLink API)                    | [Docs](#weixin)                                                                            |
-| **Slack**            | ⭐ Easy            | **Socket Mode** (no public IP needed), enterprise     | [Docs](../channels/slack/README.md)                                                                             |
-| **Matrix**           | ⭐⭐ Medium        | Federated protocol, self-hosting supported            | [Docs](../channels/matrix/README.md)                                                                            |
 | **QQ**               | ⭐⭐ Medium        | Official bot API, Chinese community                   | [Docs](../channels/qq/README.md)                                                                                |
 | **DingTalk**         | ⭐⭐ Medium        | Stream mode (no public IP needed), enterprise         | [Docs](../channels/dingtalk/README.md)                                                                          |
 | **LINE**             | ⭐⭐⭐ Advanced    | HTTPS Webhook required                                | [Docs](../channels/line/README.md)                                                                              |
 | **WeCom (企业微信)** | ⭐⭐⭐ Advanced    | Official AI Bot over WebSocket, streaming + media     | [Docs](../channels/wecom/README.md) |
 | **Feishu (飞书)**    | ⭐⭐⭐ Advanced    | Enterprise collaboration, feature-rich                | [Docs](../channels/feishu/README.md)                                                                            |
-| **IRC**              | ⭐⭐ Medium        | Server + TLS configuration                            | [Docs](#irc)                                                                                                     |
 | **OneBot**           | ⭐⭐ Medium        | NapCat/Go-CQHTTP compatible, community ecosystem      | [Docs](../channels/onebot/README.md)                                                                            |
 | **MQTT**             | ⭐ Easy            | Any MQTT client via broker pub/sub                    | [Docs](../channels/mqtt/README.md)                                                                              |
 
@@ -300,42 +297,6 @@ picoclaw gateway
 ```
 </details>
 
-<a id="matrix"></a>
-<details>
-<summary><b>Matrix</b></summary>
-
-**1. Prepare bot account**
-
-* Use your preferred homeserver (e.g. `https://matrix.org` or self-hosted)
-* Create a bot user and obtain its access token
-
-**2. Configure**
-
-```json
-{
-  "channel_list": {
-    "matrix": {
-      "enabled": true,
-      "type": "matrix",
-      "homeserver": "https://matrix.org",
-      "user_id": "@your-bot:matrix.org",
-      "access_token": "YOUR_MATRIX_ACCESS_TOKEN",
-      "allow_from": []
-    }
-  }
-}
-```
-
-**3. Run**
-
-```bash
-picoclaw gateway
-```
-
-For full options (`device_id`, `join_on_invite`, `group_trigger`, `placeholder`, `reasoning_channel_id`), see [Matrix Channel Configuration Guide](../channels/matrix/README.md).
-
-</details>
-
 <a id="line"></a>
 <details>
 <summary><b>LINE</b></summary>
@@ -474,76 +435,6 @@ picoclaw gateway
 Open Feishu, search for your bot name, and start chatting. You can also add the bot to a group — use `group_trigger.mention_only: true` to only respond when @mentioned.
 
 For full options, see [Feishu Channel Configuration Guide](../channels/feishu/README.md).
-
-</details>
-
-<a id="slack"></a>
-<details>
-<summary><b>Slack</b></summary>
-
-**1. Create a Slack app**
-
-* Go to [Slack API](https://api.slack.com/apps) and create a new app
-* Under **OAuth & Permissions**, add bot scopes: `chat:write`, `app_mentions:read`, `im:history`, `im:read`, `im:write`
-* Install the app to your workspace
-* Copy the **Bot Token** (`xoxb-...`) and **App-Level Token** (`xapp-...`, enable Socket Mode to get this)
-
-**2. Configure**
-
-```json
-{
-  "channel_list": {
-    "slack": {
-      "enabled": true,
-      "type": "slack",
-      "bot_token": "xoxb-YOUR-BOT-TOKEN",
-      "app_token": "xapp-YOUR-APP-TOKEN",
-      "allow_from": []
-    }
-  }
-}
-```
-
-**3. Run**
-
-```bash
-picoclaw gateway
-```
-
-</details>
-
-<a id="irc"></a>
-<details>
-<summary><b>IRC</b></summary>
-
-**1. Configure**
-
-```json
-{
-  "channel_list": {
-    "irc": {
-      "enabled": true,
-      "type": "irc",
-      "server": "irc.libera.chat:6697",
-      "tls": true,
-      "nick": "picoclaw-bot",
-      "channels": ["#your-channel"],
-      "password": "",
-      "allow_from": []
-    }
-  }
-}
-```
-
-Optional: `nickserv_password` for NickServ authentication, `sasl_user`/`sasl_password` for SASL auth.
-
-**2. Run**
-
-```bash
-picoclaw gateway
-```
-
-The bot will connect to the IRC server and join the specified channels.
 
 </details>
 

@@ -88,11 +88,11 @@ type ResolvedRoute struct {
           }
         },
         {
-          "name": "slack-mentions",
+          "name": "discord-mentions",
           "agent": "support",
           "when": {
-            "channel": "slack",
-            "space": "workspace:t001",
+            "channel": "discord",
+            "space": "guild:t001",
             "mentioned": true
           }
         }

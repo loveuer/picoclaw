@@ -168,7 +168,7 @@ func TestAgentCheckSilencePublishesInboundAndCleansUp(t *testing.T) {
 		chatID:      "chat",
 		speakerID:   "speaker",
 		sessionID:   "sess",
-		channel:     "slack",
+		channel:     "discord",
 	}
 
 	agent.mu.Lock()
@@ -179,7 +179,7 @@ func TestAgentCheckSilencePublishesInboundAndCleansUp(t *testing.T) {
 
 	select {
 	case msg := <-mb.InboundChan():
-		if msg.Channel != "slack" {
+		if msg.Channel != "discord" {
 			t.Fatalf("unexpected inbound channel: %q", msg.Channel)
 		}
 		if !strings.Contains(msg.Content, "hello there") {

@@ -368,13 +368,10 @@ Bicara dengan PicoClaw Anda melalui 17+ platform pesan:
 | **WhatsApp** | Mudah (scan QR atau bridge URL) | Native / Bridge | [Panduan](../guides/chat-apps.md#whatsapp) |
 | **Weixin** | Mudah (scan QR native) | iLink API | [Panduan](../guides/chat-apps.md#weixin) |
 | **QQ** | Mudah (AppID + AppSecret) | WebSocket | [Panduan](../channels/qq/README.md) |
-| **Slack** | Mudah (bot + app token) | Socket Mode | [Panduan](../channels/slack/README.md) |
-| **Matrix** | Sedang (homeserver + token) | Sync API | [Panduan](../channels/matrix/README.md) |
 | **DingTalk** | Sedang (client credentials) | Stream | [Panduan](../channels/dingtalk/README.md) |
 | **Feishu / Lark** | Sedang (App ID + Secret) | WebSocket/SDK | [Panduan](../channels/feishu/README.md) |
 | **LINE** | Sedang (credentials + webhook) | Webhook | [Panduan](../channels/line/README.md) |
 | **WeCom** | Mudah (login QR atau manual) | WebSocket | [Panduan](../channels/wecom/README.md) |
-| **IRC** | Sedang (server + nick) | IRC protocol | [Panduan](../guides/chat-apps.md#irc) |
 | **OneBot** | Sedang (WebSocket URL) | OneBot v11 | [Panduan](../channels/onebot/README.md) |
 
 > Semua channel berbasis webhook berbagi satu server HTTP Gateway (`gateway.host`:`gateway.port`, default `127.0.0.1:18790`). Feishu menggunakan mode WebSocket/SDK dan tidak menggunakan server HTTP bersama.

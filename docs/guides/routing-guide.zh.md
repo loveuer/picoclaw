@@ -36,7 +36,7 @@ PicoClaw 里用户能直接感知到的“路由”主要有两部分：
 }
 ```
 
-### 只处理某个 Slack workspace 里的 @提及
+### 只处理某个 Discord server 里的 @提及
 
 ```json
 {
@@ -48,11 +48,11 @@ PicoClaw 里用户能直接感知到的“路由”主要有两部分：
     "dispatch": {
       "rules": [
         {
-          "name": "slack mentions",
+          "name": "discord mentions",
           "agent": "support",
           "when": {
-            "channel": "slack",
-            "space": "workspace:t001",
+            "channel": "discord",
+            "space": "guild:t001",
             "mentioned": true
           }
         }
@@ -109,9 +109,9 @@ agents.dispatch.rules
 
 | 字段 | 含义 | 示例 |
 | --- | --- | --- |
-| `channel` | Channel 名称 | `telegram`、`slack`、`discord` |
+| `channel` | Channel 名称 | `telegram`、`discord`、`feishu` |
 | `account` | 归一化后的 account ID | `default`、`bot2` |
-| `space` | workspace、guild 等上层容器 | `workspace:t001`、`guild:123456` |
+| `space` | workspace、guild 等上层容器 | `guild:t001`、`guild:123456` |
 | `chat` | 私聊、群或频道 | `direct:user123`、`group:-100123`、`channel:c123` |
 | `topic` | 线程或话题 | `topic:42` |
 | `sender` | 归一化后的发送者身份 | `12345`、`john` |
@@ -202,7 +202,7 @@ agents.dispatch.rules
 {
   "session": {
     "identity_links": {
-      "john": ["slack:u123", "legacy-user-42"]
+      "john": ["discord:u123", "legacy-user-42"]
     }
   },
   "agents": {

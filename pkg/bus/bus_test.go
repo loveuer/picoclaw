@@ -57,7 +57,7 @@ func TestPublishInbound_NormalizesContext(t *testing.T) {
 
 	msg := InboundMessage{
 		Context: InboundContext{
-			Channel:          "slack",
+			Channel:          "discord",
 			Account:          "workspace-a",
 			ChatID:           "C456/1712",
 			ChatType:         "group",
@@ -77,8 +77,8 @@ func TestPublishInbound_NormalizesContext(t *testing.T) {
 	}
 
 	got := <-mb.InboundChan()
-	if got.Context.Channel != "slack" {
-		t.Fatalf("expected context channel slack, got %q", got.Context.Channel)
+	if got.Context.Channel != "discord" {
+		t.Fatalf("expected context channel discord, got %q", got.Context.Channel)
 	}
 	if got.Context.Account != "workspace-a" {
 		t.Fatalf("expected context account workspace-a, got %q", got.Context.Account)
@@ -394,7 +394,7 @@ func TestPublishOutboundMedia_MirrorsContextToLegacyFields(t *testing.T) {
 
 	msg := OutboundMediaMessage{
 		Context: InboundContext{
-			Channel: "slack",
+			Channel: "discord",
 			ChatID:  "C001",
 		},
 		AgentID:    "support",
@@ -402,7 +402,7 @@ func TestPublishOutboundMedia_MirrorsContextToLegacyFields(t *testing.T) {
 		Scope: &OutboundScope{
 			Version:    1,
 			AgentID:    "support",
-			Channel:    "slack",
+			Channel:    "discord",
 			Dimensions: []string{"chat"},
 			Values: map[string]string{
 				"chat": "channel:c001",
@@ -416,8 +416,8 @@ func TestPublishOutboundMedia_MirrorsContextToLegacyFields(t *testing.T) {
 	}
 
 	got := <-mb.OutboundMediaChan()
-	if got.Channel != "slack" {
-		t.Fatalf("expected legacy channel slack, got %q", got.Channel)
+	if got.Channel != "discord" {
+		t.Fatalf("expected legacy channel discord, got %q", got.Channel)
 	}
 	if got.ChatID != "C001" {
 		t.Fatalf("expected legacy chat ID C001, got %q", got.ChatID)
@@ -428,7 +428,7 @@ func TestPublishOutboundMedia_MirrorsContextToLegacyFields(t *testing.T) {
 	if got.Scope == nil || got.Scope.Values["chat"] != "channel:c001" {
 		t.Fatalf("unexpected outbound media scope: %+v", got.Scope)
 	}
-	if got.Context.Channel != "slack" || got.Context.ChatID != "C001" {
+	if got.Context.Channel != "discord" || got.Context.ChatID != "C001" {
 		t.Fatalf("unexpected outbound media context: %+v", got.Context)
 	}
 }

@@ -4,7 +4,7 @@
 
 ## 💬 聊天应用集成 (Chat Apps)
 
-PicoClaw 支持多种聊天平台，使您的 Agent 能够连接到任何地方，包括 Telegram、Discord、WhatsApp、微信、QQ、钉钉、LINE、企业微信、飞书、Slack、IRC、OneBot、MQTT 等。
+PicoClaw 支持多种聊天平台，使您的 Agent 能够连接到任何地方，包括 Telegram、Discord、WhatsApp、微信、QQ、钉钉、LINE、企业微信、飞书、OneBot、MQTT 等。
 
 > **注意**: 依赖 HTTP 回调的渠道共用同一个 Gateway HTTP 服务器（`gateway.host`:`gateway.port`，默认 `127.0.0.1:18790`），无需为每个渠道单独配置端口。飞书、钉钉、企业微信这类 Socket/Stream 模式渠道不依赖共享 webhook 服务器来接收入站消息。
 
@@ -16,14 +16,11 @@ PicoClaw 支持多种聊天平台，使您的 Agent 能够连接到任何地方�
 | **Discord**          | ⭐ 简单     | Socket Mode，支持群组/私信，Bot 生态成熟  | [查看文档](../channels/discord/README.zh.md)                                                                  |
 | **WhatsApp**         | ⭐ 简单     | 原生 (QR 扫码) 或 Bridge URL              | [查看文档](#whatsapp)                                                                 |
 | **微信 (Weixin)**    | ⭐ 简单     | 原生扫码（腾讯 iLink API）                | [查看文档](#weixin)                                                                   |
-| **Slack**            | ⭐ 简单     | **Socket Mode** (无需公网 IP)，企业级支持 | [查看文档](../channels/slack/README.zh.md)                                                                    |
-| **Matrix**           | ⭐⭐ 中等   | 联邦协议，支持自建 homeserver 与公开服务器 | [查看文档](../channels/matrix/README.zh.md)                                                                  |
 | **QQ**               | ⭐⭐ 中等   | 官方机器人 API，适合国内社群              | [查看文档](../channels/qq/README.zh.md)                                                                       |
 | **钉钉 (DingTalk)**  | ⭐⭐ 中等   | Stream 模式无需公网，企业办公首选         | [查看文档](../channels/dingtalk/README.zh.md)                                                                 |
 | **LINE**             | ⭐⭐⭐ 较难 | 需要 HTTPS Webhook                        | [查看文档](../channels/line/README.zh.md)                                                                     |
 | **企业微信 (WeCom)** | ⭐⭐⭐ 较难 | 官方 AI Bot WebSocket 接入，支持流式回复和媒体消息 | [查看文档](../channels/wecom/README.zh.md) |
 | **飞书 (Feishu)**    | ⭐⭐⭐ 较难 | 企业级协作，功能丰富                      | [查看文档](../channels/feishu/README.zh.md)                                                                   |
-| **IRC**              | ⭐⭐ 中等   | 服务器 + TLS 配置                         | [查看文档](#irc) |
 | **OneBot**           | ⭐⭐ 中等   | 兼容 NapCat/Go-CQHTTP，社区生态丰富       | [查看文档](../channels/onebot/README.zh.md)                                                                   |
 | **MQTT**             | ⭐ 简单     | 任意 MQTT 客户端通过 Broker 收发消息      | [查看文档](../channels/mqtt/README.zh.md)                                                                     |
 
@@ -221,42 +218,6 @@ picoclaw gateway
 
 </details>
 
-<a id="matrix"></a>
-<details>
-<summary><b>Matrix</b></summary>
-
-**1. 准备 Bot 账号**
-
-* 使用你的 homeserver（如 `https://matrix.org` 或自建）
-* 创建 Bot 用户并获取 access token
-
-**2. 配置**
-
-```json
-{
-  "channel_list": {
-    "matrix": {
-      "enabled": true,
-      "type": "matrix",
-      "homeserver": "https://matrix.org",
-      "user_id": "@your-bot:matrix.org",
-      "access_token": "YOUR_MATRIX_ACCESS_TOKEN",
-      "allow_from": []
-    }
-  }
-}
-```
-
-**3. 运行**
-
-```bash
-picoclaw gateway
-```
-
-完整选项（`device_id`、`join_on_invite`、`group_trigger`、`placeholder`、`reasoning_channel_id`）请参考 [Matrix 渠道配置指南](../channels/matrix/README.md)。
-
-</details>
-
 <a id="qq"></a>
 <details>
 <summary><b>QQ</b></summary>
@@ -297,76 +258,6 @@ QQ 开放平台提供了一键创建 OpenClaw 兼容机器人的页面：
 * 创建 QQ 机器人 — 自定义头像和名称
 * 从机器人设置中复制 **App ID** 和 **App Secret**
 * 按上述方式配置并运行 `picoclaw gateway`
-
-</details>
-
-<a id="slack"></a>
-<details>
-<summary><b>Slack</b></summary>
-
-**1. 创建 Slack App**
-
-* 前往 [Slack API](https://api.slack.com/apps) 创建新应用
-* 在 **OAuth & Permissions** 中添加 Bot 权限范围：`chat:write`、`app_mentions:read`、`im:history`、`im:read`、`im:write`
-* 将应用安装到你的工作区
-* 复制 **Bot Token**（`xoxb-...`）和 **App-Level Token**（`xapp-...`，启用 Socket Mode 后获取）
-
-**2. 配置**
-
-```json
-{
-  "channel_list": {
-    "slack": {
-      "enabled": true,
-      "type": "slack",
-      "bot_token": "xoxb-YOUR-BOT-TOKEN",
-      "app_token": "xapp-YOUR-APP-TOKEN",
-      "allow_from": []
-    }
-  }
-}
-```
-
-**3. 运行**
-
-```bash
-picoclaw gateway
-```
-
-</details>
-
-<a id="irc"></a>
-<details>
-<summary><b>IRC</b></summary>
-
-**1. 配置**
-
-```json
-{
-  "channel_list": {
-    "irc": {
-      "enabled": true,
-      "type": "irc",
-      "server": "irc.libera.chat:6697",
-      "tls": true,
-      "nick": "picoclaw-bot",
-      "channels": ["#your-channel"],
-      "password": "",
-      "allow_from": []
-    }
-  }
-}
-```
-
-可选：`nickserv_password` 用于 NickServ 认证，`sasl_user`/`sasl_password` 用于 SASL 认证。
-
-**2. 运行**
-
-```bash
-picoclaw gateway
-```
-
-Bot 将连接到 IRC 服务器并加入指定的频道。
 
 </details>
 

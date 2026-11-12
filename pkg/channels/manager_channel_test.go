@@ -180,28 +180,3 @@ func TestToChannelHashes_EnabledNotBool(t *testing.T) {
 	h := toChannelHashes(cfg)
 	assert.Equal(t, 0, len(h), "string enabled not treated as true")
 }
-
-func TestToChannelHashes_TeamsWebhookWithWebhooks(t *testing.T) {
-	cfg := config.DefaultConfig()
-	// teams_webhook with configured webhooks — this is the real-world
-	// scenario where the map type from JSON unmarshal (map[string]any)
-	// would cause a panic on the old unchecked vv.(map[string]string)
-	settings, _ := json.Marshal(map[string]any{
-		"enabled": true,
-		"webhooks": map[string]any{
-			"hook1": "https://example.com/webhook",
-		},
-	})
-	cfg.Channels["teams_webhook"] = &config.Channel{
-		Enabled:  true,
-		Type:     config.ChannelTeamsWebHook,
-		Settings: config.RawNode(settings),
-	}
-
-	assert.NotPanics(t, func() {
-		_ = toChannelHashes(cfg)
-	})
-	h := toChannelHashes(cfg)
-	assert.Equal(t, 1, len(h))
-	assert.Contains(t, h, "teams_webhook")
-}

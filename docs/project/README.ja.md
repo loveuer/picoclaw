@@ -369,13 +369,10 @@ Provider の完全な設定詳細は [Provider とモデル](../guides/providers
 | **WhatsApp** | 簡単（QR スキャンまたは bridge URL） | Native / Bridge | [ガイド](../guides/chat-apps.ja.md#whatsapp) |
 | **微信 (Weixin)** | 簡単（QR スキャン） | iLink API | [ガイド](../guides/chat-apps.ja.md#weixin) |
 | **QQ** | 簡単（AppID + AppSecret） | WebSocket | [ガイド](../channels/qq/README.ja.md) |
-| **Slack** | 簡単（bot + app トークン） | Socket Mode | [ガイド](../channels/slack/README.ja.md) |
-| **Matrix** | 中級（homeserver + トークン） | Sync API | [ガイド](../channels/matrix/README.ja.md) |
 | **DingTalk** | 中級（クライアント認証情報） | Stream | [ガイド](../channels/dingtalk/README.ja.md) |
 | **Feishu / Lark** | 中級（App ID + Secret） | WebSocket/SDK | [ガイド](../channels/feishu/README.ja.md) |
 | **LINE** | 中級（認証情報 + webhook） | Webhook | [ガイド](../channels/line/README.ja.md) |
 | **WeCom** | 簡単（QR ログインまたは手動） | WebSocket | [ガイド](../channels/wecom/README.ja.md) |
-| **IRC** | 中級（サーバー + nick） | IRC protocol | [ガイド](../guides/chat-apps.ja.md#irc) |
 | **OneBot** | 中級（WebSocket URL） | OneBot v11 | [ガイド](../channels/onebot/README.ja.md) |
 
 > webhook ベースのすべての Channel は単一の Gateway HTTP サーバー（`gateway.host`:`gateway.port`、デフォルト `127.0.0.1:18790`）を共有します。Feishu は WebSocket/SDK モードを使用し、共有 HTTP サーバーを使用しません。

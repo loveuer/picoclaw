@@ -4,7 +4,7 @@
 
 ## 💬 Ứng Dụng Chat
 
-Trò chuyện với picoclaw của bạn qua Telegram, Discord, WhatsApp, Matrix, QQ, DingTalk, LINE, WeCom, Feishu, Slack, IRC, OneBot, MQTT
+Trò chuyện với picoclaw của bạn qua Telegram, Discord, WhatsApp, QQ, DingTalk, LINE, WeCom, Feishu, OneBot, MQTT
 
 > **Lưu ý**: Tất cả các kênh dựa trên webhook (LINE, WeCom, v.v.) được phục vụ trên một máy chủ HTTP Gateway chung (`gateway.host`:`gateway.port`, mặc định `127.0.0.1:18790`). Không có port riêng cho từng kênh. Lưu ý: Feishu sử dụng chế độ WebSocket/SDK và không sử dụng máy chủ HTTP webhook chung.
 
@@ -14,14 +14,11 @@ Trò chuyện với picoclaw của bạn qua Telegram, Discord, WhatsApp, Matrix
 | **Discord**          | ⭐ Dễ              | Socket Mode, hỗ trợ nhóm/DM, hệ sinh thái bot phong phú | [Tài liệu](../channels/discord/README.vi.md)                                                                  |
 | **WhatsApp**         | ⭐ Dễ              | Bản địa (quét QR) hoặc Bridge URL                     | [Tài liệu](#whatsapp)                                                                                            |
 | **Weixin**           | ⭐ Dễ              | Quét QR gốc (API Tencent iLink)                       | [Tài liệu](#weixin)                                                                                              |
-| **Slack**            | ⭐ Dễ              | **Socket Mode** (không cần IP công khai), doanh nghiệp | [Tài liệu](../channels/slack/README.vi.md)                                                                      |
-| **Matrix**           | ⭐⭐ Trung bình    | Giao thức liên kết, hỗ trợ tự lưu trữ                | [Tài liệu](../channels/matrix/README.vi.md)                                                                     |
 | **QQ**               | ⭐⭐ Trung bình    | API bot chính thức, cộng đồng Trung Quốc              | [Tài liệu](../channels/qq/README.vi.md)                                                                         |
 | **DingTalk**         | ⭐⭐ Trung bình    | Chế độ Stream (không cần IP công khai), doanh nghiệp  | [Tài liệu](../channels/dingtalk/README.vi.md)                                                                   |
 | **LINE**             | ⭐⭐⭐ Nâng cao    | Yêu cầu HTTPS Webhook                                 | [Tài liệu](../channels/line/README.vi.md)                                                                       |
 | **WeCom (企业微信)** | ⭐⭐⭐ Nâng cao    | Bot nhóm (Webhook), ứng dụng tùy chỉnh (API), AI Bot | [Hướng dẫn](../channels/wecom/README.vi.md) |
 | **Feishu (飞书)**    | ⭐⭐⭐ Nâng cao    | Cộng tác doanh nghiệp, nhiều tính năng                | [Tài liệu](../channels/feishu/README.vi.md)                                                                     |
-| **IRC**              | ⭐⭐ Trung bình    | Máy chủ + cấu hình TLS                                | [Tài liệu](#irc) |
 | **OneBot**           | ⭐⭐ Trung bình    | Tương thích NapCat/Go-CQHTTP, hệ sinh thái cộng đồng  | [Tài liệu](../channels/onebot/README.vi.md)                                                                     |
 | **MQTT**             | ⭐ Dễ              | Bất kỳ client MQTT nào qua broker pub/sub            | [Tài liệu](../channels/mqtt/README.vi.md)                                                                    |
 
@@ -295,42 +292,6 @@ picoclaw gateway
 
 </details>
 
-<a id="matrix"></a>
-<details>
-<summary><b>Matrix</b></summary>
-
-**1. Chuẩn bị tài khoản bot**
-
-* Sử dụng homeserver ưa thích (ví dụ: `https://matrix.org` hoặc tự host)
-* Tạo user bot và lấy access token
-
-**2. Cấu hình**
-
-```json
-{
-  "channel_list": {
-    "matrix": {
-      "enabled": true,
-      "type": "matrix",
-      "homeserver": "https://matrix.org",
-      "user_id": "@your-bot:matrix.org",
-      "access_token": "YOUR_MATRIX_ACCESS_TOKEN",
-      "allow_from": []
-    }
-  }
-}
-```
-
-**3. Chạy**
-
-```bash
-picoclaw gateway
-```
-
-Để xem đầy đủ các tùy chọn (`device_id`, `join_on_invite`, `group_trigger`, `placeholder`, `reasoning_channel_id`), xem [Hướng Dẫn Cấu Hình Kênh Matrix](../channels/matrix/README.md).
-
-</details>
-
 <a id="line"></a>
 <details>
 <summary><b>LINE</b></summary>
@@ -537,76 +498,6 @@ picoclaw gateway
 Mở Feishu, tìm tên bot của bạn và bắt đầu trò chuyện. Bạn cũng có thể thêm bot vào nhóm — sử dụng `group_trigger.mention_only: true` để chỉ phản hồi khi được @mention.
 
 Để xem đầy đủ các tùy chọn, xem [Hướng Dẫn Cấu Hình Kênh Feishu](../channels/feishu/README.vi.md).
-
-</details>
-
-<a id="slack"></a>
-<details>
-<summary><b>Slack</b></summary>
-
-**1. Tạo ứng dụng Slack**
-
-* Truy cập [Slack API](https://api.slack.com/apps) và tạo ứng dụng mới
-* Trong **OAuth & Permissions**, thêm các scope bot: `chat:write`, `app_mentions:read`, `im:history`, `im:read`, `im:write`
-* Cài đặt ứng dụng vào workspace của bạn
-* Sao chép **Bot Token** (`xoxb-...`) và **App-Level Token** (`xapp-...`, bật Socket Mode để lấy token này)
-
-**2. Cấu hình**
-
-```json
-{
-  "channel_list": {
-    "slack": {
-      "enabled": true,
-      "type": "slack",
-      "bot_token": "xoxb-YOUR-BOT-TOKEN",
-      "app_token": "xapp-YOUR-APP-TOKEN",
-      "allow_from": []
-    }
-  }
-}
-```
-
-**3. Chạy**
-
-```bash
-picoclaw gateway
-```
-
-</details>
-
-<a id="irc"></a>
-<details>
-<summary><b>IRC</b></summary>
-
-**1. Cấu hình**
-
-```json
-{
-  "channel_list": {
-    "irc": {
-      "enabled": true,
-      "type": "irc",
-      "server": "irc.libera.chat:6697",
-      "tls": true,
-      "nick": "picoclaw-bot",
-      "channels": ["#your-channel"],
-      "password": "",
-      "allow_from": []
-    }
-  }
-}
-```
-
-Tùy chọn: `nickserv_password` để xác thực NickServ, `sasl_user`/`sasl_password` để xác thực SASL.
-
-**2. Chạy**
-
-```bash
-picoclaw gateway
-```
-
-Bot sẽ kết nối đến máy chủ IRC và tham gia các kênh đã chỉ định.
 
 </details>
 

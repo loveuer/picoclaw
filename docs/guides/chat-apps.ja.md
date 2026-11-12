@@ -16,14 +16,11 @@ PicoClaw は複数のチャットプラットフォームをサポートして�
 | **Discord**          | ⭐ 簡単            | Socket Mode、グループ/DM 対応、Bot エコシステム充実 | [ドキュメント](../channels/discord/README.ja.md)                                                              |
 | **WhatsApp**         | ⭐ 簡単            | ネイティブ (QR スキャン) または Bridge URL | [ドキュメント](#whatsapp)                                                             |
 | **微信 (Weixin)**    | ⭐ 簡単            | ネイティブ QR スキャン（Tencent iLink API）| [ドキュメント](#weixin)                                                               |
-| **Slack**            | ⭐ 簡単            | **Socket Mode** (公開 IP 不要)、エンタープライズ対応 | [ドキュメント](../channels/slack/README.ja.md)                                                                |
-| **Matrix**           | ⭐⭐ 中程度        | フェデレーションプロトコル、セルフホスト対応 | [ドキュメント](../channels/matrix/README.ja.md)                                                              |
 | **QQ**               | ⭐⭐ 中程度        | 公式ボット API、中国コミュニティ向け       | [ドキュメント](../channels/qq/README.ja.md)                                                                   |
 | **DingTalk**         | ⭐⭐ 中程度        | Stream モード（公開 IP 不要）、企業向け    | [ドキュメント](../channels/dingtalk/README.ja.md)                                                             |
 | **LINE**             | ⭐⭐⭐ やや難      | HTTPS Webhook が必要                       | [ドキュメント](../channels/line/README.ja.md)                                                                 |
 | **WeCom (企業微信)** | ⭐⭐⭐ やや難      | グループ Bot (Webhook)、カスタムアプリ (API)、AI Bot 対応 | [ガイド](../channels/wecom/README.ja.md) |
 | **Feishu (飛書)**    | ⭐⭐⭐ やや難      | エンタープライズコラボレーション、機能豊富 | [ドキュメント](../channels/feishu/README.ja.md)                                                               |
-| **IRC**              | ⭐⭐ 中程度        | サーバー + TLS 設定                        | [ドキュメント](#irc) |
 | **OneBot**           | ⭐⭐ 中程度        | NapCat/Go-CQHTTP 互換、コミュニティエコシステム充実 | [ドキュメント](../channels/onebot/README.ja.md)                                                               |
 | **MQTT**             | ⭐ 簡単            | ブローカー経由で任意の MQTT クライアントと通信 | [ドキュメント](../channels/mqtt/README.ja.md)                                                                 |
 
@@ -213,42 +210,6 @@ picoclaw gateway
 
 </details>
 
-<a id="matrix"></a>
-<details>
-<summary><b>Matrix</b></summary>
-
-**1. Bot アカウントを準備**
-
-* お好みの homeserver（例: `https://matrix.org` またはセルフホスト）を使用
-* Bot ユーザーを作成し、access token を取得
-
-**2. 設定**
-
-```json
-{
-  "channel_list": {
-    "matrix": {
-      "enabled": true,
-      "type": "matrix",
-      "homeserver": "https://matrix.org",
-      "user_id": "@your-bot:matrix.org",
-      "access_token": "YOUR_MATRIX_ACCESS_TOKEN",
-      "allow_from": []
-    }
-  }
-}
-```
-
-**3. 実行**
-
-```bash
-picoclaw gateway
-```
-
-すべてのオプション（`device_id`、`join_on_invite`、`group_trigger`、`placeholder`、`reasoning_channel_id`）については [Matrix チャネル設定ガイド](../channels/matrix/README.md) を参照してください。
-
-</details>
-
 <a id="qq"></a>
 <details>
 <summary><b>QQ</b></summary>
@@ -289,76 +250,6 @@ QQ 開放プラットフォームでは、OpenClaw 互換ボットのワンク�
 * QQ ボットを作成 — アバターと名前をカスタマイズ
 * ボット設定から **App ID** と **App Secret** をコピー
 * 上記の設定を行い、`picoclaw gateway` を実行
-
-</details>
-
-<a id="slack"></a>
-<details>
-<summary><b>Slack</b></summary>
-
-**1. Slack App を作成**
-
-* [Slack API](https://api.slack.com/apps) にアクセスして新しいアプリを作成
-* **OAuth & Permissions** で Bot スコープを追加：`chat:write`、`app_mentions:read`、`im:history`、`im:read`、`im:write`
-* アプリをワークスペースにインストール
-* **Bot Token**（`xoxb-...`）と **App-Level Token**（`xapp-...`、Socket Mode を有効にして取得）をコピー
-
-**2. 設定**
-
-```json
-{
-  "channel_list": {
-    "slack": {
-      "enabled": true,
-      "type": "slack",
-      "bot_token": "xoxb-YOUR-BOT-TOKEN",
-      "app_token": "xapp-YOUR-APP-TOKEN",
-      "allow_from": []
-    }
-  }
-}
-```
-
-**3. 実行**
-
-```bash
-picoclaw gateway
-```
-
-</details>
-
-<a id="irc"></a>
-<details>
-<summary><b>IRC</b></summary>
-
-**1. 設定**
-
-```json
-{
-  "channel_list": {
-    "irc": {
-      "enabled": true,
-      "type": "irc",
-      "server": "irc.libera.chat:6697",
-      "tls": true,
-      "nick": "picoclaw-bot",
-      "channels": ["#your-channel"],
-      "password": "",
-      "allow_from": []
-    }
-  }
-}
-```
-
-オプション：NickServ 認証用の `nickserv_password`、SASL 認証用の `sasl_user`/`sasl_password`。
-
-**2. 実行**
-
-```bash
-picoclaw gateway
-```
-
-ボットは IRC サーバーに接続し、指定されたチャネルに参加します。
 
 </details>
 

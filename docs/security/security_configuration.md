@@ -61,11 +61,6 @@ channels:
     app_secret: "your-qq-app-secret"
   dingtalk:
     client_secret: "your-dingtalk-client-secret"
-  slack:
-    bot_token: "your-slack-bot-token"
-    app_token: "your-slack-app-token"
-  matrix:
-    access_token: "your-matrix-access-token"
   line:
     channel_secret: "your-line-channel-secret"
     channel_access_token: "your-line-channel-access-token"
@@ -84,10 +79,6 @@ channels:
     encoding_aes_key: "your-wecom-aibot-encoding-aes-key"
   pico:
     token: "your-pico-token"
-  irc:
-    password: "your-irc-password"
-    nickserv_password: "your-irc-nickserv-password"
-    sasl_password: "your-irc-sasl-password"
 
 # Channel Settings (nested format for channels that use settings block)
 channel_list:

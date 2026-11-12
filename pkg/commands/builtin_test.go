@@ -133,7 +133,7 @@ func TestBuiltinShowChannel_PreservesUserVisibleBehavior(t *testing.T) {
 func TestBuiltinListChannels_UsesGetEnabledChannels(t *testing.T) {
 	rt := &Runtime{
 		GetEnabledChannels: func() []string {
-			return []string{"telegram", "slack"}
+			return []string{"telegram", "discord"}
 		},
 	}
 	defs := BuiltinDefinitions()
@@ -150,8 +150,8 @@ func TestBuiltinListChannels_UsesGetEnabledChannels(t *testing.T) {
 	if res.Outcome != OutcomeHandled {
 		t.Fatalf("/list channels: outcome=%v, want=%v", res.Outcome, OutcomeHandled)
 	}
-	if !strings.Contains(reply, "telegram") || !strings.Contains(reply, "slack") {
-		t.Fatalf("/list channels reply=%q, want telegram and slack", reply)
+	if !strings.Contains(reply, "telegram") || !strings.Contains(reply, "discord") {
+		t.Fatalf("/list channels reply=%q, want telegram and discord", reply)
 	}
 }
 

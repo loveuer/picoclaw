@@ -212,11 +212,6 @@ channels:
 	  app_secret: "value"
 	dingtalk:
 	  client_secret: "value"
-	slack:
-	  bot_token: "value"
-	  app_token: "value"
-	matrix:
-	  access_token: "value"
 	line:
 	  channel_secret: "value"
 	  channel_access_token: "value"
@@ -233,12 +228,6 @@ channels:
 	  secret: "value"
 	  token: "value"
 	  encoding_aes_key: "value"
-	pico:
-	  token: "value"
-	irc:
-	  password: "value"
-	  nickserv_password: "value"
-	  sasl_password: "value"
 
 ## Web Tool API Keys
 

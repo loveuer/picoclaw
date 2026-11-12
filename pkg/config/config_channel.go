@@ -23,19 +23,12 @@ const (
 	ChannelWeixin         = "weixin"
 	ChannelWeCom          = "wecom"
 	ChannelDingTalk       = "dingtalk"
-	ChannelSlack          = "slack"
-	ChannelMatrix         = "matrix"
-	ChannelDeltaChat      = "deltachat"
 	ChannelLINE           = "line"
 	ChannelOneBot         = "onebot"
 	ChannelQQ             = "qq"
-	ChannelIRC            = "irc"
-	ChannelVK             = "vk"
 	ChannelWhatsApp       = "whatsapp"
 	ChannelWhatsAppNative = "whatsapp_native"
-	ChannelTeamsWebHook   = "teams_webhook"
 	ChannelMQTT           = "mqtt"
-	ChannelSlackWebHook   = "slack_webhook"
 )
 
 // RawNode stores raw configuration data as JSON bytes, supporting both JSON and YAML.
@@ -611,19 +604,12 @@ var channelSettingsFactory = map[string]any{
 	ChannelWeixin:         (WeixinSettings{}),
 	ChannelWeCom:          (WeComSettings{}),
 	ChannelDingTalk:       (DingTalkSettings{}),
-	ChannelSlack:          (SlackSettings{}),
-	ChannelMatrix:         (MatrixSettings{}),
-	ChannelDeltaChat:      (DeltaChatSettings{}),
 	ChannelLINE:           (LINESettings{}),
 	ChannelOneBot:         (OneBotSettings{}),
 	ChannelQQ:             (QQSettings{}),
-	ChannelIRC:            (IRCSettings{}),
-	ChannelVK:             (VKSettings{}),
 	ChannelWhatsApp:       (WhatsAppSettings{}),
 	ChannelWhatsAppNative: (WhatsAppSettings{}),
-	ChannelTeamsWebHook:   (TeamsWebhookSettings{}),
 	ChannelMQTT:           (MQTTSettings{}),
-	ChannelSlackWebHook:   (SlackWebhookSettings{}),
 }
 
 // RegisterChannelSettings registers a settings struct prototype for a custom

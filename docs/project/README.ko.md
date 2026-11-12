@@ -371,14 +371,10 @@ PicoClaw는 `model_list` 설정을 통해 30개 이상의 LLM 프로바이더를
 | **WhatsApp** | 쉬움(QR 스캔 또는 브리지 URL) | Native / Bridge | [가이드](../guides/chat-apps.md#whatsapp) |
 | **Weixin** | 쉬움(네이티브 QR 스캔) | iLink API | [가이드](../guides/chat-apps.md#weixin) |
 | **QQ** | 쉬움(AppID + AppSecret) | WebSocket | [가이드](../channels/qq/README.md) |
-| **Slack** | 쉬움(봇 + 앱 토큰) | Socket Mode | [가이드](../channels/slack/README.md) |
-| **Matrix** | 중간(homeserver + 토큰) | Sync API | [가이드](../channels/matrix/README.md) |
 | **DingTalk** | 중간(클라이언트 자격 증명) | Stream | [가이드](../channels/dingtalk/README.md) |
 | **Feishu / Lark** | 중간(App ID + Secret) | WebSocket/SDK | [가이드](../channels/feishu/README.md) |
 | **LINE** | 중간(인증 정보 + webhook) | Webhook | [가이드](../channels/line/README.md) |
 | **WeCom** | 쉬움(QR 로그인 또는 수동 설정) | WebSocket | [가이드](../channels/wecom/README.md) |
-| **VK** | 쉬움(그룹 토큰) | Long Poll | [가이드](../channels/vk/README.md) |
-| **IRC** | 중간(서버 + 닉네임) | IRC protocol | [가이드](../guides/chat-apps.md#irc) |
 | **OneBot** | 중간(WebSocket URL) | OneBot v11 | [가이드](../channels/onebot/README.md) |
 
 > webhook 기반 채널은 모두 하나의 게이트웨이 HTTP 서버(`gateway.host`:`gateway.port`, 기본값 `127.0.0.1:18790`)를 공유합니다. Feishu는 WebSocket/SDK 모드를 사용하며 이 공용 HTTP 서버를 사용하지 않습니다.

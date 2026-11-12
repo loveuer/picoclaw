@@ -21,7 +21,7 @@ graph TD
     subgraph External Callers
         TG[Telegram]
         DC[Discord]
-        SL[Slack]
+        SL[Discord]
     end
 
     subgraph AgentLoop

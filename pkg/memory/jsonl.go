@@ -96,7 +96,7 @@ func (s *JSONLStore) metaPath(key string) string {
 // sanitizeKey converts a session key to a safe filename component.
 // Mirrors pkg/session.sanitizeFilename so that migration paths match.
 // Replaces ':' with '_' (session key separator) and '/' and '\' with '_'
-// so composite IDs (e.g. Telegram forum "chatID/threadID", Slack "channel/thread_ts")
+// so composite IDs (e.g. Telegram forum "chatID/threadID")
 // do not create subdirectories or break on Windows.
 func sanitizeKey(key string) string {
 	s := strings.ReplaceAll(key, ":", "_")

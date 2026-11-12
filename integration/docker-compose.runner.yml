@@ -12,7 +12,7 @@ services:
       GOMODCACHE: /go-mod-cache
       GOTOOLCHAIN: local
       CGO_ENABLED: "0"
-      GOFLAGS: -tags=goolm,stdjson,integration
+      GOFLAGS: -tags=stdjson,integration
 
 volumes:
   picoclaw-integration-gocache:

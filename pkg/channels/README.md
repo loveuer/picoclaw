@@ -25,7 +25,6 @@
 pkg/channels/
 ├── telegram.go          # Each channel directly in the channels package
 ├── discord.go
-├── slack.go
 ├── manager.go           # Manager directly references each channel type
 ├── ...
 ```
@@ -60,7 +59,7 @@ pkg/channels/
 ├── discord/
 │   ├── init.go
 │   └── discord.go
-├── slack/ line/ onebot/ dingtalk/ feishu/ wecom/ qq/ whatsapp/ whatsapp_native/ mqtt/
+├── line/ onebot/ dingtalk/ feishu/ wecom/ qq/ whatsapp/ whatsapp_native/ mqtt/
 │   └── ...
 
 pkg/bus/
@@ -80,7 +79,7 @@ pkg/identity/
 ┌────────────┐      InboundMessage       ┌───────────┐      LLM + Tools      ┌────────────┐
 │  Telegram   │──┐                        │           │                        │            │
 │  Discord    │──┤   PublishInbound()     │           │   PublishOutbound()   │            │
-│  Slack      │──┼──────────────────────▶ │ MessageBus │ ◀─────────────────── │ AgentLoop  │
+│  Feishu     │──┼──────────────────────▶ │ MessageBus │ ◀─────────────────── │ AgentLoop  │
 │  LINE       │──┤   (buffered chan, 64)  │           │   (buffered chan, 64) │            │
 │  ...        │──┘                        │           │                        │            │
 └────────────┘                            └─────┬─────┘                        └────────────┘
@@ -409,21 +408,21 @@ Main changes to the Agent Loop:
 
 ### 3.1 Minimum Implementation Checklist
 
-To add a new chat platform (e.g., `matrix`), you need to:
+To add a new chat platform (e.g., `examplechat`), you need to:
 
-1. ✅ Create sub-package directory `pkg/channels/matrix/`
+1. ✅ Create sub-package directory `pkg/channels/examplechat/`
 2. ✅ Create `init.go` — factory registration
-3. ✅ Create `matrix.go` — channel implementation
+3. ✅ Create `examplechat.go` — channel implementation
 4. ✅ Add blank import in Gateway helpers
 5. ✅ Add config check in Manager.initChannels()
 6. ✅ Add config struct in `pkg/config/`
 
 ### 3.2 Complete Template
 
-#### `pkg/channels/matrix/init.go`
+#### `pkg/channels/examplechat/init.go`
 
 ```go
-package matrix
+package examplechat
 
 import (
     "github.com/sipeed/picoclaw/pkg/bus"
@@ -432,21 +431,21 @@ import (
 )
 
 func init() {
-    channels.RegisterFactory(config.ChannelMatrix, func(channelName, channelType string, cfg *config.Config, b *bus.MessageBus) (channels.Channel, error) {
+    channels.RegisterFactory(config.ChannelExampleChat, func(channelName, channelType string, cfg *config.Config, b *bus.MessageBus) (channels.Channel, error) {
         bc := cfg.Channels[channelName]
         decoded, err := bc.GetDecoded()
         if err != nil { return nil, err }
-        c, ok := decoded.(*config.MatrixSettings)
+        c, ok := decoded.(*config.ExampleChatSettings)
         if !ok { return nil, channels.ErrSendFailed }
-        return NewMatrixChannel(bc, c, b)
+        return NewExampleChatChannel(bc, c, b)
     })
 }
 ```
 
-#### `pkg/channels/matrix/matrix.go`
+#### `pkg/channels/examplechat/examplechat.go`
 
 ```go
-package matrix
+package examplechat
 
 import (
     "context"
@@ -459,29 +458,29 @@ import (
     "github.com/sipeed/picoclaw/pkg/logger"
 )
 
-// MatrixChannel implements channels.Channel for the Matrix protocol.
-type MatrixChannel struct {
+// ExampleChatChannel implements channels.Channel for the ExampleChat protocol.
+type ExampleChatChannel struct {
     *channels.BaseChannel            // Must embed
     config *config.Config
     ctx    context.Context
     cancel context.CancelFunc
-    // ... Matrix SDK client, etc.
+    // ... ExampleChat SDK client, etc.
 }
 
-func NewMatrixChannel(cfg *config.Config, msgBus *bus.MessageBus) (*MatrixChannel, error) {
-    matrixCfg := cfg.Channels.Matrix // Assumes this field exists in config
+func NewExampleChatChannel(cfg *config.Config, msgBus *bus.MessageBus) (*ExampleChatChannel, error) {
+    examplechatCfg := cfg.Channels.ExampleChat // Assumes this field exists in config
 
     base := channels.NewBaseChannel(
-        "matrix",                           // Channel name (globally unique)
-        matrixCfg,                          // Raw config
+        "examplechat",                           // Channel name (globally unique)
+        examplechatCfg,                          // Raw config
         msgBus,                             // Message bus
-        matrixCfg.AllowFrom,                // Allow list
-        channels.WithMaxMessageLength(65536), // Matrix message length limit
-        channels.WithGroupTrigger(matrixCfg.GroupTrigger),
-        channels.WithReasoningChannelID(matrixCfg.ReasoningChannelID), // Reasoning chain routing (optional)
+        examplechatCfg.AllowFrom,                // Allow list
+        channels.WithMaxMessageLength(65536), // ExampleChat message length limit
+        channels.WithGroupTrigger(examplechatCfg.GroupTrigger),
+        channels.WithReasoningChannelID(examplechatCfg.ReasoningChannelID), // Reasoning chain routing (optional)
     )
 
-    return &MatrixChannel{
+    return &ExampleChatChannel{
         BaseChannel: base,
         config:      cfg,
     }, nil
@@ -489,37 +488,37 @@ func NewMatrixChannel(cfg *config.Config, msgBus *bus.MessageBus) (*MatrixChanne
 
 // ========== Required Channel Interface Methods ==========
 
-func (c *MatrixChannel) Start(ctx context.Context) error {
+func (c *ExampleChatChannel) Start(ctx context.Context) error {
     c.ctx, c.cancel = context.WithCancel(ctx)
 
-    // 1. Initialize Matrix client
+    // 1. Initialize ExampleChat client
     // 2. Start listening for messages
     // 3. Mark as running
     c.SetRunning(true)
 
-    logger.InfoC("matrix", "Matrix channel started")
+    logger.InfoC("examplechat", "ExampleChat channel started")
     return nil
 }
 
-func (c *MatrixChannel) Stop(ctx context.Context) error {
+func (c *ExampleChatChannel) Stop(ctx context.Context) error {
     c.SetRunning(false)
 
     if c.cancel != nil {
         c.cancel()
     }
 
-    logger.InfoC("matrix", "Matrix channel stopped")
+    logger.InfoC("examplechat", "ExampleChat channel stopped")
     return nil
 }
 
-func (c *MatrixChannel) Send(ctx context.Context, msg bus.OutboundMessage) ([]string, error) {
+func (c *ExampleChatChannel) Send(ctx context.Context, msg bus.OutboundMessage) ([]string, error) {
     // 1. Check running state
     if !c.IsRunning() {
         return nil, channels.ErrNotRunning
     }
 
-    // 2. Send message to Matrix
-    eventID, err := c.sendToMatrix(ctx, msg.ChatID, msg.Content)
+    // 2. Send message to ExampleChat
+    eventID, err := c.sendToExampleChat(ctx, msg.ChatID, msg.Content)
     if err != nil {
         // 3. Must use error classification wrapping
         //    If you have an HTTP status code:
@@ -535,12 +534,12 @@ func (c *MatrixChannel) Send(ctx context.Context, msg bus.OutboundMessage) ([]st
 
 // ========== Incoming Message Handling ==========
 
-func (c *MatrixChannel) handleIncoming(roomID, senderID, displayName, content string, msgID string) {
+func (c *ExampleChatChannel) handleIncoming(roomID, senderID, displayName, content string, msgID string) {
     // 1. Construct structured sender identity
     sender := bus.SenderInfo{
-        Platform:    "matrix",
+        Platform:    "examplechat",
         PlatformID:  senderID,
-        CanonicalID: identity.BuildCanonicalID("matrix", senderID),
+        CanonicalID: identity.BuildCanonicalID("examplechat", senderID),
         Username:    senderID,
         DisplayName: displayName,
     }
@@ -590,8 +589,8 @@ func (c *MatrixChannel) handleIncoming(roomID, senderID, displayName, content st
 
 // ========== Internal Methods ==========
 
-func (c *MatrixChannel) sendToMatrix(ctx context.Context, roomID, content string) (string, error) {
-    // Actual Matrix SDK call
+func (c *ExampleChatChannel) sendToExampleChat(ctx context.Context, roomID, content string) (string, error) {
+    // Actual ExampleChat SDK call
     return "event-id", nil
 }
 ```
@@ -604,7 +603,7 @@ Depending on platform capabilities, your channel can optionally implement the fo
 
 ```go
 // If the platform supports sending images/files/audio/video
-func (c *MatrixChannel) SendMedia(ctx context.Context, msg bus.OutboundMediaMessage) ([]string, error) {
+func (c *ExampleChatChannel) SendMedia(ctx context.Context, msg bus.OutboundMediaMessage) ([]string, error) {
     if !c.IsRunning() {
         return nil, channels.ErrNotRunning
     }
@@ -618,7 +617,7 @@ func (c *MatrixChannel) SendMedia(ctx context.Context, msg bus.OutboundMediaMess
     for _, part := range msg.Parts {
         localPath, err := store.Resolve(part.Ref)
         if err != nil {
-            logger.ErrorCF("matrix", "Failed to resolve media", map[string]any{
+            logger.ErrorCF("examplechat", "Failed to resolve media", map[string]any{
                 "ref": part.Ref, "error": err.Error(),
             })
             continue
@@ -627,9 +626,9 @@ func (c *MatrixChannel) SendMedia(ctx context.Context, msg bus.OutboundMediaMess
         // Call the appropriate API based on part.Type ("image"|"audio"|"video"|"file")
         switch part.Type {
         case "image":
-            // Upload image to Matrix
+            // Upload image to ExampleChat
         default:
-            // Upload file to Matrix
+            // Upload file to ExampleChat
         }
         // Append platform IDs here when the API returns them.
         // messageIDs = append(messageIDs, uploadedMessageID)
@@ -642,14 +641,14 @@ func (c *MatrixChannel) SendMedia(ctx context.Context, msg bus.OutboundMediaMess
 
 ```go
 // If the platform supports "typing..." indicators
-func (c *MatrixChannel) StartTyping(ctx context.Context, chatID string) (stop func(), err error) {
-    // Call Matrix API to send typing indicator
+func (c *ExampleChatChannel) StartTyping(ctx context.Context, chatID string) (stop func(), err error) {
+    // Call ExampleChat API to send typing indicator
     // The returned stop function must be idempotent
     stopped := false
     return func() {
         if !stopped {
             stopped = true
-            // Call Matrix API to stop typing
+            // Call ExampleChat API to stop typing
         }
     }, nil
 }
@@ -658,9 +657,9 @@ func (c *MatrixChannel) StartTyping(ctx context.Context, chatID string) (stop fu
 #### ReactionCapable — Message Reaction Indicator
 
 ```go
-// If the platform supports adding emoji reactions to inbound messages (e.g., Slack's 👀, OneBot's emoji 289)
-func (c *MatrixChannel) ReactToMessage(ctx context.Context, chatID, messageID string) (undo func(), err error) {
-    // Call Matrix API to add reaction to message
+// If the platform supports adding emoji reactions to inbound messages (e.g., OneBot's emoji 289)
+func (c *ExampleChatChannel) ReactToMessage(ctx context.Context, chatID, messageID string) (undo func(), err error) {
+    // Call ExampleChat API to add reaction to message
     // The returned undo function removes the reaction, must be idempotent
     err = c.addReaction(chatID, messageID, "eyes")
     if err != nil {
@@ -676,8 +675,8 @@ func (c *MatrixChannel) ReactToMessage(ctx context.Context, chatID, messageID st
 
 ```go
 // If the platform supports editing sent messages (used for Placeholder replacement)
-func (c *MatrixChannel) EditMessage(ctx context.Context, chatID, messageID, content string) error {
-    // Call Matrix API to edit message
+func (c *ExampleChatChannel) EditMessage(ctx context.Context, chatID, messageID, content string) error {
+    // Call ExampleChat API to edit message
     return nil
 }
 ```
@@ -690,8 +689,8 @@ func (c *MatrixChannel) EditMessage(ctx context.Context, chatID, messageID, cont
 // automatically edit the placeholder into the final response on outbound.
 // SendPlaceholder checks PlaceholderConfig.Enabled internally;
 // returning ("", nil) means skip.
-func (c *MatrixChannel) SendPlaceholder(ctx context.Context, chatID string) (string, error) {
-    cfg := c.config.Channels.Matrix.Placeholder
+func (c *ExampleChatChannel) SendPlaceholder(ctx context.Context, chatID string) (string, error) {
+    cfg := c.config.Channels.ExampleChat.Placeholder
     if !cfg.Enabled {
         return "", nil
     }
@@ -699,7 +698,7 @@ func (c *MatrixChannel) SendPlaceholder(ctx context.Context, chatID string) (str
     if text == "" {
         text = "Thinking... 💭"
     }
-    // Call Matrix API to send placeholder message
+    // Call ExampleChat API to send placeholder message
     msg, err := c.sendText(ctx, chatID, text)
     if err != nil {
         return "", err
@@ -712,11 +711,11 @@ func (c *MatrixChannel) SendPlaceholder(ctx context.Context, chatID string) (str
 
 ```go
 // If the channel receives messages via webhook (rather than long-polling/WebSocket)
-func (c *MatrixChannel) WebhookPath() string {
-    return "/webhook/matrix"   // Path will be registered on the shared HTTP server
+func (c *ExampleChatChannel) WebhookPath() string {
+    return "/webhook/examplechat"   // Path will be registered on the shared HTTP server
 }
 
-func (c *MatrixChannel) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (c *ExampleChatChannel) ServeHTTP(w http.ResponseWriter, r *http.Request) {
     // Handle webhook request
 }
 ```
@@ -724,11 +723,11 @@ func (c *MatrixChannel) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 #### HealthChecker — Health Check Endpoint
 
 ```go
-func (c *MatrixChannel) HealthPath() string {
-    return "/health/matrix"
+func (c *ExampleChatChannel) HealthPath() string {
+    return "/health/examplechat"
 }
 
-func (c *MatrixChannel) HealthHandler(w http.ResponseWriter, r *http.Request) {
+func (c *ExampleChatChannel) HealthHandler(w http.ResponseWriter, r *http.Request) {
     if c.IsRunning() {
         w.WriteHeader(http.StatusOK)
         w.Write([]byte("OK"))
@@ -768,7 +767,7 @@ if c.owner != nil && c.placeholderRecorder != nil {
 
 **This means**:
 - Channels implementing `TypingCapable` (Telegram, Discord, LINE) do not need to manually call `StartTyping` + `RecordTypingStop` in `handleMessage`
-- Channels implementing `ReactionCapable` (Slack, OneBot) do not need to manually call `AddReaction` + `RecordTypingStop` in `handleMessage`
+- Channels implementing `ReactionCapable` (OneBot) do not need to manually call `AddReaction` + `RecordTypingStop` in `handleMessage`
 - Channels implementing `PlaceholderCapable` (Telegram, Discord) do not need to manually send placeholder messages and call `RecordPlaceholder` in `handleMessage`
 - Channels only need to implement the corresponding interface; `HandleMessage` handles orchestration automatically
 - Channels that don't implement these interfaces are unaffected (type assertions will fail and be skipped)
@@ -792,12 +791,12 @@ the top level, with channel-specific settings in the `settings` sub-key:
 ```json
 {
   "channel_list": {
-    "matrix": {
+    "examplechat": {
       "enabled": true,
-      "type": "matrix",
+      "type": "examplechat",
       "allow_from": ["@user:example.com"],
       "settings": {
-        "home_server": "https://matrix.org",
+        "home_server": "https://examplechat.org",
         "user_id": "@bot:example.com",
         "access_token": "enc://..."
       }
@@ -810,8 +809,8 @@ Secure fields (tokens, passwords, API keys) go into `.security.yml`:
 
 ```yaml
 channels:
-  matrix:
-    access_token: "your-matrix-access-token"
+  examplechat:
+    access_token: "your-examplechat-access-token"
 ```
 
 Channel types must be registered in `channelSettingsFactory` in
@@ -820,7 +819,7 @@ Channel types must be registered in `channelSettingsFactory` in
 ```go
 var channelSettingsFactory = map[string]any{
     // ... existing channels
-    ChannelMatrix: (MatrixSettings{}),
+    ChannelExampleChat: (ExampleChatSettings{}),
 }
 ```
 
@@ -843,7 +842,7 @@ just register the factory and the config entry.
 ```go
 // cmd/picoclaw/internal/gateway/helpers.go
 import (
-    _ "github.com/sipeed/picoclaw/pkg/channels/matrix"
+    _ "github.com/sipeed/picoclaw/pkg/channels/examplechat"
 )
 ```
 
@@ -1072,7 +1071,6 @@ type channelWorker struct {
 var channelRateConfig = map[string]float64{
     "telegram": 20,   // 20 msg/s
     "discord":  1,    // 1 msg/s
-    "slack":    1,    // 1 msg/s
     "line":     10,   // 10 msg/s
 }
 // Default: 10 msg/s
@@ -1267,7 +1265,7 @@ Existing test files:
 
 To add tests for a new channel:
 ```bash
-go test ./pkg/channels/matrix/ -v              # Sub-package tests
+go test ./pkg/channels/examplechat/ -v              # Sub-package tests
 go test ./pkg/channels/ -run TestSpecific -v    # Framework tests
 make test                                       # Full test suite
 ```
@@ -1300,7 +1298,6 @@ make test                                       # Full test suite
 |-------------|----------------|-------------------|
 | `pkg/channels/telegram/` | `"telegram"` | TypingCapable, PlaceholderCapable, MessageEditor, MediaSender |
 | `pkg/channels/discord/` | `"discord"` | TypingCapable, PlaceholderCapable, MessageEditor, MediaSender |
-| `pkg/channels/slack/` | `"slack"` | ReactionCapable, MediaSender |
 | `pkg/channels/line/` | `"line"` | TypingCapable, MediaSender, WebhookHandler |
 | `pkg/channels/onebot/` | `"onebot"` | ReactionCapable, MediaSender |
 | `pkg/channels/dingtalk/` | `"dingtalk"` | — |
@@ -1409,7 +1406,6 @@ agentLoop.Stop()               // Stop Agent
 |---------|-------------|-------|
 | telegram | 20 | 10 |
 | discord | 1 | 1 |
-| slack | 1 | 1 |
 | line | 10 | 5 |
 | _others_ | 10 (default) | 5 |
 
@@ -1425,6 +1421,6 @@ agentLoop.Stop()               // Stop Agent
 
 5. **DingTalk uses Stream mode**: DingTalk uses the SDK's Stream/WebSocket mode (not HTTP webhook), so it does not implement `WebhookHandler`.
 
-6. **PlaceholderConfig vs implementation**: `PlaceholderConfig` appears in 5 channel configs (Telegram, Discord, Slack, LINE, OneBot), but only channels that implement both `PlaceholderCapable` + `MessageEditor` (Telegram, Discord) can actually use placeholder message editing. The rest are reserved fields.
+6. **PlaceholderConfig vs implementation**: `PlaceholderConfig` appears in 4 channel configs (Telegram, Discord, LINE, OneBot), but only channels that implement both `PlaceholderCapable` + `MessageEditor` (Telegram, Discord) can actually use placeholder message editing. The rest are reserved fields.
 
-7. **ReasoningChannelID**: Most channel configs include a `reasoning_channel_id` field to route LLM reasoning/thinking output to a designated channel (WhatsApp, Telegram, Feishu, Discord, QQ, DingTalk, Slack, LINE, OneBot, WeCom). `BaseChannel` exposes this via the `WithReasoningChannelID` option and `ReasoningChannelID()` method.
+7. **ReasoningChannelID**: Most channel configs include a `reasoning_channel_id` field to route LLM reasoning/thinking output to a designated channel (WhatsApp, Telegram, Feishu, Discord, QQ, DingTalk, LINE, OneBot, WeCom). `BaseChannel` exposes this via the `WithReasoningChannelID` option and `ReasoningChannelID()` method.

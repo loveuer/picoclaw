@@ -2006,7 +2006,7 @@ func TestAppendEventContextFields_IncludesInboundRouteAndScope(t *testing.T) {
 
 	appendEventContextFields(fields, &TurnContext{
 		Inbound: &bus.InboundContext{
-			Channel:   "slack",
+			Channel:   "discord",
 			Account:   "workspace-a",
 			ChatID:    "C123",
 			ChatType:  "channel",
@@ -2018,20 +2018,20 @@ func TestAppendEventContextFields_IncludesInboundRouteAndScope(t *testing.T) {
 		},
 		Route: &routing.ResolvedRoute{
 			AgentID:   "support",
-			Channel:   "slack",
+			Channel:   "discord",
 			AccountID: "workspace-a",
 			MatchedBy: "default",
 			SessionPolicy: routing.SessionPolicy{
 				Dimensions: []string{"chat", "sender"},
 				IdentityLinks: map[string][]string{
-					"canonical-user": {"slack:U123"},
+					"canonical-user": {"discord:U123"},
 				},
 			},
 		},
 		Scope: &session.SessionScope{
 			Version:    session.ScopeVersionV1,
 			AgentID:    "support",
-			Channel:    "slack",
+			Channel:    "discord",
 			Account:    "workspace-a",
 			Dimensions: []string{"chat", "sender"},
 			Values: map[string]string{
@@ -2041,8 +2041,8 @@ func TestAppendEventContextFields_IncludesInboundRouteAndScope(t *testing.T) {
 		},
 	})
 
-	if fields["inbound_channel"] != "slack" {
-		t.Fatalf("inbound_channel = %v, want slack", fields["inbound_channel"])
+	if fields["inbound_channel"] != "discord" {
+		t.Fatalf("inbound_channel = %v, want discord", fields["inbound_channel"])
 	}
 	if fields["inbound_topic_id"] != "thread-42" {
 		t.Fatalf("inbound_topic_id = %v, want thread-42", fields["inbound_topic_id"])
@@ -2090,7 +2090,7 @@ func TestResolveMessageRoute_UsesInboundContextAccount(t *testing.T) {
 
 	route, _, err := al.resolveMessageRoute(testInboundMessage(bus.InboundMessage{
 		Context: bus.InboundContext{
-			Channel:   "slack",
+			Channel:   "discord",
 			Account:   "workspace-a",
 			ChatID:    "C123",
 			ChatType:  "channel",
@@ -5536,7 +5536,6 @@ func TestTargetReasoningChannelID_AllChannels(t *testing.T) {
 		"mqtt":     "rid-mqtt",
 		"qq":       "rid-qq",
 		"dingtalk": "rid-dingtalk",
-		"slack":    "rid-slack",
 		"line":     "rid-line",
 		"onebot":   "rid-onebot",
 		"wecom":    "rid-wecom",
@@ -5555,7 +5554,6 @@ func TestTargetReasoningChannelID_AllChannels(t *testing.T) {
 		{channel: "mqtt", wantID: "rid-mqtt"},
 		{channel: "qq", wantID: "rid-qq"},
 		{channel: "dingtalk", wantID: "rid-dingtalk"},
-		{channel: "slack", wantID: "rid-slack"},
 		{channel: "line", wantID: "rid-line"},
 		{channel: "onebot", wantID: "rid-onebot"},
 		{channel: "wecom", wantID: "rid-wecom"},
@@ -5622,13 +5620,13 @@ func TestHandleReasoning(t *testing.T) {
 
 	t.Run("publishes one message for non telegram", func(t *testing.T) {
 		al, msgBus := newLoop(t)
-		al.handleReasoning(context.Background(), "hello reasoning", "slack", "channel-1")
+		al.handleReasoning(context.Background(), "hello reasoning", "discord", "channel-1")
 
 		msg, ok := <-msgBus.OutboundChan()
 		if !ok {
 			t.Fatal("expected an outbound message")
 		}
-		if msg.Channel != "slack" || msg.ChatID != "channel-1" || msg.Content != "hello reasoning" {
+		if msg.Channel != "discord" || msg.ChatID != "channel-1" || msg.Content != "hello reasoning" {
 			t.Fatalf("unexpected outbound message: %+v", msg)
 		}
 	})
@@ -5711,7 +5709,7 @@ func TestHandleReasoning(t *testing.T) {
 		defer cancel()
 
 		start := time.Now()
-		al.handleReasoning(ctx, "should timeout", "slack", "channel-full")
+		al.handleReasoning(ctx, "should timeout", "discord", "channel-full")
 		elapsed := time.Since(start)
 
 		// handleReasoning uses a 5s internal timeout, but the parent ctx

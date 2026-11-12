@@ -25,7 +25,6 @@
 pkg/channels/
 ├── telegram.go          # 每个 channel 直接放在 channels 包内
 ├── discord.go
-├── slack.go
 ├── manager.go           # Manager 直接引用各 channel 类型
 ├── ...
 ```
@@ -60,7 +59,7 @@ pkg/channels/
 ├── discord/
 │   ├── init.go
 │   └── discord.go
-├── slack/ line/ onebot/ dingtalk/ feishu/ wecom/ qq/ whatsapp/ whatsapp_native/ mqtt/
+├── line/ onebot/ dingtalk/ feishu/ wecom/ qq/ whatsapp/ whatsapp_native/ mqtt/
 │   └── ...
 
 pkg/bus/
@@ -80,7 +79,7 @@ pkg/identity/
 ┌────────────┐      InboundMessage       ┌───────────┐      LLM + Tools      ┌────────────┐
 │  Telegram   │──┐                        │           │                        │            │
 │  Discord    │──┤   PublishInbound()     │           │   PublishOutbound()   │            │
-│  Slack      │──┼──────────────────────▶ │ MessageBus │ ◀─────────────────── │ AgentLoop  │
+│  Feishu     │──┼──────────────────────▶ │ MessageBus │ ◀─────────────────── │ AgentLoop  │
 │  LINE       │──┤   (buffered chan, 64)  │           │   (buffered chan, 64) │            │
 │  ...        │──┘                        │           │                        │            │
 └────────────┘                            └─────┬─────┘                        └────────────┘
@@ -409,21 +408,21 @@ Agent Loop 的主要变化：
 
 ### 3.1 最小实现清单
 
-要添加一个新的聊天平台（例如 `matrix`），你需要：
+要添加一个新的聊天平台（例如 `examplechat`），你需要：
 
-1. ✅ 创建子包目录 `pkg/channels/matrix/`
+1. ✅ 创建子包目录 `pkg/channels/examplechat/`
 2. ✅ 创建 `init.go` — 工厂注册
-3. ✅ 创建 `matrix.go` — Channel 实现
+3. ✅ 创建 `examplechat.go` — Channel 实现
 4. ✅ 在 Gateway helpers 中添加 blank import
 5. ✅ 在 Manager.initChannels() 中添加配置检查
 6. ✅ 在 `pkg/config/` 中添加配置结构体
 
 ### 3.2 完整模板
 
-#### `pkg/channels/matrix/init.go`
+#### `pkg/channels/examplechat/init.go`
 
 ```go
-package matrix
+package examplechat
 
 import (
     "github.com/sipeed/picoclaw/pkg/bus"
@@ -432,21 +431,21 @@ import (
 )
 
 func init() {
-    channels.RegisterFactory(config.ChannelMatrix, func(channelName, channelType string, cfg *config.Config, b *bus.MessageBus) (channels.Channel, error) {
+    channels.RegisterFactory(config.ChannelExampleChat, func(channelName, channelType string, cfg *config.Config, b *bus.MessageBus) (channels.Channel, error) {
         bc := cfg.Channels[channelName]
         decoded, err := bc.GetDecoded()
         if err != nil { return nil, err }
-        c, ok := decoded.(*config.MatrixSettings)
+        c, ok := decoded.(*config.ExampleChatSettings)
         if !ok { return nil, channels.ErrSendFailed }
-        return NewMatrixChannel(bc, c, b)
+        return NewExampleChatChannel(bc, c, b)
     })
 }
 ```
 
-#### `pkg/channels/matrix/matrix.go`
+#### `pkg/channels/examplechat/examplechat.go`
 
 ```go
-package matrix
+package examplechat
 
 import (
     "context"
@@ -459,29 +458,29 @@ import (
     "github.com/sipeed/picoclaw/pkg/logger"
 )
 
-// MatrixChannel implements channels.Channel for the Matrix protocol.
-type MatrixChannel struct {
+// ExampleChatChannel implements channels.Channel for the ExampleChat protocol.
+type ExampleChatChannel struct {
     *channels.BaseChannel            // 必须嵌入
     config *config.Config
     ctx    context.Context
     cancel context.CancelFunc
-    // ... Matrix SDK 客户端等
+    // ... ExampleChat SDK 客户端等
 }
 
-func NewMatrixChannel(cfg *config.Config, msgBus *bus.MessageBus) (*MatrixChannel, error) {
-    matrixCfg := cfg.Channels.Matrix // 假设配置中有此字段
+func NewExampleChatChannel(cfg *config.Config, msgBus *bus.MessageBus) (*ExampleChatChannel, error) {
+    examplechatCfg := cfg.Channels.ExampleChat // 假设配置中有此字段
 
     base := channels.NewBaseChannel(
-        "matrix",                           // channel 名称（全局唯一）
-        matrixCfg,                          // 原始配置
+        "examplechat",                           // channel 名称（全局唯一）
+        examplechatCfg,                          // 原始配置
         msgBus,                             // 消息总线
-        matrixCfg.AllowFrom,                // 允许列表
-        channels.WithMaxMessageLength(65536), // Matrix 消息长度限制
-        channels.WithGroupTrigger(matrixCfg.GroupTrigger),
-        channels.WithReasoningChannelID(matrixCfg.ReasoningChannelID), // 思维链路由（可选）
+        examplechatCfg.AllowFrom,                // 允许列表
+        channels.WithMaxMessageLength(65536), // ExampleChat 消息长度限制
+        channels.WithGroupTrigger(examplechatCfg.GroupTrigger),
+        channels.WithReasoningChannelID(examplechatCfg.ReasoningChannelID), // 思维链路由（可选）
     )
 
-    return &MatrixChannel{
+    return &ExampleChatChannel{
         BaseChannel: base,
         config:      cfg,
     }, nil
@@ -489,37 +488,37 @@ func NewMatrixChannel(cfg *config.Config, msgBus *bus.MessageBus) (*MatrixChanne
 
 // ========== 必须实现的 Channel 接口方法 ==========
 
-func (c *MatrixChannel) Start(ctx context.Context) error {
+func (c *ExampleChatChannel) Start(ctx context.Context) error {
     c.ctx, c.cancel = context.WithCancel(ctx)
 
-    // 1. 初始化 Matrix 客户端
+    // 1. 初始化 ExampleChat 客户端
     // 2. 开始监听消息
     // 3. 标记为运行中
     c.SetRunning(true)
 
-    logger.InfoC("matrix", "Matrix channel started")
+    logger.InfoC("examplechat", "ExampleChat channel started")
     return nil
 }
 
-func (c *MatrixChannel) Stop(ctx context.Context) error {
+func (c *ExampleChatChannel) Stop(ctx context.Context) error {
     c.SetRunning(false)
 
     if c.cancel != nil {
         c.cancel()
     }
 
-    logger.InfoC("matrix", "Matrix channel stopped")
+    logger.InfoC("examplechat", "ExampleChat channel stopped")
     return nil
 }
 
-func (c *MatrixChannel) Send(ctx context.Context, msg bus.OutboundMessage) ([]string, error) {
+func (c *ExampleChatChannel) Send(ctx context.Context, msg bus.OutboundMessage) ([]string, error) {
     // 1. 检查运行状态
     if !c.IsRunning() {
         return nil, channels.ErrNotRunning
     }
 
-    // 2. 发送消息到 Matrix
-    eventID, err := c.sendToMatrix(ctx, msg.ChatID, msg.Content)
+    // 2. 发送消息到 ExampleChat
+    eventID, err := c.sendToExampleChat(ctx, msg.ChatID, msg.Content)
     if err != nil {
         // 3. 必须使用错误分类包装
         //    如果你有 HTTP 状态码：
@@ -535,12 +534,12 @@ func (c *MatrixChannel) Send(ctx context.Context, msg bus.OutboundMessage) ([]st
 
 // ========== 消息接收处理 ==========
 
-func (c *MatrixChannel) handleIncoming(roomID, senderID, displayName, content string, msgID string) {
+func (c *ExampleChatChannel) handleIncoming(roomID, senderID, displayName, content string, msgID string) {
     // 1. 构造结构化发送者身份
     sender := bus.SenderInfo{
-        Platform:    "matrix",
+        Platform:    "examplechat",
         PlatformID:  senderID,
-        CanonicalID: identity.BuildCanonicalID("matrix", senderID),
+        CanonicalID: identity.BuildCanonicalID("examplechat", senderID),
         Username:    senderID,
         DisplayName: displayName,
     }
@@ -590,8 +589,8 @@ func (c *MatrixChannel) handleIncoming(roomID, senderID, displayName, content st
 
 // ========== 内部方法 ==========
 
-func (c *MatrixChannel) sendToMatrix(ctx context.Context, roomID, content string) (string, error) {
-    // 实际的 Matrix SDK 调用
+func (c *ExampleChatChannel) sendToExampleChat(ctx context.Context, roomID, content string) (string, error) {
+    // 实际的 ExampleChat SDK 调用
     return "event-id", nil
 }
 ```
@@ -604,7 +603,7 @@ func (c *MatrixChannel) sendToMatrix(ctx context.Context, roomID, content string
 
 ```go
 // 如果平台支持发送图片/文件/音频/视频
-func (c *MatrixChannel) SendMedia(ctx context.Context, msg bus.OutboundMediaMessage) ([]string, error) {
+func (c *ExampleChatChannel) SendMedia(ctx context.Context, msg bus.OutboundMediaMessage) ([]string, error) {
     if !c.IsRunning() {
         return nil, channels.ErrNotRunning
     }
@@ -618,7 +617,7 @@ func (c *MatrixChannel) SendMedia(ctx context.Context, msg bus.OutboundMediaMess
     for _, part := range msg.Parts {
         localPath, err := store.Resolve(part.Ref)
         if err != nil {
-            logger.ErrorCF("matrix", "Failed to resolve media", map[string]any{
+            logger.ErrorCF("examplechat", "Failed to resolve media", map[string]any{
                 "ref": part.Ref, "error": err.Error(),
             })
             continue
@@ -627,9 +626,9 @@ func (c *MatrixChannel) SendMedia(ctx context.Context, msg bus.OutboundMediaMess
         // 根据 part.Type ("image"|"audio"|"video"|"file") 调用对应 API
         switch part.Type {
         case "image":
-            // 上传图片到 Matrix
+            // 上传图片到 ExampleChat
         default:
-            // 上传文件到 Matrix
+            // 上传文件到 ExampleChat
         }
         // 如果 API 能返回平台消息 ID，就在这里追加。
         // messageIDs = append(messageIDs, uploadedMessageID)
@@ -642,14 +641,14 @@ func (c *MatrixChannel) SendMedia(ctx context.Context, msg bus.OutboundMediaMess
 
 ```go
 // 如果平台支持 "正在输入..." 提示
-func (c *MatrixChannel) StartTyping(ctx context.Context, chatID string) (stop func(), err error) {
-    // 调用 Matrix API 发送 typing 指示器
+func (c *ExampleChatChannel) StartTyping(ctx context.Context, chatID string) (stop func(), err error) {
+    // 调用 ExampleChat API 发送 typing 指示器
     // 返回的 stop 函数必须是幂等的
     stopped := false
     return func() {
         if !stopped {
             stopped = true
-            // 调用 Matrix API 停止 typing
+            // 调用 ExampleChat API 停止 typing
         }
     }, nil
 }
@@ -658,9 +657,9 @@ func (c *MatrixChannel) StartTyping(ctx context.Context, chatID string) (stop fu
 #### ReactionCapable — 消息反应指示器
 
 ```go
-// 如果平台支持对入站消息添加 emoji 反应（如 Slack 的 👀、OneBot 的表情 289）
-func (c *MatrixChannel) ReactToMessage(ctx context.Context, chatID, messageID string) (undo func(), err error) {
-    // 调用 Matrix API 添加反应到消息
+// 如果平台支持对入站消息添加 emoji 反应（如 OneBot 的表情 289）
+func (c *ExampleChatChannel) ReactToMessage(ctx context.Context, chatID, messageID string) (undo func(), err error) {
+    // 调用 ExampleChat API 添加反应到消息
     // 返回的 undo 函数移除反应，必须是幂等的
     err = c.addReaction(chatID, messageID, "eyes")
     if err != nil {
@@ -676,8 +675,8 @@ func (c *MatrixChannel) ReactToMessage(ctx context.Context, chatID, messageID st
 
 ```go
 // 如果平台支持编辑已发送的消息（用于 Placeholder 替换）
-func (c *MatrixChannel) EditMessage(ctx context.Context, chatID, messageID, content string) error {
-    // 调用 Matrix API 编辑消息
+func (c *ExampleChatChannel) EditMessage(ctx context.Context, chatID, messageID, content string) error {
+    // 调用 ExampleChat API 编辑消息
     return nil
 }
 ```
@@ -689,8 +688,8 @@ func (c *MatrixChannel) EditMessage(ctx context.Context, chatID, messageID, cont
 // 则 Manager 的 preSend 会在出站时自动将占位消息编辑为最终回复。
 // SendPlaceholder 内部根据 PlaceholderConfig.Enabled 决定是否发送；
 // 返回 ("", nil) 表示跳过。
-func (c *MatrixChannel) SendPlaceholder(ctx context.Context, chatID string) (string, error) {
-    cfg := c.config.Channels.Matrix.Placeholder
+func (c *ExampleChatChannel) SendPlaceholder(ctx context.Context, chatID string) (string, error) {
+    cfg := c.config.Channels.ExampleChat.Placeholder
     if !cfg.Enabled {
         return "", nil
     }
@@ -698,7 +697,7 @@ func (c *MatrixChannel) SendPlaceholder(ctx context.Context, chatID string) (str
     if text == "" {
         text = "Thinking... 💭"
     }
-    // 调用 Matrix API 发送占位消息
+    // 调用 ExampleChat API 发送占位消息
     msg, err := c.sendText(ctx, chatID, text)
     if err != nil {
         return "", err
@@ -711,11 +710,11 @@ func (c *MatrixChannel) SendPlaceholder(ctx context.Context, chatID string) (str
 
 ```go
 // 如果 channel 通过 webhook 接收消息（而非长轮询/WebSocket）
-func (c *MatrixChannel) WebhookPath() string {
-    return "/webhook/matrix"   // 路径会被注册到共享 HTTP 服务器
+func (c *ExampleChatChannel) WebhookPath() string {
+    return "/webhook/examplechat"   // 路径会被注册到共享 HTTP 服务器
 }
 
-func (c *MatrixChannel) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (c *ExampleChatChannel) ServeHTTP(w http.ResponseWriter, r *http.Request) {
     // 处理 webhook 请求
 }
 ```
@@ -723,11 +722,11 @@ func (c *MatrixChannel) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 #### HealthChecker — 健康检查端点
 
 ```go
-func (c *MatrixChannel) HealthPath() string {
-    return "/health/matrix"
+func (c *ExampleChatChannel) HealthPath() string {
+    return "/health/examplechat"
 }
 
-func (c *MatrixChannel) HealthHandler(w http.ResponseWriter, r *http.Request) {
+func (c *ExampleChatChannel) HealthHandler(w http.ResponseWriter, r *http.Request) {
     if c.IsRunning() {
         w.WriteHeader(http.StatusOK)
         w.Write([]byte("OK"))
@@ -767,7 +766,7 @@ if c.owner != nil && c.placeholderRecorder != nil {
 
 **这意味着**：
 - 实现 `TypingCapable` 的 channel（Telegram、Discord、LINE）无需在 `handleMessage` 中手动调用 `StartTyping` + `RecordTypingStop`
-- 实现 `ReactionCapable` 的 channel（Slack、OneBot）无需在 `handleMessage` 中手动调用 `AddReaction` + `RecordTypingStop`
+- 实现 `ReactionCapable` 的 channel（OneBot）无需在 `handleMessage` 中手动调用 `AddReaction` + `RecordTypingStop`
 - 实现 `PlaceholderCapable` 的 channel（Telegram、Discord）无需在 `handleMessage` 中手动发送占位消息并调用 `RecordPlaceholder`
 - Channel 只需实现对应接口，`HandleMessage` 会自动完成编排
 - 不实现这些接口的 channel 不受影响（类型断言会失败，跳过）
@@ -791,12 +790,12 @@ channel 特定的设置放在 `settings` 子键中：
 ```json
 {
   "channel_list": {
-    "matrix": {
+    "examplechat": {
       "enabled": true,
-      "type": "matrix",
+      "type": "examplechat",
       "allow_from": ["@user:example.com"],
       "settings": {
-        "home_server": "https://matrix.org",
+        "home_server": "https://examplechat.org",
         "user_id": "@bot:example.com",
         "access_token": "enc://..."
       }
@@ -809,8 +808,8 @@ channel 特定的设置放在 `settings` 子键中：
 
 ```yaml
 channels:
-  matrix:
-    access_token: "your-matrix-access-token"
+  examplechat:
+    access_token: "your-examplechat-access-token"
 ```
 
 Channel 类型必须在 `pkg/config/config_channel.go` 的 `channelSettingsFactory` 中注册：
@@ -818,7 +817,7 @@ Channel 类型必须在 `pkg/config/config_channel.go` 的 `channelSettingsFacto
 ```go
 var channelSettingsFactory = map[string]any{
     // ... 现有 channels
-    ChannelMatrix: (MatrixSettings{}),
+    ChannelExampleChat: (ExampleChatSettings{}),
 }
 ```
 
@@ -841,7 +840,7 @@ Manager 使用 `InitChannelList()` 来验证类型和解码设置，
 ```go
 // cmd/picoclaw/internal/gateway/helpers.go
 import (
-    _ "github.com/sipeed/picoclaw/pkg/channels/matrix"
+    _ "github.com/sipeed/picoclaw/pkg/channels/examplechat"
 )
 ```
 
@@ -1070,7 +1069,6 @@ type channelWorker struct {
 var channelRateConfig = map[string]float64{
     "telegram": 20,   // 20 msg/s
     "discord":  1,    // 1 msg/s
-    "slack":    1,    // 1 msg/s
     "line":     10,   // 10 msg/s
 }
 // 默认: 10 msg/s
@@ -1265,7 +1263,7 @@ Manager 创建单一 `http.Server`，自动发现和注册：
 
 为新 channel 添加测试时：
 ```bash
-go test ./pkg/channels/matrix/ -v              # 子包测试
+go test ./pkg/channels/examplechat/ -v              # 子包测试
 go test ./pkg/channels/ -run TestSpecific -v    # 框架测试
 make test                                       # 全量测试
 ```
@@ -1298,7 +1296,6 @@ make test                                       # 全量测试
 |------|--------|----------|
 | `pkg/channels/telegram/` | `"telegram"` | TypingCapable, PlaceholderCapable, MessageEditor, MediaSender |
 | `pkg/channels/discord/` | `"discord"` | TypingCapable, PlaceholderCapable, MessageEditor, MediaSender |
-| `pkg/channels/slack/` | `"slack"` | ReactionCapable, MediaSender |
 | `pkg/channels/line/` | `"line"` | TypingCapable, MediaSender, WebhookHandler |
 | `pkg/channels/onebot/` | `"onebot"` | ReactionCapable, MediaSender |
 | `pkg/channels/dingtalk/` | `"dingtalk"` | — |
@@ -1407,7 +1404,6 @@ agentLoop.Stop()               // 停止 Agent
 |---------|-------------|-------|
 | telegram | 20 | 10 |
 | discord | 1 | 1 |
-| slack | 1 | 1 |
 | line | 10 | 5 |
 | _其他_ | 10 (默认) | 5 |
 
@@ -1423,6 +1419,6 @@ agentLoop.Stop()               // 停止 Agent
 
 5. **DingTalk 使用 Stream 模式**：DingTalk 使用 SDK 的 Stream/WebSocket 模式（非 HTTP webhook），因此不实现 `WebhookHandler`。
 
-6. **PlaceholderConfig 的配置与实现**：`PlaceholderConfig` 出现在 5 个 channel config 中（Telegram、Discord、Slack、LINE、OneBot），但只有实现了 `PlaceholderCapable` + `MessageEditor` 的 channel（Telegram、Discord）能真正使用占位消息编辑功能。其余 channel 的 `PlaceholderConfig` 为预留字段。
+6. **PlaceholderConfig 的配置与实现**：`PlaceholderConfig` 出现在 4 个 channel config 中（Telegram、Discord、LINE、OneBot），但只有实现了 `PlaceholderCapable` + `MessageEditor` 的 channel（Telegram、Discord）能真正使用占位消息编辑功能。其余 channel 的 `PlaceholderConfig` 为预留字段。
 
-7. **ReasoningChannelID**：大多数 channel config 都包含 `reasoning_channel_id` 字段，用于将 LLM 的思维链（reasoning/thinking）路由到指定 channel（WhatsApp、Telegram、Feishu、Discord、QQ、DingTalk、Slack、LINE、OneBot、WeCom）。`BaseChannel` 通过 `WithReasoningChannelID` 选项和 `ReasoningChannelID()` 方法暴露此配置。
+7. **ReasoningChannelID**：大多数 channel config 都包含 `reasoning_channel_id` 字段，用于将 LLM 的思维链（reasoning/thinking）路由到指定 channel（WhatsApp、Telegram、Feishu、Discord、QQ、DingTalk、LINE、OneBot、WeCom）。`BaseChannel` 通过 `WithReasoningChannelID` 选项和 `ReasoningChannelID()` 方法暴露此配置。

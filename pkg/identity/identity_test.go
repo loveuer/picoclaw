@@ -14,7 +14,7 @@ func TestBuildCanonicalID(t *testing.T) {
 	}{
 		{"telegram", "123456", "telegram:123456"},
 		{"Discord", "98765432", "discord:98765432"},
-		{"SLACK", "U123ABC", "slack:U123ABC"},
+		{"DISCORD", "U123ABC", "discord:U123ABC"},
 		{"", "123", ""},
 		{"telegram", "", ""},
 		{"  telegram  ", "  123  ", "telegram:123"},
@@ -38,7 +38,7 @@ func TestParseCanonicalID(t *testing.T) {
 	}{
 		{"telegram:123456", "telegram", "123456", true},
 		{"discord:98765432", "discord", "98765432", true},
-		{"slack:U123ABC", "slack", "U123ABC", true},
+		{"discord:U123ABC", "discord", "U123ABC", true},
 		{"nocolon", "", "", false},
 		{"", "", "", false},
 		{":missing", "", "", false},

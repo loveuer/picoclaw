@@ -228,14 +228,6 @@ func TestAllSecurityKeysAccessible(t *testing.T) {
       "enabled": true,
       "client_id": "test_client_id"
     },
-    "slack": {
-      "enabled": true
-    },
-    "matrix": {
-      "enabled": true,
-      "homeserver": "https://matrix.org",
-      "user_id": "@test:matrix.org"
-    },
     "line": {
       "enabled": true,
       "webhook_host": "localhost",
@@ -249,11 +241,6 @@ func TestAllSecurityKeysAccessible(t *testing.T) {
     "wecom": {
       "enabled": true,
       "bot_id": "test_wecom_bot_id"
-    },
-    "irc": {
-      "enabled": true,
-      "server": "irc.example.com",
-      "nick": "testbot"
     },
     "qq": {
       "enabled": true,
@@ -304,11 +291,6 @@ channels:
     token: "discord_test_bot_token_xyz"
   dingtalk:
     client_secret: "dingtalk_test_client_secret"
-  slack:
-    bot_token: "xoxb-slack-bot-token-123"
-    app_token: "xapp-slack-app-token-456"
-  matrix:
-    access_token: "matrix_test_access_token"
   line:
     channel_secret: "line_test_channel_secret"
     channel_access_token: "line_test_channel_access_token"
@@ -316,10 +298,6 @@ channels:
     access_token: "onebot_test_access_token"
   wecom:
     secret: "wecom_test_secret"
-  irc:
-    password: "irc_test_password"
-    nickserv_password: "irc_test_nickserv_password"
-    sasl_password: "irc_test_sasl_password"
   qq:
     app_secret: "qq_test_app_secret"
 
@@ -401,18 +379,6 @@ skills:
 		assert.Equal(t, "dingtalk_test_client_secret", secureStr(dtSec.(*DingTalkSettings).ClientSecret))
 		t.Logf("DingTalk ClientSecret(): %s", secureStr(dtSec.(*DingTalkSettings).ClientSecret))
 
-		// Slack
-		slSec := decodeChannel("slack")
-		assert.Equal(t, "xoxb-slack-bot-token-123", secureStr(slSec.(*SlackSettings).BotToken))
-		assert.Equal(t, "xapp-slack-app-token-456", secureStr(slSec.(*SlackSettings).AppToken))
-		t.Logf("Slack BotToken(): %s", secureStr(slSec.(*SlackSettings).BotToken))
-		t.Logf("Slack AppToken(): %s", secureStr(slSec.(*SlackSettings).AppToken))
-
-		// Matrix
-		matSec := decodeChannel("matrix")
-		assert.Equal(t, "matrix_test_access_token", secureStr(matSec.(*MatrixSettings).AccessToken))
-		t.Logf("Matrix AccessToken(): %s", secureStr(matSec.(*MatrixSettings).AccessToken))
-
 		// LINE
 		lineSec := decodeChannel("line")
 		assert.Equal(t, "line_test_channel_secret", secureStr(lineSec.(*LINESettings).ChannelSecret))
@@ -431,15 +397,6 @@ skills:
 		assert.Equal(t, "wecom_test_secret", secureStr(wcSec.(*WeComSettings).Secret))
 		t.Logf("WeCom BotID: %s", wcSec.(*WeComSettings).BotID)
 		t.Logf("WeCom Secret(): %s", secureStr(wcSec.(*WeComSettings).Secret))
-
-		// IRC
-		ircSec := decodeChannel("irc")
-		assert.Equal(t, "irc_test_password", secureStr(ircSec.(*IRCSettings).Password))
-		assert.Equal(t, "irc_test_nickserv_password", secureStr(ircSec.(*IRCSettings).NickServPassword))
-		assert.Equal(t, "irc_test_sasl_password", secureStr(ircSec.(*IRCSettings).SASLPassword))
-		t.Logf("IRC Password(): %s", secureStr(ircSec.(*IRCSettings).Password))
-		t.Logf("IRC NickServPassword(): %s", secureStr(ircSec.(*IRCSettings).NickServPassword))
-		t.Logf("IRC SASLPassword(): %s", secureStr(ircSec.(*IRCSettings).SASLPassword))
 
 		// QQ
 		qqSec := decodeChannel("qq")

@@ -2,7 +2,7 @@ package bus
 
 // SenderInfo provides structured sender identity information.
 type SenderInfo struct {
-	Platform    string `json:"platform,omitempty"`     // "telegram", "discord", "slack", ...
+	Platform    string `json:"platform,omitempty"`     // "telegram", "discord", ...
 	PlatformID  string `json:"platform_id,omitempty"`  // raw platform ID, e.g. "123456"
 	CanonicalID string `json:"canonical_id,omitempty"` // "platform:id" format
 	Username    string `json:"username,omitempty"`     // username (e.g. @alice)

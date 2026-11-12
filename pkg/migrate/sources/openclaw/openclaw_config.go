@@ -115,13 +115,9 @@ type OpenClawAgentTools struct {
 type OpenClawChannels struct {
 	Telegram    *OpenClawTelegramConfig    `json:"telegram"`
 	Discord     *OpenClawDiscordConfig     `json:"discord"`
-	Slack       *OpenClawSlackConfig       `json:"slack"`
 	WhatsApp    *OpenClawWhatsAppConfig    `json:"whatsapp"`
 	Signal      *OpenClawSignalConfig      `json:"signal"`
-	Matrix      *OpenClawMatrixConfig      `json:"matrix"`
 	GoogleChat  *OpenClawGoogleChatConfig  `json:"googlechat"`
-	Teams       *OpenClawTeamsConfig       `json:"msteams"`
-	IRC         *OpenClawIrcConfig         `json:"irc"`
 	Mattermost  *OpenClawMattermostConfig  `json:"mattermost"`
 	Feishu      *OpenClawFeishuConfig      `json:"feishu"`
 	IMessage    *OpenClawIMessageConfig    `json:"imessage"`
@@ -148,15 +144,6 @@ type OpenClawDiscordConfig struct {
 	Enabled     *bool           `json:"enabled"`
 }
 
-type OpenClawSlackConfig struct {
-	BotToken    *string  `json:"botToken"`
-	AppToken    *string  `json:"appToken"`
-	DmPolicy    *string  `json:"dmPolicy"`
-	GroupPolicy *string  `json:"groupPolicy"`
-	AllowFrom   []string `json:"allowFrom"`
-	Enabled     *bool    `json:"enabled"`
-}
-
 type OpenClawWhatsAppConfig struct {
 	AuthDir     *string  `json:"authDir"`
 	DmPolicy    *string  `json:"dmPolicy"`
@@ -176,43 +163,12 @@ type OpenClawSignalConfig struct {
 	Enabled   *bool    `json:"enabled"`
 }
 
-type OpenClawMatrixConfig struct {
-	Homeserver  *string  `json:"homeserver"`
-	UserID      *string  `json:"userId"`
-	AccessToken *string  `json:"accessToken"`
-	Rooms       []string `json:"rooms"`
-	DmPolicy    *string  `json:"dmPolicy"`
-	AllowFrom   []string `json:"allowFrom"`
-	Enabled     *bool    `json:"enabled"`
-}
-
 type OpenClawGoogleChatConfig struct {
 	ServiceAccountFile *string `json:"serviceAccountFile"`
 	WebhookPath        *string `json:"webhookPath"`
 	BotUser            *string `json:"botUser"`
 	DmPolicy           *string `json:"dmPolicy"`
 	Enabled            *bool   `json:"enabled"`
-}
-
-type OpenClawTeamsConfig struct {
-	AppID       *string  `json:"appId"`
-	AppPassword *string  `json:"appPassword"`
-	TenantID    *string  `json:"tenantId"`
-	DmPolicy    *string  `json:"dmPolicy"`
-	AllowFrom   []string `json:"allowFrom"`
-	Enabled     *bool    `json:"enabled"`
-}
-
-type OpenClawIrcConfig struct {
-	Host      *string  `json:"host"`
-	Port      *int     `json:"port"`
-	TLS       *bool    `json:"tls"`
-	Nick      *string  `json:"nick"`
-	Password  *string  `json:"password"`
-	Channels  []string `json:"channels"`
-	DmPolicy  *string  `json:"dmPolicy"`
-	AllowFrom []string `json:"allowFrom"`
-	Enabled   *bool    `json:"enabled"`
 }
 
 type OpenClawMattermostConfig struct {
@@ -361,10 +317,6 @@ func (c *OpenClawConfig) IsChannelEnabled(name string) bool {
 		return c.Channels.Telegram == nil || c.Channels.Telegram.Enabled == nil || *c.Channels.Telegram.Enabled
 	case "discord":
 		return c.Channels.Discord == nil || c.Channels.Discord.Enabled == nil || *c.Channels.Discord.Enabled
-	case "slack":
-		return c.Channels.Slack == nil || c.Channels.Slack.Enabled == nil || *c.Channels.Slack.Enabled
-	case "matrix":
-		return c.Channels.Matrix == nil || c.Channels.Matrix.Enabled == nil || *c.Channels.Matrix.Enabled
 	case "whatsapp":
 		return c.Channels.WhatsApp == nil || c.Channels.WhatsApp.Enabled == nil || *c.Channels.WhatsApp.Enabled
 	case "feishu":
@@ -382,16 +334,6 @@ func GetChannelAllowFrom(ch any) []string {
 		}
 		return c.AllowFrom
 	case *OpenClawDiscordConfig:
-		if c == nil {
-			return nil
-		}
-		return c.AllowFrom
-	case *OpenClawSlackConfig:
-		if c == nil {
-			return nil
-		}
-		return c.AllowFrom
-	case *OpenClawMatrixConfig:
 		if c == nil {
 			return nil
 		}
@@ -624,8 +566,6 @@ type ChannelsConfig struct {
 	Discord  DiscordConfig  `json:"discord"`
 	QQ       QQConfig       `json:"qq"`
 	DingTalk DingTalkConfig `json:"dingtalk"`
-	Slack    SlackConfig    `json:"slack"`
-	Matrix   MatrixConfig   `json:"matrix"`
 	LINE     LINEConfig     `json:"line"`
 }
 
@@ -671,21 +611,6 @@ type DingTalkConfig struct {
 	ClientID     string   `json:"client_id"`
 	ClientSecret string   `json:"client_secret"`
 	AllowFrom    []string `json:"allow_from"`
-}
-
-type SlackConfig struct {
-	Enabled   bool     `json:"enabled"`
-	BotToken  string   `json:"bot_token"`
-	AppToken  string   `json:"app_token"`
-	AllowFrom []string `json:"allow_from"`
-}
-
-type MatrixConfig struct {
-	Enabled     bool     `json:"enabled"`
-	Homeserver  string   `json:"homeserver"`
-	UserID      string   `json:"user_id"`
-	AccessToken string   `json:"access_token"`
-	AllowFrom   []string `json:"allow_from"`
 }
 
 type LINEConfig struct {
@@ -784,20 +709,6 @@ func (c *OpenClawConfig) convertChannels(warnings *[]string) ChannelsConfig {
 		}
 	}
 
-	if c.Channels.Slack != nil {
-		enabled := c.Channels.Slack.Enabled == nil || *c.Channels.Slack.Enabled
-		channels.Slack = SlackConfig{
-			Enabled:   enabled,
-			AllowFrom: c.Channels.Slack.AllowFrom,
-		}
-		if c.Channels.Slack.BotToken != nil {
-			channels.Slack.BotToken = *c.Channels.Slack.BotToken
-		}
-		if c.Channels.Slack.AppToken != nil {
-			channels.Slack.AppToken = *c.Channels.Slack.AppToken
-		}
-	}
-
 	if c.Channels.WhatsApp != nil {
 		enabled := c.Channels.WhatsApp.Enabled == nil || *c.Channels.WhatsApp.Enabled
 		channels.WhatsApp = WhatsAppConfig{
@@ -855,28 +766,8 @@ func (c *OpenClawConfig) convertChannels(warnings *[]string) ChannelsConfig {
 		}
 	}
 
-	if c.Channels.Matrix != nil && supportedChannels["matrix"] {
-		enabled := c.Channels.Matrix.Enabled == nil || *c.Channels.Matrix.Enabled
-		channels.Matrix = MatrixConfig{
-			Enabled:   enabled,
-			AllowFrom: c.Channels.Matrix.AllowFrom,
-		}
-		if c.Channels.Matrix.Homeserver != nil {
-			channels.Matrix.Homeserver = *c.Channels.Matrix.Homeserver
-		}
-		if c.Channels.Matrix.UserID != nil {
-			channels.Matrix.UserID = *c.Channels.Matrix.UserID
-		}
-		if c.Channels.Matrix.AccessToken != nil {
-			channels.Matrix.AccessToken = *c.Channels.Matrix.AccessToken
-		}
-	}
-
 	if c.Channels.Signal != nil {
 		*warnings = append(*warnings, "Channel 'signal': No PicoClaw adapter available")
-	}
-	if c.Channels.IRC != nil {
-		*warnings = append(*warnings, "Channel 'irc': No PicoClaw adapter available")
 	}
 	if c.Channels.Mattermost != nil {
 		*warnings = append(*warnings, "Channel 'mattermost': No PicoClaw adapter available")
@@ -1052,33 +943,6 @@ func (c ChannelsConfig) ToStandardChannels() config.ChannelsConfig {
 		}
 		if c.DingTalk.ClientSecret != "" {
 			m["client_secret"] = config.NewSecureString(c.DingTalk.ClientSecret)
-		}
-		return m
-	}())
-
-	setChannel(channels, "slack", func() map[string]any {
-		m := map[string]any{
-			"enabled": c.Slack.Enabled,
-		}
-		if c.Slack.BotToken != "" {
-			m["bot_token"] = config.NewSecureString(c.Slack.BotToken)
-		}
-		if c.Slack.AppToken != "" {
-			m["app_token"] = config.NewSecureString(c.Slack.AppToken)
-		}
-		return m
-	}())
-
-	setChannel(channels, "matrix", func() map[string]any {
-		m := map[string]any{
-			"enabled":        c.Matrix.Enabled,
-			"homeserver":     c.Matrix.Homeserver,
-			"user_id":        c.Matrix.UserID,
-			"allow_from":     c.Matrix.AllowFrom,
-			"join_on_invite": true,
-		}
-		if c.Matrix.AccessToken != "" {
-			m["access_token"] = config.NewSecureString(c.Matrix.AccessToken)
 		}
 		return m
 	}())

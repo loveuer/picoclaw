@@ -368,13 +368,10 @@ Parla con il tuo PicoClaw attraverso 17+ piattaforme di messaggistica:
 | **WhatsApp** | Facile (QR scan o bridge URL) | Nativo / Bridge | [Guida](../guides/chat-apps.md#whatsapp) |
 | **Weixin** | Facile (scan QR nativo) | iLink API | [Guida](../guides/chat-apps.md#weixin) |
 | **QQ** | Facile (AppID + AppSecret) | WebSocket | [Guida](../channels/qq/README.md) |
-| **Slack** | Facile (bot + app token) | Socket Mode | [Guida](../channels/slack/README.md) |
-| **Matrix** | Medio (homeserver + token) | Sync API | [Guida](../channels/matrix/README.md) |
 | **DingTalk** | Medio (credenziali client) | Stream | [Guida](../channels/dingtalk/README.md) |
 | **Feishu / Lark** | Medio (App ID + Secret) | WebSocket/SDK | [Guida](../channels/feishu/README.md) |
 | **LINE** | Medio (credenziali + webhook) | Webhook | [Guida](../channels/line/README.md) |
 | **WeCom** | Facile (login QR o manuale) | WebSocket | [Guida](../channels/wecom/README.md) |
-| **IRC** | Medio (server + nick) | Protocollo IRC | [Guida](../guides/chat-apps.md#irc) |
 | **OneBot** | Medio (WebSocket URL) | OneBot v11 | [Guida](../channels/onebot/README.md) |
 
 > Tutti i channel basati su webhook condividono un singolo server HTTP Gateway (`gateway.host`:`gateway.port`, default `127.0.0.1:18790`). Feishu usa la modalità WebSocket/SDK e non usa il server HTTP condiviso.

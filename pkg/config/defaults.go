@@ -537,22 +537,6 @@ func defaultChannels() ChannelsConfig {
 			"settings": map[string]any{"max_message_length": 2000},
 		},
 		"dingtalk": map[string]any{},
-		"slack":    map[string]any{},
-		"matrix": map[string]any{
-			"group_trigger": map[string]any{"mention_only": true},
-			"placeholder":   map[string]any{"enabled": true, "text": []string{"Thinking... 💭"}},
-			"settings": map[string]any{
-				"homeserver":     "https://matrix.org",
-				"join_on_invite": true,
-			},
-		},
-		"deltachat": map[string]any{
-			"group_trigger": map[string]any{"mention_only": true},
-			"settings": map[string]any{
-				"email":        "@nine.testrun.org",
-				"display_name": "PicoClaw Bot",
-			},
-		},
 		"line": map[string]any{
 			"group_trigger": map[string]any{"mention_only": true},
 			"settings": map[string]any{
@@ -577,14 +561,6 @@ func defaultChannels() ChannelsConfig {
 			"settings": map[string]any{
 				"base_url":     "https://ilinkai.weixin.qq.com/",
 				"cdn_base_url": "https://novac2c.cdn.weixin.qq.com/c2c",
-			},
-		},
-		"irc": map[string]any{
-			"settings": map[string]any{
-				"server":   "",
-				"tls":      true,
-				"nick":     "picoclaw",
-				"channels": []string{},
 			},
 		},
 	}

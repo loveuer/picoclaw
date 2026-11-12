@@ -73,7 +73,7 @@ If your channel exposes a `space` value, you can route by workspace or guild ins
 
 Use this when:
 
-- a Slack workspace assistant should share context across channels
+- a Discord server assistant should share context across channels
 - a Discord guild assistant should share context across channels
 
 ### Split by thread or forum topic
@@ -212,7 +212,7 @@ Example:
   "session": {
     "dimensions": ["chat", "sender"],
     "identity_links": {
-      "john": ["slack:u123", "u123", "legacy-user-42"]
+      "john": ["discord:u123", "u123", "legacy-user-42"]
     }
   }
 }
@@ -244,7 +244,7 @@ Switch to:
 }
 ```
 
-### The same user does not share memory across Slack and Telegram
+### The same user does not share memory across Discord and Telegram
 
 That is expected.
 PicoClaw still separates sessions by channel even if you use `sender`.

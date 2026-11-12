@@ -4,7 +4,7 @@
 
 ## 💬 Aplikasi Sembang
 
-Berbual dengan picoclaw anda melalui Telegram, Discord, WhatsApp, Matrix, QQ, DingTalk, LINE, WeCom, Feishu, Slack, IRC, OneBot, MQTT
+Berbual dengan picoclaw anda melalui Telegram, Discord, WhatsApp, QQ, DingTalk, LINE, WeCom, Feishu, OneBot, MQTT
 
 > **Nota**: Semua saluran berasaskan webhook (LINE, WeCom, dan sebagainya) diservis pada satu pelayan HTTP Gateway yang dikongsi (`gateway.host`:`gateway.port`, lalai `127.0.0.1:18790`). Tiada port khusus per saluran untuk dikonfigurasikan. Nota: Feishu menggunakan mod WebSocket/SDK dan tidak menggunakan pelayan HTTP webhook yang dikongsi.
 
@@ -13,14 +13,11 @@ Berbual dengan picoclaw anda melalui Telegram, Discord, WhatsApp, Matrix, QQ, Di
 | **Telegram**     | Mudah (hanya token)                        |
 | **Discord**      | Mudah (token bot + intents)                |
 | **WhatsApp**     | Mudah (asli: imbas QR; atau bridge URL)    |
-| **Matrix**       | Sederhana (homeserver + access token bot)  |
 | **QQ**           | Mudah (AppID + AppSecret)                  |
 | **DingTalk**     | Sederhana (kelayakan aplikasi)             |
 | **LINE**         | Sederhana (kelayakan + webhook URL)        |
 | **WeCom AI Bot** | Sederhana (Token + kunci AES)              |
 | **Feishu**       | Sederhana (App ID + Secret, mod WebSocket) |
-| **Slack**        | Sederhana (Bot token + App token)          |
-| **IRC**          | Sederhana (pelayan + konfigurasi TLS)      |
 | **OneBot**       | Sederhana (QQ melalui protokol OneBot)     |
 | **MQTT**         | Mudah (broker + agent_id)                  |
 
@@ -245,41 +242,6 @@ picoclaw gateway
 ```bash
 picoclaw gateway
 ```
-</details>
-
-<details>
-<summary><b>Matrix</b></summary>
-
-**1. Sediakan akaun bot**
-
-* Gunakan homeserver pilihan anda (contohnya `https://matrix.org` atau self-hosted)
-* Cipta pengguna bot dan dapatkan access tokennya
-
-**2. Konfigurasi**
-
-```json
-{
-  "channel_list": {
-    "matrix": {
-      "enabled": true,
-      "type": "matrix",
-      "homeserver": "https://matrix.org",
-      "user_id": "@your-bot:matrix.org",
-      "access_token": "YOUR_MATRIX_ACCESS_TOKEN",
-      "allow_from": []
-    }
-  }
-}
-```
-
-**3. Jalankan**
-
-```bash
-picoclaw gateway
-```
-
-Untuk pilihan penuh (`device_id`, `join_on_invite`, `group_trigger`, `placeholder`, `reasoning_channel_id`), lihat [Panduan Konfigurasi Saluran Matrix](../channels/matrix/README.md).
-
 </details>
 
 <details>

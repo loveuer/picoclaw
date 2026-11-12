@@ -574,47 +574,6 @@ type DingTalkSettings struct {
 	ClientSecret SecureString `json:"client_secret,omitzero" yaml:"client_secret,omitempty" env:"PICOCLAW_CHANNELS_DINGTALK_CLIENT_SECRET"`
 }
 
-type SlackSettings struct {
-	BotToken SecureString `json:"bot_token,omitzero" yaml:"bot_token,omitempty" env:"PICOCLAW_CHANNELS_SLACK_BOT_TOKEN"`
-	AppToken SecureString `json:"app_token,omitzero" yaml:"app_token,omitempty" env:"PICOCLAW_CHANNELS_SLACK_APP_TOKEN"`
-}
-
-type MatrixSettings struct {
-	Homeserver         string       `json:"homeserver"                     yaml:"-"                      env:"PICOCLAW_CHANNELS_MATRIX_HOMESERVER"`
-	UserID             string       `json:"user_id"                        yaml:"-"                      env:"PICOCLAW_CHANNELS_MATRIX_USER_ID"`
-	AccessToken        SecureString `json:"access_token,omitzero"          yaml:"access_token,omitempty" env:"PICOCLAW_CHANNELS_MATRIX_ACCESS_TOKEN"`
-	DeviceID           string       `json:"device_id,omitempty"            yaml:"-"`
-	JoinOnInvite       bool         `json:"join_on_invite"                 yaml:"-"`
-	MessageFormat      string       `json:"message_format,omitempty"       yaml:"-"`
-	CryptoDatabasePath string       `json:"crypto_database_path,omitempty" yaml:"-"`
-	CryptoPassphrase   string       `json:"crypto_passphrase,omitempty"    yaml:"-"`
-}
-
-// DeltaChatSettings configures the Delta Chat channel. Delta Chat is an
-// email-based, end-to-end encrypted messenger; PicoClaw talks to a local
-// `deltachat-rpc-server` process over JSON-RPC (stdio).
-//
-// Email is the only required setting. A full address selects an already
-// configured account in DataDir; a first-run marker such as "@nine.testrun.org"
-// creates a chatmail account and tells the user which full email to save.
-// Mailbox credentials stay in the Delta Chat account store. DisplayName and
-// AvatarImage are optional profile settings applied on startup. Password remains
-// only for legacy PicoClaw-managed email configuration.
-type DeltaChatSettings struct {
-	Email          string       `json:"email"                     yaml:"-"                  env:"PICOCLAW_CHANNELS_DELTACHAT_EMAIL"`
-	Password       SecureString `json:"password,omitzero"         yaml:"password,omitempty" env:"PICOCLAW_CHANNELS_DELTACHAT_PASSWORD"`
-	DisplayName    string       `json:"display_name,omitempty"    yaml:"-"                  env:"PICOCLAW_CHANNELS_DELTACHAT_DISPLAY_NAME"`
-	AvatarImage    string       `json:"avatar_image,omitempty"    yaml:"-"                  env:"PICOCLAW_CHANNELS_DELTACHAT_AVATAR_IMAGE"`
-	DataDir        string       `json:"data_dir,omitempty"        yaml:"-"                  env:"PICOCLAW_CHANNELS_DELTACHAT_DATA_DIR"`
-	RPCServerPath  string       `json:"rpc_server_path,omitempty" yaml:"-"                  env:"PICOCLAW_CHANNELS_DELTACHAT_RPC_SERVER_PATH"`
-	InviteLink     string       `json:"invite_link,omitempty"     yaml:"-"                  env:"PICOCLAW_CHANNELS_DELTACHAT_INVITE_LINK"`
-	AllowCrosspost bool         `json:"allow_crosspost,omitempty" yaml:"-"                  env:"PICOCLAW_CHANNELS_DELTACHAT_ALLOW_CROSSPOST"`
-	IMAPServer     string       `json:"imap_server,omitempty"     yaml:"-"`
-	IMAPPort       int          `json:"imap_port,omitempty"       yaml:"-"`
-	SMTPServer     string       `json:"smtp_server,omitempty"     yaml:"-"`
-	SMTPPort       int          `json:"smtp_port,omitempty"       yaml:"-"`
-}
-
 type LINESettings struct {
 	ChannelSecret      SecureString `json:"channel_secret,omitzero"       yaml:"channel_secret,omitempty"       env:"PICOCLAW_CHANNELS_LINE_CHANNEL_SECRET"`
 	ChannelAccessToken SecureString `json:"channel_access_token,omitzero" yaml:"channel_access_token,omitempty" env:"PICOCLAW_CHANNELS_LINE_CHANNEL_ACCESS_TOKEN"`
@@ -659,41 +618,6 @@ func (c *WeixinSettings) SetToken(token string) {
 	c.Token = *NewSecureString(token)
 }
 
-type IRCSettings struct {
-	Server           string              `json:"server"                     yaml:"-"                           env:"PICOCLAW_CHANNELS_IRC_SERVER"`
-	TLS              bool                `json:"tls"                        yaml:"-"                           env:"PICOCLAW_CHANNELS_IRC_TLS"`
-	Nick             string              `json:"nick"                       yaml:"-"                           env:"PICOCLAW_CHANNELS_IRC_NICK"`
-	User             string              `json:"user,omitempty"             yaml:"-"                           env:"PICOCLAW_CHANNELS_IRC_USER"`
-	RealName         string              `json:"real_name,omitempty"        yaml:"-"`
-	Password         SecureString        `json:"password,omitzero"          yaml:"password,omitempty"          env:"PICOCLAW_CHANNELS_IRC_PASSWORD"`
-	NickServPassword SecureString        `json:"nickserv_password,omitzero" yaml:"nickserv_password,omitempty" env:"PICOCLAW_CHANNELS_IRC_NICKSERV_PASSWORD"`
-	SASLUser         string              `json:"sasl_user"                  yaml:"-"                           env:"PICOCLAW_CHANNELS_IRC_SASL_USER"`
-	SASLPassword     SecureString        `json:"sasl_password,omitzero"     yaml:"sasl_password,omitempty"     env:"PICOCLAW_CHANNELS_IRC_SASL_PASSWORD"`
-	Channels         FlexibleStringSlice `json:"channels"                   yaml:"-"                           env:"PICOCLAW_CHANNELS_IRC_CHANNELS"`
-	RequestCaps      FlexibleStringSlice `json:"request_caps,omitempty"     yaml:"-"`
-}
-
-type VKSettings struct {
-	Token   SecureString `json:"token,omitzero" yaml:"token,omitempty" env:"PICOCLAW_CHANNELS_VK_TOKEN"`
-	GroupID int          `json:"group_id"       yaml:"-"               env:"PICOCLAW_CHANNELS_VK_GROUP_ID"`
-}
-
-func (c *VKSettings) SetToken(token string) {
-	c.Token = *NewSecureString(token)
-}
-
-// TeamsWebhookSettings configures the output-only Microsoft Teams webhook channel.
-// Multiple webhook targets can be configured and selected via ChatID at send time.
-type TeamsWebhookSettings struct {
-	Webhooks map[string]TeamsWebhookTarget `json:"webhooks" yaml:"webhooks,omitempty"`
-}
-
-// TeamsWebhookTarget represents a single Teams webhook destination.
-type TeamsWebhookTarget struct {
-	WebhookURL SecureString `json:"webhook_url,omitzero" yaml:"webhook_url,omitempty"`
-	Title      string       `json:"title,omitempty"      yaml:"-"`
-}
-
 type MQTTSettings struct {
 	Broker      string       `json:"broker"                 yaml:"-"                  env:"PICOCLAW_CHANNELS_MQTT_BROKER"`
 	AgentID     string       `json:"agent_id"               yaml:"-"                  env:"PICOCLAW_CHANNELS_MQTT_AGENT_ID"`
@@ -703,18 +627,6 @@ type MQTTSettings struct {
 	ClientID    string       `json:"client_id,omitempty"    yaml:"-"                  env:"PICOCLAW_CHANNELS_MQTT_CLIENT_ID"`
 	KeepAlive   int          `json:"keep_alive,omitempty"   yaml:"-"                  env:"PICOCLAW_CHANNELS_MQTT_KEEP_ALIVE"`
 	QoS         int          `json:"qos,omitempty"          yaml:"-"                  env:"PICOCLAW_CHANNELS_MQTT_QOS"`
-}
-
-// SlackWebhookSettings configures the output-only Slack webhook channel.
-type SlackWebhookSettings struct {
-	Webhooks map[string]SlackWebhookTarget `json:"webhooks" yaml:"webhooks,omitempty"`
-}
-
-// SlackWebhookTarget represents a single Slack Incoming Webhook destination.
-type SlackWebhookTarget struct {
-	WebhookURL SecureString `json:"webhook_url,omitzero" yaml:"webhook_url,omitempty"`
-	Username   string       `json:"username,omitempty"   yaml:"-"`
-	IconEmoji  string       `json:"icon_emoji,omitempty" yaml:"-"`
 }
 
 type HeartbeatConfig struct {

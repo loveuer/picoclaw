@@ -41,7 +41,7 @@ The runner auto-discovers every suite under `integration/suites/`, so adding a s
 - The shared runner is defined in [`integration/docker-compose.runner.yml`](docker-compose.runner.yml).
 - Each suite lives in `integration/suites/<suite-name>/`.
 - The runner script loads `suite.env`, merges the shared compose file with the suite-specific compose files, starts dependency services, runs the suite command, and then tears everything down.
-- The shared runner container sets `GOFLAGS=-tags=goolm,stdjson,integration`, so tests run with the same build tags used by CI.
+- The shared runner container sets `GOFLAGS=-tags=stdjson,integration`, so tests run with the same build tags used by CI.
 
 In practice, each suite gives us:
 
@@ -125,7 +125,7 @@ This is the fastest way to reproduce exactly what the CI integration job does fo
 For faster iteration while writing the test, you can run the Go test itself without Docker:
 
 ```bash
-go test -tags=goolm,stdjson,integration ./pkg/mcp -run TestIntegration_StreamableHTTPCompatibility -v
+go test -tags=stdjson,integration ./pkg/mcp -run TestIntegration_StreamableHTTPCompatibility -v
 ```
 
 You can also run the real-server smoke test directly if you provide the same environment variables that the Docker suite would inject:
@@ -135,7 +135,7 @@ PICOCLAW_MCP_REAL_SERVER_JSON='{"enabled":true,"type":"http","url":"http://127.0
 PICOCLAW_MCP_REAL_TOOL_NAME=echo \
 PICOCLAW_MCP_REAL_TOOL_ARGS_JSON='{"message":"hello"}' \
 PICOCLAW_MCP_REAL_EXPECT_SUBSTRING=hello \
-go test -tags=goolm,stdjson,integration ./pkg/mcp -run TestIntegration_RealConfiguredServer -v
+go test -tags=stdjson,integration ./pkg/mcp -run TestIntegration_RealConfiguredServer -v
 ```
 
 Notes:
@@ -235,7 +235,7 @@ Practical advice:
 At minimum:
 
 ```bash
-go test -tags=goolm,stdjson,integration ./path/to/package -run TestIntegration_Name -v
+go test -tags=stdjson,integration ./path/to/package -run TestIntegration_Name -v
 bash ./scripts/run-integration-tests.sh <suite-name>
 ```
 

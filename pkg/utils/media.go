@@ -141,7 +141,7 @@ func DownloadFile(urlStr, filename string, opts DownloadOptions) string {
 		return ""
 	}
 
-	// Add extra headers (e.g., Authorization for Slack)
+	// Add extra headers (e.g., Authorization)
 	for key, value := range opts.ExtraHeaders {
 		req.Header.Set(key, value)
 	}

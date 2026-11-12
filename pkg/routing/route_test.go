@@ -160,10 +160,10 @@ func TestResolveRoute_DispatchMentionedRule(t *testing.T) {
 	cfg.Agents.Dispatch = &config.DispatchConfig{
 		Rules: []config.DispatchRule{
 			{
-				Name:  "slack-mentions",
+				Name:  "discord-mentions",
 				Agent: "support",
 				When: config.DispatchSelector{
-					Channel:   "slack",
+					Channel:   "discord",
 					Space:     "workspace:t001",
 					Mentioned: &mentioned,
 				},
@@ -173,7 +173,7 @@ func TestResolveRoute_DispatchMentionedRule(t *testing.T) {
 	r := NewRouteResolver(cfg)
 
 	route := r.ResolveRoute(bus.InboundContext{
-		Channel:   "slack",
+		Channel:   "discord",
 		ChatID:    "C123",
 		ChatType:  "channel",
 		SpaceID:   "T001",
