@@ -9,7 +9,6 @@ It does not sandbox the main `picoclaw` process itself.
 The current scope is the child-process startup path:
 
 - `exec` tool
-- CLI providers such as `claude-cli` and `codex-cli`
 - process hooks
 - MCP `stdio` servers
 

@@ -419,15 +419,20 @@ func TestProvider_ChatStreamingRoundTrip(t *testing.T) {
 		return "refreshed-token", nil
 	}, server.URL)
 
-	resp, err := p.Chat(
+	var chunks []string
+	resp, err := p.ChatStream(
 		t.Context(),
 		[]Message{{Role: "user", Content: "Hello"}},
 		nil,
 		"claude-sonnet-4.6",
 		map[string]any{},
+		func(content string) { chunks = append(chunks, content) },
 	)
 	if err != nil {
 		t.Fatalf("Chat() error: %v", err)
+	}
+	if !reflect.DeepEqual(chunks, []string{"Hello", "Hello world"}) {
+		t.Fatalf("streamed chunks = %v", chunks)
 	}
 	if resp.Content != "Hello world" {
 		t.Errorf("Content = %q, want %q", resp.Content, "Hello world")

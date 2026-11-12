@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"time"
 
 	"github.com/anthropics/anthropic-sdk-go"
 	"github.com/anthropics/anthropic-sdk-go/option"
@@ -37,6 +38,40 @@ type Provider struct {
 
 // SupportsThinking implements providers.ThinkingCapable.
 func (p *Provider) SupportsThinking() bool { return true }
+
+// NewAPIKeyProvider uses Anthropic's native Messages API with configured HTTP options.
+func NewAPIKeyProvider(
+	apiKey, apiBase, proxy, userAgent string,
+	timeoutSeconds int,
+	extraBody map[string]any,
+	customHeaders map[string]string,
+) *Provider {
+	baseURL := common.NormalizeBaseURL(apiBase, defaultBaseURL, false)
+	client := common.NewHTTPClient(proxy)
+	if timeoutSeconds > 0 {
+		client.Timeout = time.Duration(timeoutSeconds) * time.Second
+	}
+	opts := []option.RequestOption{
+		option.WithAPIKey(apiKey),
+		option.WithAuthToken(""),
+		option.WithHeaderDel("Authorization"),
+		option.WithBaseURL(baseURL),
+		option.WithHTTPClient(client),
+	}
+	if userAgent != "" {
+		opts = append(opts, option.WithHeader("User-Agent", userAgent))
+	}
+	for key, value := range extraBody {
+		opts = append(opts, option.WithJSONSet(key, value))
+	}
+	for key, value := range customHeaders {
+		if strings.TrimSpace(key) != "" {
+			opts = append(opts, option.WithHeader(key, value))
+		}
+	}
+	sdkClient := anthropic.NewClient(opts...)
+	return &Provider{client: &sdkClient, baseURL: baseURL}
+}
 
 func NewProvider(token string) *Provider {
 	return NewProviderWithBaseURL(token, "")
@@ -78,6 +113,44 @@ func (p *Provider) Chat(
 	model string,
 	options map[string]any,
 ) (*LLMResponse, error) {
+	return p.chat(ctx, messages, tools, model, options, false, nil)
+}
+
+func (p *Provider) ChatStream(
+	ctx context.Context,
+	messages []Message,
+	tools []ToolDefinition,
+	model string,
+	options map[string]any,
+	onChunk func(string),
+) (*LLMResponse, error) {
+	return p.ChatStreamEvents(ctx, messages, tools, model, options, func(chunk protocoltypes.StreamChunk) {
+		if onChunk != nil && chunk.Content != "" {
+			onChunk(chunk.Content)
+		}
+	})
+}
+
+func (p *Provider) ChatStreamEvents(
+	ctx context.Context,
+	messages []Message,
+	tools []ToolDefinition,
+	model string,
+	options map[string]any,
+	onChunk func(protocoltypes.StreamChunk),
+) (*LLMResponse, error) {
+	return p.chat(ctx, messages, tools, model, options, true, onChunk)
+}
+
+func (p *Provider) chat(
+	ctx context.Context,
+	messages []Message,
+	tools []ToolDefinition,
+	model string,
+	options map[string]any,
+	streaming bool,
+	onChunk func(protocoltypes.StreamChunk),
+) (*LLMResponse, error) {
 	var opts []option.RequestOption
 	if p.tokenSource != nil {
 		tok, err := p.tokenSource()
@@ -96,8 +169,8 @@ func (p *Provider) Chat(
 	}
 
 	// OAuth/setup-tokens require streaming; API keys use non-streaming.
-	if p.tokenSource != nil {
-		return p.chatStreaming(ctx, params, opts)
+	if p.tokenSource != nil || streaming {
+		return p.chatStreaming(ctx, params, opts, onChunk)
 	}
 
 	resp, err := p.client.Messages.New(ctx, params, opts...)
@@ -112,15 +185,28 @@ func (p *Provider) chatStreaming(
 	ctx context.Context,
 	params anthropic.MessageNewParams,
 	opts []option.RequestOption,
+	onChunk func(protocoltypes.StreamChunk),
 ) (*LLMResponse, error) {
 	stream := p.client.Messages.NewStreaming(ctx, params, opts...)
 	defer stream.Close()
 
 	var msg anthropic.Message
+	var content, reasoning strings.Builder
 	for stream.Next() {
 		event := stream.Current()
 		if err := msg.Accumulate(event); err != nil {
 			return nil, fmt.Errorf("claude streaming accumulate: %w", err)
+		}
+		if delta, ok := event.AsAny().(anthropic.ContentBlockDeltaEvent); ok && onChunk != nil {
+			switch value := delta.Delta.AsAny().(type) {
+			case anthropic.TextDelta:
+				content.WriteString(value.Text)
+			case anthropic.ThinkingDelta:
+				reasoning.WriteString(value.Thinking)
+			default:
+				continue
+			}
+			onChunk(protocoltypes.StreamChunk{Content: content.String(), ReasoningContent: reasoning.String()})
 		}
 	}
 	if err := stream.Err(); err != nil {

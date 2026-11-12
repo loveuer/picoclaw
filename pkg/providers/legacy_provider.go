@@ -135,7 +135,7 @@ func modelConfigTemplateScore(modelCfg *config.ModelConfig, defaultProvider stri
 			}
 		}
 	}
-	if strings.TrimSpace(modelCfg.AuthMethod) != "" || strings.TrimSpace(modelCfg.ConnectMode) != "" {
+	if strings.TrimSpace(modelCfg.AuthMethod) != "" {
 		score += 8
 	}
 	if modelCfg.Enabled {
@@ -159,11 +159,6 @@ func CreateProvider(cfg *config.Config) (LLMProvider, string, error) {
 	modelCfg, err := ResolveModelConfig(cfg, model)
 	if err != nil {
 		return nil, "", fmt.Errorf("model %q not found in model_list: %w", model, err)
-	}
-
-	// Inject global workspace if not set in model config
-	if modelCfg.Workspace == "" {
-		modelCfg.Workspace = cfg.WorkspacePath()
 	}
 
 	// Use factory to create provider

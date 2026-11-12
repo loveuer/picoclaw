@@ -1,5 +1,7 @@
 # Provider Architecture Refactoring Design
 
+> Historical design notes. This fork now supports only OpenAI and Anthropic; see the [current provider guide](../guides/providers.md). References below to other providers describe the earlier implementation.
+
 > Issue: #283
 > Discussion: #122
 > Branch: feat/refactor-provider-by-protocol

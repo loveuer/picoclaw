@@ -150,9 +150,9 @@ func TestNewAgentInstance_ResolveCandidatesFromModelListAlias(t *testing.T) {
 		{
 			name:         "alias with provider prefix",
 			aliasName:    "step-3.5-flash",
-			modelName:    "openrouter/stepfun/step-3.5-flash:free",
+			modelName:    "openai/stepfun/step-3.5-flash:free",
 			apiBase:      "https://openrouter.ai/api/v1",
-			wantProvider: "openrouter",
+			wantProvider: "openai",
 			wantModel:    "stepfun/step-3.5-flash:free",
 		},
 		{
@@ -167,9 +167,9 @@ func TestNewAgentInstance_ResolveCandidatesFromModelListAlias(t *testing.T) {
 			name:         "explicit provider overrides model prefix",
 			aliasName:    "nvidia-gpt",
 			modelName:    "z-ai/glm-5.1",
-			provider:     "nvidia",
+			provider:     "openai",
 			apiBase:      "https://integrate.api.nvidia.com/v1",
-			wantProvider: "nvidia",
+			wantProvider: "openai",
 			wantModel:    "z-ai/glm-5.1",
 		},
 	}
@@ -229,12 +229,12 @@ func TestNewAgentInstance_PreservesDistinctLimiterIdentityForSharedResolvedModel
 		ModelList: []*config.ModelConfig{
 			{
 				ModelName: "glm-4.7",
-				Model:     "zhipu/glm-4.7",
+				Model:     "openai/glm-4.7",
 				RPM:       1,
 			},
 			{
 				ModelName: "glm-4.7__key_1",
-				Model:     "zhipu/glm-4.7",
+				Model:     "openai/glm-4.7",
 				RPM:       3,
 			},
 		},
@@ -247,11 +247,11 @@ func TestNewAgentInstance_PreservesDistinctLimiterIdentityForSharedResolvedModel
 
 	first := agent.Candidates[0]
 	second := agent.Candidates[1]
-	if first.Provider != "zhipu" || first.Model != "glm-4.7" {
-		t.Fatalf("first candidate = %s/%s, want zhipu/glm-4.7", first.Provider, first.Model)
+	if first.Provider != "openai" || first.Model != "glm-4.7" {
+		t.Fatalf("first candidate = %s/%s, want openai/glm-4.7", first.Provider, first.Model)
 	}
-	if second.Provider != "zhipu" || second.Model != "glm-4.7" {
-		t.Fatalf("second candidate = %s/%s, want zhipu/glm-4.7", second.Provider, second.Model)
+	if second.Provider != "openai" || second.Model != "glm-4.7" {
+		t.Fatalf("second candidate = %s/%s, want openai/glm-4.7", second.Provider, second.Model)
 	}
 	if first.IdentityKey != "model_name:glm-4.7" {
 		t.Fatalf("first identity key = %q, want %q", first.IdentityKey, "model_name:glm-4.7")
@@ -274,13 +274,13 @@ func TestNewAgentInstance_PreservesConfigIdentityForExplicitProviderModelRef(t *
 		Agents: config.AgentsConfig{
 			Defaults: config.AgentDefaults{
 				Workspace: tmpDir,
-				ModelName: "nvidia/z-ai/glm-5.1",
+				ModelName: "openai/z-ai/glm-5.1",
 			},
 		},
 		ModelList: []*config.ModelConfig{
 			{
 				ModelName: "nvidia-glm",
-				Provider:  "nvidia",
+				Provider:  "openai",
 				Model:     "z-ai/glm-5.1",
 				RPM:       7,
 			},
@@ -293,8 +293,8 @@ func TestNewAgentInstance_PreservesConfigIdentityForExplicitProviderModelRef(t *
 	}
 
 	candidate := agent.Candidates[0]
-	if candidate.Provider != "nvidia" || candidate.Model != "z-ai/glm-5.1" {
-		t.Fatalf("candidate = %s/%s, want nvidia/z-ai/glm-5.1", candidate.Provider, candidate.Model)
+	if candidate.Provider != "openai" || candidate.Model != "z-ai/glm-5.1" {
+		t.Fatalf("candidate = %s/%s, want openai/z-ai/glm-5.1", candidate.Provider, candidate.Model)
 	}
 	if candidate.IdentityKey != "model_name:nvidia-glm" {
 		t.Fatalf("identity key = %q, want %q", candidate.IdentityKey, "model_name:nvidia-glm")
@@ -438,7 +438,7 @@ func TestPopulateCandidateProviders_ResolvesAlias(t *testing.T) {
 
 // TestPopulateCandidateProviders_ResolvesProtocolPrefix verifies that a
 // model_list entry using full "provider/model" notation (e.g.
-// "gemini/gemma-3-27b-it") is matched correctly when referenced by model_name.
+// "anthropic/gemma-3-27b-it") is matched correctly when referenced by model_name.
 func TestPopulateCandidateProviders_ResolvesProtocolPrefix(t *testing.T) {
 	workspace := t.TempDir()
 	out := map[string]providers.LLMProvider{}
@@ -447,7 +447,7 @@ func TestPopulateCandidateProviders_ResolvesProtocolPrefix(t *testing.T) {
 		ModelList: []*config.ModelConfig{
 			{
 				ModelName: "gemma",
-				Model:     "gemini/gemma-3-27b-it",
+				Model:     "anthropic/gemma-3-27b-it",
 				APIKeys:   config.SimpleSecureStrings("gemini-test-key"),
 				Workspace: workspace,
 			},
@@ -455,7 +455,7 @@ func TestPopulateCandidateProviders_ResolvesProtocolPrefix(t *testing.T) {
 	}
 	populateCandidateProvidersFromNames(cfg, workspace, []string{"gemma"}, out)
 
-	key := providers.ModelKey("gemini", "gemma-3-27b-it")
+	key := providers.ModelKey("anthropic", "gemma-3-27b-it")
 	if out[key] == nil {
 		t.Fatalf("expected CandidateProviders[%q] to be populated for protocol-prefixed model", key)
 	}
@@ -464,11 +464,11 @@ func TestPopulateCandidateProviders_ResolvesProtocolPrefix(t *testing.T) {
 func TestLookupModelConfigByRef_BareUsesDefaultProvider(t *testing.T) {
 	cfg := &config.Config{
 		Agents: config.AgentsConfig{
-			Defaults: config.AgentDefaults{Provider: "openrouter"},
+			Defaults: config.AgentDefaults{Provider: "openai"},
 		},
 		ModelList: []*config.ModelConfig{
-			{ModelName: "openai-model", Provider: "openai", Model: "gpt-4o"},
-			{ModelName: "openrouter-model", Provider: "openrouter", Model: "gpt-4o"},
+			{ModelName: "anthropic-model", Provider: "anthropic", Model: "claude-sonnet-4-6"},
+			{ModelName: "openrouter-model", Provider: "openai", Model: "gpt-4o"},
 		},
 	}
 
@@ -484,7 +484,7 @@ func TestResolvePrimaryProviderForAgent_ResolvesRawUsingProviderTemplate(t *test
 	cfg := &config.Config{
 		ModelList: []*config.ModelConfig{{
 			ModelName: "openrouter-template",
-			Model:     "openrouter/auto",
+			Model:     "openai/auto",
 			APIBase:   "https://openrouter.ai/api/v1",
 			APIKeys:   config.SimpleSecureStrings("sk-or-test"),
 		}},
@@ -494,7 +494,7 @@ func TestResolvePrimaryProviderForAgent_ResolvesRawUsingProviderTemplate(t *test
 		cfg,
 		workspace,
 		"raw-agent",
-		"openrouter/new-model",
+		"openai/new-model",
 		fallback,
 	)
 	if resolved == fallback {
@@ -555,7 +555,7 @@ func TestProviderForFallbackCandidateRejectsMissingCrossProvider(t *testing.T) {
 		agent,
 		activeProvider,
 		activeCandidates,
-		providers.FallbackCandidate{Provider: "openrouter", Model: "new-model"},
+		providers.FallbackCandidate{Provider: "anthropic", Model: "claude-sonnet-4-6"},
 	)
 	if err == nil || provider != nil {
 		t.Fatalf("provider = %T, error = %v, want missing cross-provider error", provider, err)
@@ -758,20 +758,20 @@ func TestPopulateCandidateProvidersFromCandidatesUsesCandidateProvider(t *testin
 		},
 		{
 			ModelName: "backup",
-			Provider:  "openrouter",
+			Provider:  "openai",
 			Model:     "shared-model",
 			APIKeys:   config.SimpleSecureStrings("sk-openrouter"),
 		},
 	}}
 	candidate := providers.FallbackCandidate{
-		Provider:    "openrouter",
+		Provider:    "openai",
 		Model:       "shared-model",
 		DisplayName: "backup",
 		IdentityKey: "model_name:backup",
 	}
 
 	populateCandidateProvidersFromCandidates(cfg, t.TempDir(), []providers.FallbackCandidate{candidate}, out)
-	if out[providers.ModelKey("openrouter", "shared-model")] == nil {
+	if out[providers.ModelKey("openai", "shared-model")] == nil {
 		t.Fatal("candidate provider map did not use the already resolved OpenRouter candidate")
 	}
 }
@@ -782,7 +782,7 @@ func TestPopulateCandidateProviders_ResolvesRawUsingProviderTemplate(t *testing.
 	cfg := &config.Config{
 		ModelList: []*config.ModelConfig{{
 			ModelName: "openrouter-template",
-			Model:     "openrouter/auto",
+			Model:     "openai/auto",
 			APIBase:   "https://openrouter.ai/api/v1",
 			APIKeys:   config.SimpleSecureStrings("sk-or-test"),
 			Workspace: workspace,
@@ -792,11 +792,11 @@ func TestPopulateCandidateProviders_ResolvesRawUsingProviderTemplate(t *testing.
 	populateCandidateProvidersFromNames(
 		cfg,
 		workspace,
-		[]string{"openrouter/deepseek/deepseek-v3.2"},
+		[]string{"openai/deepseek/deepseek-v3.2"},
 		out,
 	)
 
-	key := providers.ModelKey("openrouter", "deepseek/deepseek-v3.2")
+	key := providers.ModelKey("openai", "deepseek/deepseek-v3.2")
 	if out[key] == nil {
 		t.Fatalf("expected CandidateProviders[%q] to use the OpenRouter template", key)
 	}
@@ -835,7 +835,7 @@ func TestPopulateCandidateProviders_UnmatchedNameIsSkipped(t *testing.T) {
 	out := map[string]providers.LLMProvider{}
 	cfg := &config.Config{
 		ModelList: []*config.ModelConfig{
-			{ModelName: "my-gemini", Model: "gemini/gemini-2.5-pro", APIKeys: config.SimpleSecureStrings("key")},
+			{ModelName: "my-gemini", Model: "anthropic/gemini-2.5-pro", APIKeys: config.SimpleSecureStrings("key")},
 		},
 	}
 	populateCandidateProvidersFromNames(cfg, t.TempDir(), []string{"nonexistent-model"}, out)
@@ -863,20 +863,20 @@ func TestNewAgentInstance_CandidateProvidersPopulatedForCrossProviderFallbacks(t
 		ModelList: []*config.ModelConfig{
 			{
 				ModelName: "mistral-small-3.1",
-				Model:     "openrouter/mistralai/mistral-small-3.1-24b-instruct:free",
+				Model:     "openai/mistralai/mistral-small-3.1-24b-instruct:free",
 				APIBase:   "https://openrouter.ai/api/v1",
 				APIKeys:   config.SimpleSecureStrings("sk-or-test"),
 				Workspace: workspace,
 			},
 			{
 				ModelName: "gemma-3-27b",
-				Model:     "gemini/gemma-3-27b-it",
+				Model:     "anthropic/gemma-3-27b-it",
 				APIKeys:   config.SimpleSecureStrings("AIzaSy-test"),
 				Workspace: workspace,
 			},
 			{
 				ModelName: "gemini-images",
-				Model:     "gemini/gemini-2.5-flash-lite",
+				Model:     "anthropic/gemini-2.5-flash-lite",
 				APIKeys:   config.SimpleSecureStrings("AIzaSy-test"),
 				Workspace: workspace,
 			},
@@ -888,8 +888,8 @@ func TestNewAgentInstance_CandidateProvidersPopulatedForCrossProviderFallbacks(t
 
 	// Only fallback models need entries — the primary uses the injected provider directly.
 	wantKeys := []string{
-		providers.ModelKey("gemini", "gemma-3-27b-it"),
-		providers.ModelKey("gemini", "gemini-2.5-flash-lite"),
+		providers.ModelKey("anthropic", "gemma-3-27b-it"),
+		providers.ModelKey("anthropic", "gemini-2.5-flash-lite"),
 	}
 
 	for _, key := range wantKeys {

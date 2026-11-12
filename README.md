@@ -7,7 +7,7 @@
 ## 当前功能
 
 - **CLI 与 Gateway**：本地交互、单次提问，或通过消息渠道持续运行。
-- **模型接入**：支持多种模型提供商、OpenAI 兼容接口、多模型配置与切换。
+- **模型接入**：仅保留 OpenAI（Responses / Chat Completions）和 Anthropic Messages，支持兼容端点、多模型配置与切换。
 - **会话管理**：保存对话上下文，支持摘要压缩，以及通过 `/new` 清空上下文后重新提问。
 - **工具与扩展**：文件操作、命令执行、网页搜索与抓取、MCP、Skills 和定时任务。
 - **语音能力**：保留语音识别与合成，实际可用能力取决于模型、服务及渠道配置。
@@ -150,7 +150,7 @@ picoclaw update --url https://github.com/loveuer/picoclaw/releases/tag/v1.0.0 --
 }
 ```
 
-`model_name` 是本地别名，`agents.defaults.model_name` 用它选择默认模型；`provider` 指定提供商，`model` 是远端模型 ID。使用兼容接口时，可在该模型条目中添加 `api_base`。
+`model_name` 是本地别名，`agents.defaults.model_name` 用它选择默认模型；`provider` 指定提供商，`model` 是远端模型 ID。使用兼容接口时，仍选择 `provider: "openai"` 或 `"anthropic"`，并显式填写 `api_base` 和远端 `model`。其他厂商专用名称、原生 Gemini / Azure / Bedrock、Copilot、Antigravity 和 CLI 代理已移除；原有配置需要按协议调整。
 
 已有 `.security.yml` 中的值可能覆盖主配置中的同名设置。修改密钥时请同时检查该文件。完整字段示例见 [config/config.example.json](config/config.example.json)，提供商说明见[模型配置文档](docs/guides/providers.zh.md)。
 

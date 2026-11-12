@@ -4,8 +4,8 @@ import (
 	"context"
 	"strings"
 
+	"github.com/sipeed/picoclaw/pkg/audio"
 	"github.com/sipeed/picoclaw/pkg/config"
-	"github.com/sipeed/picoclaw/pkg/providers"
 )
 
 const elevenLabsSupportedModelID = "scribe_v1"
@@ -26,40 +26,13 @@ type TranscriptionResponse struct {
 }
 
 func supportsAudioTranscription(modelCfg *config.ModelConfig) bool {
-	protocol, _ := providers.ExtractProtocol(modelCfg)
-
-	switch protocol {
-	case "openai", "azure",
-		"litellm", "openrouter", "groq", "zhipu", "gemini", "nvidia",
-		"ollama", "moonshot", "shengsuanyun", "deepseek", "cerebras",
-		"vivgrid", "volcengine", "vllm", "qwen-portal", "qwen-intl", "qwen-us",
-		"mistral", "avian", "minimax", "longcat", "modelscope", "novita",
-		"alibaba-coding", "zai":
-		// These protocols all go through the OpenAI-compatible or Azure provider path in
-		// providers.CreateProviderFromConfig, so they are the only ones that can supply
-		// the audio media payload shape expected by NewAudioModelTranscriber.
-
-		// TODO: Further restrict this by modelID, since not every model under these
-		// protocols supports audio transcription.
-		return true
-	default:
-		return false
-	}
+	protocol, _, _ := audio.ResolveModel(modelCfg)
+	return protocol == "openai"
 }
 
 func supportsWhisperTranscription(modelCfg *config.ModelConfig) bool {
-	protocol, _ := providers.ExtractProtocol(modelCfg)
-
-	switch protocol {
-	case "openai", "litellm", "openrouter", "groq", "zhipu", "gemini", "nvidia",
-		"ollama", "moonshot", "shengsuanyun", "deepseek", "cerebras",
-		"vivgrid", "volcengine", "vllm", "qwen-portal", "qwen-intl", "qwen-us",
-		"mistral", "avian", "minimax", "longcat", "modelscope", "novita",
-		"alibaba-coding", "zai", "mimo":
-		return true
-	default:
-		return false
-	}
+	protocol, _, _ := audio.ResolveModel(modelCfg)
+	return protocol == "openai" || protocol == "groq" || protocol == "mimo"
 }
 
 func whisperModelID(modelCfg *config.ModelConfig) string {
@@ -71,7 +44,7 @@ func whisperModelID(modelCfg *config.ModelConfig) string {
 		return ""
 	}
 
-	_, modelID := providers.ExtractProtocol(modelCfg)
+	_, modelID, _ := audio.ResolveModel(modelCfg)
 	if strings.Contains(strings.ToLower(modelID), "whisper") {
 		return modelID
 	}
@@ -83,7 +56,7 @@ func isElevenLabsTranscriptionModel(modelCfg *config.ModelConfig) bool {
 		return false
 	}
 
-	protocol, _ := providers.ExtractProtocol(modelCfg)
+	protocol, _, _ := audio.ResolveModel(modelCfg)
 	return protocol == "elevenlabs"
 }
 
@@ -93,7 +66,7 @@ func transcriberFromModelConfig(modelCfg *config.ModelConfig) Transcriber {
 	}
 
 	if isElevenLabsTranscriptionModel(modelCfg) {
-		_, modelID := providers.ExtractProtocol(modelCfg)
+		_, modelID, _ := audio.ResolveModel(modelCfg)
 		return NewElevenLabsTranscriber(modelCfg.APIKey(), modelCfg.APIBase, modelID)
 	}
 	if modelID := whisperModelID(modelCfg); modelID != "" {
@@ -111,7 +84,7 @@ func fallbackTranscriberFromModelConfig(modelCfg *config.ModelConfig) Transcribe
 	}
 
 	if isElevenLabsTranscriptionModel(modelCfg) {
-		_, modelID := providers.ExtractProtocol(modelCfg)
+		_, modelID, _ := audio.ResolveModel(modelCfg)
 		return NewElevenLabsTranscriber(modelCfg.APIKey(), modelCfg.APIBase, modelID)
 	}
 	if modelID := whisperModelID(modelCfg); modelID != "" {

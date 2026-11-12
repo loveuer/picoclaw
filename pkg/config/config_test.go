@@ -2724,27 +2724,6 @@ func TestModelConfig_ToolSchemaTransformRoundTrip(t *testing.T) {
 	}
 }
 
-func TestDefaultConfig_MinimaxExtraBody(t *testing.T) {
-	cfg := DefaultConfig()
-
-	var minimaxCfg *ModelConfig
-	for i := range cfg.ModelList {
-		if cfg.ModelList[i].Provider == "minimax" && cfg.ModelList[i].Model == "MiniMax-M2.5" {
-			minimaxCfg = cfg.ModelList[i]
-			break
-		}
-	}
-	if minimaxCfg == nil {
-		t.Fatal("Minimax model not found in ModelList")
-	}
-	if minimaxCfg.ExtraBody == nil {
-		t.Fatal("Minimax ExtraBody should not be nil")
-	}
-	if got, ok := minimaxCfg.ExtraBody["reasoning_split"]; !ok || got != true {
-		t.Fatalf("Minimax ExtraBody[reasoning_split] = %v, want true", got)
-	}
-}
-
 func TestFilterSensitiveData(t *testing.T) {
 	// Test with nil security config
 	cfg := &Config{}

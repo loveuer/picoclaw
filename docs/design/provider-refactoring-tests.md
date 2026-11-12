@@ -1,5 +1,7 @@
 # Provider Architecture Refactoring - Test Suite Summary
 
+> Historical design notes. This fork now supports only OpenAI and Anthropic; see the [current provider guide](../guides/providers.md). References below to other providers describe the earlier implementation.
+
 This document summarizes the complete test suite designed for the Provider architecture refactoring.
 
 ## Test File Structure

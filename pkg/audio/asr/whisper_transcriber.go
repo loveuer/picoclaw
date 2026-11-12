@@ -13,9 +13,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sipeed/picoclaw/pkg/audio"
 	"github.com/sipeed/picoclaw/pkg/config"
 	"github.com/sipeed/picoclaw/pkg/logger"
-	"github.com/sipeed/picoclaw/pkg/providers"
 	"github.com/sipeed/picoclaw/pkg/utils"
 )
 
@@ -32,14 +32,14 @@ func NewWhisperTranscriber(modelCfg *config.ModelConfig) *WhisperTranscriber {
 		return nil
 	}
 
-	protocol, modelID := providers.ExtractProtocol(modelCfg)
+	protocol, modelID, apiBase := audio.ResolveModel(modelCfg)
 	if modelID == "" {
 		modelID = strings.TrimSpace(modelCfg.Model)
 	}
 
 	tr := newWhisperTranscriber(
 		modelCfg.APIKey(),
-		providers.ResolveAPIBase(modelCfg),
+		apiBase,
 		modelID,
 		protocol,
 	)

@@ -6,7 +6,6 @@
 package providers
 
 import (
-	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -43,12 +42,6 @@ func TestExtractProtocol(t *testing.T) {
 			wantModelID:  "gpt-4o",
 		},
 		{
-			name:         "groq with prefix",
-			config:       &config.ModelConfig{Model: "groq/llama-3.1-70b"},
-			wantProtocol: "groq",
-			wantModelID:  "llama-3.1-70b",
-		},
-		{
 			name:         "empty string",
 			config:       &config.ModelConfig{Model: ""},
 			wantProtocol: "",
@@ -62,26 +55,20 @@ func TestExtractProtocol(t *testing.T) {
 		},
 		{
 			name:         "multiple slashes",
-			config:       &config.ModelConfig{Model: "nvidia/meta/llama-3.1-8b"},
-			wantProtocol: "nvidia",
+			config:       &config.ModelConfig{Model: "openai/meta/llama-3.1-8b"},
+			wantProtocol: "openai",
 			wantModelID:  "meta/llama-3.1-8b",
 		},
 		{
 			name:         "normalizes provider",
-			config:       &config.ModelConfig{Model: "z.ai/glm-5.1"},
-			wantProtocol: "zai",
+			config:       &config.ModelConfig{Model: "gpt/glm-5.1"},
+			wantProtocol: "openai",
 			wantModelID:  "glm-5.1",
 		},
 		{
-			name:         "azure with prefix",
-			config:       &config.ModelConfig{Model: "azure/my-gpt5-deployment"},
-			wantProtocol: "azure",
-			wantModelID:  "my-gpt5-deployment",
-		},
-		{
 			name:         "explicit provider keeps model",
-			config:       &config.ModelConfig{Provider: "nvidia", Model: "z-ai/glm-5.1"},
-			wantProtocol: "nvidia",
+			config:       &config.ModelConfig{Provider: "openai", Model: "z-ai/glm-5.1"},
+			wantProtocol: "openai",
 			wantModelID:  "z-ai/glm-5.1",
 		},
 		{
@@ -92,8 +79,8 @@ func TestExtractProtocol(t *testing.T) {
 		},
 		{
 			name:         "explicit provider preserves aliased prefix",
-			config:       &config.ModelConfig{Provider: "qwen", Model: "qwen/qwen-plus"},
-			wantProtocol: "qwen-portal",
+			config:       &config.ModelConfig{Provider: "gpt", Model: "qwen/qwen-plus"},
+			wantProtocol: "openai",
 			wantModelID:  "qwen/qwen-plus",
 		},
 		{
@@ -152,7 +139,7 @@ func TestCreateProviderFromConfig_UsesExplicitProvider(t *testing.T) {
 	cfg := &config.ModelConfig{
 		ModelName: "test-explicit-provider",
 		Model:     "z-ai/glm-5.1",
-		Provider:  "nvidia",
+		Provider:  "openai",
 	}
 	cfg.SetAPIKey("test-key")
 
@@ -166,32 +153,8 @@ func TestCreateProviderFromConfig_UsesExplicitProvider(t *testing.T) {
 	if modelID != "z-ai/glm-5.1" {
 		t.Fatalf("modelID = %q, want z-ai/glm-5.1", modelID)
 	}
-	if got := ResolveAPIBase(cfg); got != "https://integrate.api.nvidia.com/v1" {
-		t.Fatalf("ResolveAPIBase() = %q, want NVIDIA default API base", got)
-	}
-}
-
-func TestCreateProviderFromConfig_DeepSeekSupportsThinking(t *testing.T) {
-	cfg := &config.ModelConfig{
-		ModelName: "deepseek-v4-flash",
-		Provider:  "deepseek",
-		Model:     "deepseek-v4-flash",
-	}
-	cfg.SetAPIKey("test-key")
-
-	provider, modelID, err := CreateProviderFromConfig(cfg)
-	if err != nil {
-		t.Fatalf("CreateProviderFromConfig() error = %v", err)
-	}
-	if modelID != "deepseek-v4-flash" {
-		t.Fatalf("modelID = %q, want %q", modelID, "deepseek-v4-flash")
-	}
-	tc, ok := provider.(ThinkingCapable)
-	if !ok {
-		t.Fatalf("provider %T should implement ThinkingCapable for DeepSeek", provider)
-	}
-	if !tc.SupportsThinking() {
-		t.Fatalf("DeepSeek provider SupportsThinking() = false, want true")
+	if got := ResolveAPIBase(cfg); got != "https://api.openai.com/v1" {
+		t.Fatalf("ResolveAPIBase() = %q, want OpenAI default API base", got)
 	}
 }
 
@@ -216,375 +179,6 @@ func TestCreateProviderFromConfig_PreservesExplicitProviderPrefixedModel(t *test
 	}
 }
 
-func TestCreateProviderFromConfig_DefaultAPIBase(t *testing.T) {
-	tests := []struct {
-		name     string
-		protocol string
-	}{
-		{"openai", "openai"},
-		{"venice", "venice"},
-		{"nearai", "nearai"},
-		{"groq", "groq"},
-		{"novita", "novita"},
-		{"openrouter", "openrouter"},
-		{"cerebras", "cerebras"},
-		{"vivgrid", "vivgrid"},
-		{"siliconflow", "siliconflow"},
-		{"qwen", "qwen"},
-		{"vllm", "vllm"},
-		{"deepseek", "deepseek"},
-		{"ollama", "ollama"},
-		{"lmstudio", "lmstudio"},
-		{"gpt4free", "gpt4free"},
-		{"longcat", "longcat"},
-		{"modelscope", "modelscope"},
-		{"mimo", "mimo"},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			cfg := &config.ModelConfig{
-				ModelName: "test-" + tt.protocol,
-				Model:     tt.protocol + "/test-model",
-			}
-			cfg.SetAPIKey("test-key")
-
-			provider, _, err := CreateProviderFromConfig(cfg)
-			if err != nil {
-				t.Fatalf("CreateProviderFromConfig() error = %v", err)
-			}
-
-			// Verify we got an HTTPProvider for all these protocols
-			if _, ok := provider.(*HTTPProvider); !ok {
-				t.Fatalf("expected *HTTPProvider, got %T", provider)
-			}
-		})
-	}
-}
-
-func TestGetDefaultAPIBase_LiteLLM(t *testing.T) {
-	if got := getDefaultAPIBase("litellm"); got != "http://localhost:4000/v1" {
-		t.Fatalf("getDefaultAPIBase(%q) = %q, want %q", "litellm", got, "http://localhost:4000/v1")
-	}
-}
-
-func TestGetDefaultAPIBase_LMStudio(t *testing.T) {
-	if got := getDefaultAPIBase("lmstudio"); got != "http://localhost:1234/v1" {
-		t.Fatalf("getDefaultAPIBase(%q) = %q, want %q", "lmstudio", got, "http://localhost:1234/v1")
-	}
-}
-
-func TestGetDefaultAPIBase_GPT4Free(t *testing.T) {
-	if got := getDefaultAPIBase("gpt4free"); got != "http://localhost:1337/v1" {
-		t.Fatalf("getDefaultAPIBase(%q) = %q, want %q", "gpt4free", got, "http://localhost:1337/v1")
-	}
-	if got := getDefaultAPIBase("g4f"); got != "http://localhost:1337/v1" {
-		t.Fatalf("getDefaultAPIBase(%q) = %q, want %q", "g4f", got, "http://localhost:1337/v1")
-	}
-}
-
-func TestGetDefaultAPIBase_Venice(t *testing.T) {
-	if got := getDefaultAPIBase("venice"); got != "https://api.venice.ai/api/v1" {
-		t.Fatalf("getDefaultAPIBase(%q) = %q, want %q", "venice", got, "https://api.venice.ai/api/v1")
-	}
-}
-
-func TestGetDefaultAPIBase_NearAI(t *testing.T) {
-	if got := getDefaultAPIBase("nearai"); got != "https://cloud-api.near.ai/v1" {
-		t.Fatalf("getDefaultAPIBase(%q) = %q, want %q", "nearai", got, "https://cloud-api.near.ai/v1")
-	}
-	if got := getDefaultAPIBase("near-ai"); got != "https://cloud-api.near.ai/v1" {
-		t.Fatalf("getDefaultAPIBase(%q) = %q, want %q", "near-ai", got, "https://cloud-api.near.ai/v1")
-	}
-}
-
-func TestGetDefaultAPIBase_SiliconFlow(t *testing.T) {
-	if got := getDefaultAPIBase("siliconflow"); got != "https://api.siliconflow.cn/v1" {
-		t.Fatalf("getDefaultAPIBase(%q) = %q, want %q", "siliconflow", got, "https://api.siliconflow.cn/v1")
-	}
-}
-
-func TestCreateProviderFromConfig_LiteLLM(t *testing.T) {
-	cfg := &config.ModelConfig{
-		ModelName: "test-litellm",
-		Model:     "litellm/my-proxy-alias",
-		APIBase:   "http://localhost:4000/v1",
-	}
-	cfg.SetAPIKey("test-key")
-
-	provider, modelID, err := CreateProviderFromConfig(cfg)
-	if err != nil {
-		t.Fatalf("CreateProviderFromConfig() error = %v", err)
-	}
-	if provider == nil {
-		t.Fatal("CreateProviderFromConfig() returned nil provider")
-	}
-	if modelID != "my-proxy-alias" {
-		t.Errorf("modelID = %q, want %q", modelID, "my-proxy-alias")
-	}
-}
-
-func TestCreateProviderFromConfig_LocalProviders(t *testing.T) {
-	tests := []struct {
-		name        string
-		modelName   string
-		model       string
-		apiKey      string
-		wantModelID string
-	}{
-		{
-			name:        "LMStudio with API key",
-			modelName:   "test-lmstudio",
-			model:       "lmstudio/openai/gpt-oss-20b",
-			apiKey:      "test-key",
-			wantModelID: "openai/gpt-oss-20b",
-		},
-		{
-			name:        "LMStudio without API key",
-			modelName:   "test-lmstudio",
-			model:       "lmstudio/openai/gpt-oss-20b",
-			apiKey:      "",
-			wantModelID: "openai/gpt-oss-20b",
-		},
-		{
-			name:        "Ollama with API key",
-			modelName:   "test-ollama",
-			model:       "ollama/llama3.1:8b",
-			apiKey:      "test-key",
-			wantModelID: "llama3.1:8b",
-		},
-		{
-			name:        "Ollama without API key",
-			modelName:   "test-ollama",
-			model:       "ollama/llama3.1:8b",
-			apiKey:      "",
-			wantModelID: "llama3.1:8b",
-		},
-		{
-			name:        "VLLM with API key",
-			modelName:   "test-vllm",
-			model:       "vllm/Qwen/Qwen3-8B",
-			apiKey:      "test-key",
-			wantModelID: "Qwen/Qwen3-8B",
-		},
-		{
-			name:        "VLLM without API key",
-			modelName:   "test-vllm",
-			model:       "vllm/Qwen/Qwen3-8B",
-			apiKey:      "",
-			wantModelID: "Qwen/Qwen3-8B",
-		},
-		{
-			name:        "GPT4Free without API key",
-			modelName:   "test-gpt4free",
-			model:       "gpt4free/gpt-4o-mini",
-			apiKey:      "",
-			wantModelID: "gpt-4o-mini",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			cfg := &config.ModelConfig{
-				ModelName: tt.modelName,
-				Model:     tt.model,
-			}
-			if tt.apiKey != "" {
-				cfg.SetAPIKey(tt.apiKey)
-			}
-
-			provider, modelID, err := CreateProviderFromConfig(cfg)
-			if err != nil {
-				t.Fatalf("CreateProviderFromConfig() error = %v", err)
-			}
-			if provider == nil {
-				t.Fatal("CreateProviderFromConfig() returned nil provider")
-			}
-			if modelID != tt.wantModelID {
-				t.Errorf("modelID = %q, want %q", modelID, tt.wantModelID)
-			}
-			if _, ok := provider.(*HTTPProvider); !ok {
-				t.Fatalf("expected *HTTPProvider, got %T", provider)
-			}
-		})
-	}
-}
-
-func TestCreateProviderFromConfig_LongCat(t *testing.T) {
-	cfg := &config.ModelConfig{
-		ModelName: "test-longcat",
-		Model:     "longcat/LongCat-Flash-Thinking",
-		APIBase:   "https://api.longcat.chat/openai",
-	}
-	cfg.SetAPIKey("test-key")
-
-	provider, modelID, err := CreateProviderFromConfig(cfg)
-	if err != nil {
-		t.Fatalf("CreateProviderFromConfig() error = %v", err)
-	}
-	if provider == nil {
-		t.Fatal("CreateProviderFromConfig() returned nil provider")
-	}
-	if modelID != "LongCat-Flash-Thinking" {
-		t.Errorf("modelID = %q, want %q", modelID, "LongCat-Flash-Thinking")
-	}
-	if _, ok := provider.(*HTTPProvider); !ok {
-		t.Fatalf("expected *HTTPProvider, got %T", provider)
-	}
-}
-
-func TestCreateProviderFromConfig_ModelScope(t *testing.T) {
-	cfg := &config.ModelConfig{
-		ModelName: "test-modelscope",
-		Model:     "modelscope/Qwen/Qwen3-235B-A22B-Instruct-2507",
-		APIBase:   "https://api-inference.modelscope.cn/v1",
-	}
-	cfg.SetAPIKey("test-key")
-
-	provider, modelID, err := CreateProviderFromConfig(cfg)
-	if err != nil {
-		t.Fatalf("CreateProviderFromConfig() error = %v", err)
-	}
-	if provider == nil {
-		t.Fatal("CreateProviderFromConfig() returned nil provider")
-	}
-	if modelID != "Qwen/Qwen3-235B-A22B-Instruct-2507" {
-		t.Errorf("modelID = %q, want %q", modelID, "Qwen/Qwen3-235B-A22B-Instruct-2507")
-	}
-	if _, ok := provider.(*HTTPProvider); !ok {
-		t.Fatalf("expected *HTTPProvider, got %T", provider)
-	}
-}
-
-func TestGetDefaultAPIBase_ModelScope(t *testing.T) {
-	if got := getDefaultAPIBase("modelscope"); got != "https://api-inference.modelscope.cn/v1" {
-		t.Fatalf("getDefaultAPIBase(%q) = %q, want %q", "modelscope", got, "https://api-inference.modelscope.cn/v1")
-	}
-}
-
-func TestCreateProviderFromConfig_Novita(t *testing.T) {
-	cfg := &config.ModelConfig{
-		ModelName: "test-novita",
-		Model:     "novita/deepseek/deepseek-v3.2",
-	}
-	cfg.SetAPIKey("test-key")
-
-	provider, modelID, err := CreateProviderFromConfig(cfg)
-	if err != nil {
-		t.Fatalf("CreateProviderFromConfig() error = %v", err)
-	}
-	if provider == nil {
-		t.Fatal("CreateProviderFromConfig() returned nil provider")
-	}
-	if modelID != "deepseek/deepseek-v3.2" {
-		t.Errorf("modelID = %q, want %q", modelID, "deepseek/deepseek-v3.2")
-	}
-	if _, ok := provider.(*HTTPProvider); !ok {
-		t.Fatalf("expected *HTTPProvider, got %T", provider)
-	}
-}
-
-func TestGetDefaultAPIBase_Novita(t *testing.T) {
-	if got := getDefaultAPIBase("novita"); got != "https://api.novita.ai/openai" {
-		t.Fatalf("getDefaultAPIBase(%q) = %q, want %q", "novita", got, "https://api.novita.ai/openai")
-	}
-}
-
-func TestCreateProviderFromConfig_Mimo(t *testing.T) {
-	cfg := &config.ModelConfig{
-		ModelName: "test-mimo",
-		Model:     "mimo/mimo-v2-pro",
-		APIBase:   "https://api.xiaomimimo.com/v1",
-	}
-	cfg.SetAPIKey("test-key")
-
-	provider, modelID, err := CreateProviderFromConfig(cfg)
-	if err != nil {
-		t.Fatalf("CreateProviderFromConfig() error = %v", err)
-	}
-	if provider == nil {
-		t.Fatal("CreateProviderFromConfig() returned nil provider")
-	}
-	if modelID != "mimo-v2-pro" {
-		t.Errorf("modelID = %q, want %q", modelID, "mimo-v2-pro")
-	}
-	if _, ok := provider.(*HTTPProvider); !ok {
-		t.Fatalf("expected *HTTPProvider, got %T", provider)
-	}
-}
-
-func TestCreateProviderFromConfig_Venice(t *testing.T) {
-	cfg := &config.ModelConfig{
-		ModelName: "test-venice",
-		Model:     "venice/venice-uncensored",
-	}
-	cfg.SetAPIKey("test-key")
-
-	provider, modelID, err := CreateProviderFromConfig(cfg)
-	if err != nil {
-		t.Fatalf("CreateProviderFromConfig() error = %v", err)
-	}
-	if provider == nil {
-		t.Fatal("CreateProviderFromConfig() returned nil provider")
-	}
-	if modelID != "venice-uncensored" {
-		t.Errorf("modelID = %q, want %q", modelID, "venice-uncensored")
-	}
-	if _, ok := provider.(*HTTPProvider); !ok {
-		t.Fatalf("expected *HTTPProvider, got %T", provider)
-	}
-}
-
-func TestCreateProviderFromConfig_NearAI(t *testing.T) {
-	cfg := &config.ModelConfig{
-		ModelName: "test-nearai",
-		Model:     "nearai/zai-org/GLM-5.1-FP8",
-	}
-	cfg.SetAPIKey("test-key")
-
-	provider, modelID, err := CreateProviderFromConfig(cfg)
-	if err != nil {
-		t.Fatalf("CreateProviderFromConfig() error = %v", err)
-	}
-	if provider == nil {
-		t.Fatal("CreateProviderFromConfig() returned nil provider")
-	}
-	if modelID != "zai-org/GLM-5.1-FP8" {
-		t.Errorf("modelID = %q, want %q", modelID, "zai-org/GLM-5.1-FP8")
-	}
-	if _, ok := provider.(*HTTPProvider); !ok {
-		t.Fatalf("expected *HTTPProvider, got %T", provider)
-	}
-}
-
-func TestCreateProviderFromConfig_SiliconFlow(t *testing.T) {
-	cfg := &config.ModelConfig{
-		ModelName: "test-siliconflow",
-		Model:     "siliconflow/deepseek-ai/DeepSeek-V3",
-	}
-	cfg.SetAPIKey("test-key")
-
-	provider, modelID, err := CreateProviderFromConfig(cfg)
-	if err != nil {
-		t.Fatalf("CreateProviderFromConfig() error = %v", err)
-	}
-	if provider == nil {
-		t.Fatal("CreateProviderFromConfig() returned nil provider")
-	}
-	if modelID != "deepseek-ai/DeepSeek-V3" {
-		t.Errorf("modelID = %q, want %q", modelID, "deepseek-ai/DeepSeek-V3")
-	}
-	if _, ok := provider.(*HTTPProvider); !ok {
-		t.Fatalf("expected *HTTPProvider, got %T", provider)
-	}
-}
-
-func TestGetDefaultAPIBase_Mimo(t *testing.T) {
-	if got := getDefaultAPIBase("mimo"); got != "https://api.xiaomimimo.com/v1" {
-		t.Fatalf("getDefaultAPIBase(%q) = %q, want %q", "mimo", got, "https://api.xiaomimimo.com/v1")
-	}
-}
-
 func TestCreateProviderFromConfig_Anthropic(t *testing.T) {
 	cfg := &config.ModelConfig{
 		ModelName: "test-anthropic",
@@ -601,116 +195,6 @@ func TestCreateProviderFromConfig_Anthropic(t *testing.T) {
 	}
 	if modelID != "claude-sonnet-4.6" {
 		t.Errorf("modelID = %q, want %q", modelID, "claude-sonnet-4.6")
-	}
-}
-
-func TestCreateProviderFromConfig_Antigravity(t *testing.T) {
-	cfg := &config.ModelConfig{
-		ModelName: "test-antigravity",
-		Model:     "antigravity/gemini-2.0-flash",
-	}
-
-	provider, modelID, err := CreateProviderFromConfig(cfg)
-	if err != nil {
-		t.Fatalf("CreateProviderFromConfig() error = %v", err)
-	}
-	if provider == nil {
-		t.Fatal("CreateProviderFromConfig() returned nil provider")
-	}
-	if modelID != "gemini-2.0-flash" {
-		t.Errorf("modelID = %q, want %q", modelID, "gemini-2.0-flash")
-	}
-}
-
-func TestCreateProviderFromConfig_Gemini(t *testing.T) {
-	cfg := &config.ModelConfig{
-		ModelName: "test-gemini",
-		Model:     "gemini/gemini-2.5-flash",
-	}
-	cfg.SetAPIKey("test-key")
-
-	provider, modelID, err := CreateProviderFromConfig(cfg)
-	if err != nil {
-		t.Fatalf("CreateProviderFromConfig() error = %v", err)
-	}
-	if provider == nil {
-		t.Fatal("CreateProviderFromConfig() returned nil provider")
-	}
-	if modelID != "gemini-2.5-flash" {
-		t.Errorf("modelID = %q, want %q", modelID, "gemini-2.5-flash")
-	}
-	if _, ok := provider.(*GeminiProvider); !ok {
-		t.Fatalf("expected *GeminiProvider, got %T", provider)
-	}
-}
-
-func TestCreateProviderFromConfig_GeminiMissingAPIKey(t *testing.T) {
-	cfg := &config.ModelConfig{
-		ModelName: "test-gemini-no-key",
-		Model:     "gemini/gemini-2.5-flash",
-	}
-
-	_, _, err := CreateProviderFromConfig(cfg)
-	if err == nil {
-		t.Fatal("CreateProviderFromConfig() expected error for missing gemini API key")
-	}
-}
-
-func TestCreateProviderFromConfig_GeminiCustomAPIBaseWithoutKey(t *testing.T) {
-	cfg := &config.ModelConfig{
-		ModelName: "test-gemini-custom-base",
-		Model:     "gemini/gemini-2.5-flash",
-		APIBase:   "https://proxy.example.com/v1beta",
-	}
-
-	provider, modelID, err := CreateProviderFromConfig(cfg)
-	if err != nil {
-		t.Fatalf("CreateProviderFromConfig() error = %v", err)
-	}
-	if provider == nil {
-		t.Fatal("CreateProviderFromConfig() returned nil provider")
-	}
-	if modelID != "gemini-2.5-flash" {
-		t.Errorf("modelID = %q, want %q", modelID, "gemini-2.5-flash")
-	}
-	if _, ok := provider.(*GeminiProvider); !ok {
-		t.Fatalf("expected *GeminiProvider, got %T", provider)
-	}
-}
-
-func TestCreateProviderFromConfig_ClaudeCLI(t *testing.T) {
-	cfg := &config.ModelConfig{
-		ModelName: "test-claude-cli",
-		Model:     "claude-cli/claude-sonnet-4.6",
-	}
-
-	provider, modelID, err := CreateProviderFromConfig(cfg)
-	if err != nil {
-		t.Fatalf("CreateProviderFromConfig() error = %v", err)
-	}
-	if provider == nil {
-		t.Fatal("CreateProviderFromConfig() returned nil provider")
-	}
-	if modelID != "claude-sonnet-4.6" {
-		t.Errorf("modelID = %q, want %q", modelID, "claude-sonnet-4.6")
-	}
-}
-
-func TestCreateProviderFromConfig_CodexCLI(t *testing.T) {
-	cfg := &config.ModelConfig{
-		ModelName: "test-codex-cli",
-		Model:     "codex-cli/codex",
-	}
-
-	provider, modelID, err := CreateProviderFromConfig(cfg)
-	if err != nil {
-		t.Fatalf("CreateProviderFromConfig() error = %v", err)
-	}
-	if provider == nil {
-		t.Fatal("CreateProviderFromConfig() returned nil provider")
-	}
-	if modelID != "codex" {
-		t.Errorf("modelID = %q, want %q", modelID, "codex")
 	}
 }
 
@@ -854,343 +338,6 @@ func TestCreateProviderFromConfig_RequestTimeoutPropagation(t *testing.T) {
 	}
 }
 
-func TestCreateProviderFromConfig_Azure(t *testing.T) {
-	cfg := &config.ModelConfig{
-		ModelName: "azure-gpt5",
-		Model:     "azure/my-gpt5-deployment",
-		APIBase:   "https://my-resource.openai.azure.com",
-	}
-	cfg.SetAPIKey("test-azure-key")
-
-	provider, modelID, err := CreateProviderFromConfig(cfg)
-	if err != nil {
-		t.Fatalf("CreateProviderFromConfig() error = %v", err)
-	}
-	if provider == nil {
-		t.Fatal("CreateProviderFromConfig() returned nil provider")
-	}
-	if modelID != "my-gpt5-deployment" {
-		t.Errorf("modelID = %q, want %q", modelID, "my-gpt5-deployment")
-	}
-}
-
-func TestCreateProviderFromConfig_AzureOpenAIAlias(t *testing.T) {
-	cfg := &config.ModelConfig{
-		ModelName: "azure-gpt4",
-		Model:     "azure-openai/my-deployment",
-		APIBase:   "https://my-resource.openai.azure.com",
-	}
-	cfg.SetAPIKey("test-azure-key")
-
-	provider, modelID, err := CreateProviderFromConfig(cfg)
-	if err != nil {
-		t.Fatalf("CreateProviderFromConfig() error = %v", err)
-	}
-	if provider == nil {
-		t.Fatal("CreateProviderFromConfig() returned nil provider")
-	}
-	if modelID != "my-deployment" {
-		t.Errorf("modelID = %q, want %q", modelID, "my-deployment")
-	}
-}
-
-func TestCreateProviderFromConfig_AzureMissingAPIKey(t *testing.T) {
-	cfg := &config.ModelConfig{
-		ModelName: "azure-gpt5",
-		Model:     "azure/my-gpt5-deployment",
-		APIBase:   "https://my-resource.openai.azure.com",
-	}
-
-	_, _, err := CreateProviderFromConfig(cfg)
-	// Without api_key the factory falls back to identity auth, which in the
-	// default build is stubbed out and surfaces a build-tag error. With the
-	// azidentity tag, the call succeeds and is covered by a separate test.
-	if err != nil && !strings.Contains(err.Error(), "azidentity") {
-		t.Fatalf("CreateProviderFromConfig() unexpected error = %v", err)
-	}
-}
-
-func TestCreateProviderFromConfig_AzureMissingAPIBase(t *testing.T) {
-	cfg := &config.ModelConfig{
-		ModelName: "azure-gpt5",
-		Model:     "azure/my-gpt5-deployment",
-	}
-	cfg.SetAPIKey("test-azure-key")
-
-	_, _, err := CreateProviderFromConfig(cfg)
-	if err == nil {
-		t.Fatal("CreateProviderFromConfig() expected error for missing API base")
-	}
-}
-
-func TestCreateProviderFromConfig_QwenInternationalAlias(t *testing.T) {
-	tests := []struct {
-		name     string
-		protocol string
-	}{
-		{"qwen-international", "qwen-international"},
-		{"dashscope-intl", "dashscope-intl"},
-		{"qwen-intl", "qwen-intl"},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			cfg := &config.ModelConfig{
-				ModelName: "test-" + tt.protocol,
-				Model:     tt.protocol + "/qwen-max",
-			}
-			cfg.SetAPIKey("test-key")
-
-			provider, modelID, err := CreateProviderFromConfig(cfg)
-			if err != nil {
-				t.Fatalf("CreateProviderFromConfig() error = %v", err)
-			}
-			if provider == nil {
-				t.Fatal("CreateProviderFromConfig() returned nil provider")
-			}
-			wantModelID := "qwen-max"
-			if modelID != wantModelID {
-				t.Errorf("modelID = %q, want %q", modelID, wantModelID)
-			}
-			if _, ok := provider.(*HTTPProvider); !ok {
-				t.Fatalf("expected *HTTPProvider, got %T", provider)
-			}
-		})
-	}
-}
-
-func TestCreateProviderFromConfig_QwenUSAlias(t *testing.T) {
-	tests := []struct {
-		name     string
-		protocol string
-	}{
-		{"qwen-us", "qwen-us"},
-		{"dashscope-us", "dashscope-us"},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			cfg := &config.ModelConfig{
-				ModelName: "test-" + tt.protocol,
-				Model:     tt.protocol + "/qwen-max",
-			}
-			cfg.SetAPIKey("test-key")
-
-			provider, modelID, err := CreateProviderFromConfig(cfg)
-			if err != nil {
-				t.Fatalf("CreateProviderFromConfig() error = %v", err)
-			}
-			if provider == nil {
-				t.Fatal("CreateProviderFromConfig() returned nil provider")
-			}
-			wantModelID := "qwen-max"
-			if modelID != wantModelID {
-				t.Errorf("modelID = %q, want %q", modelID, wantModelID)
-			}
-			if _, ok := provider.(*HTTPProvider); !ok {
-				t.Fatalf("expected *HTTPProvider, got %T", provider)
-			}
-		})
-	}
-}
-
-func TestCreateProviderFromConfig_CodingPlanAnthropic(t *testing.T) {
-	tests := []struct {
-		name     string
-		protocol string
-	}{
-		{"coding-plan-anthropic", "coding-plan-anthropic"},
-		{"alibaba-coding-anthropic", "alibaba-coding-anthropic"},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			cfg := &config.ModelConfig{
-				ModelName: "test-" + tt.protocol,
-				Model:     tt.protocol + "/claude-sonnet-4-20250514",
-			}
-			cfg.SetAPIKey("test-key")
-
-			provider, modelID, err := CreateProviderFromConfig(cfg)
-			if err != nil {
-				t.Fatalf("CreateProviderFromConfig() error = %v", err)
-			}
-			if provider == nil {
-				t.Fatal("CreateProviderFromConfig() returned nil provider")
-			}
-			wantModelID := "claude-sonnet-4-20250514"
-			if modelID != wantModelID {
-				t.Errorf("modelID = %q, want %q", modelID, wantModelID)
-			}
-			// alibaba-coding-anthropic uses Anthropic Messages provider
-			// Verify it's the anthropic messages provider by checking interface
-			var _ LLMProvider = provider
-		})
-	}
-}
-
-func TestGetDefaultAPIBase_CodingPlanAnthropic(t *testing.T) {
-	expectedURL := "https://coding-intl.dashscope.aliyuncs.com/apps/anthropic"
-	if got := getDefaultAPIBase("coding-plan-anthropic"); got != expectedURL {
-		t.Fatalf("getDefaultAPIBase(%q) = %q, want %q", "coding-plan-anthropic", got, expectedURL)
-	}
-	if got := getDefaultAPIBase("alibaba-coding-anthropic"); got != expectedURL {
-		t.Fatalf("getDefaultAPIBase(%q) = %q, want %q", "alibaba-coding-anthropic", got, expectedURL)
-	}
-}
-
-func TestGetDefaultAPIBase_QwenIntlAliases(t *testing.T) {
-	expectedURL := "https://dashscope-intl.aliyuncs.com/compatible-mode/v1"
-	for _, protocol := range []string{"qwen-intl", "qwen-international", "dashscope-intl"} {
-		if got := getDefaultAPIBase(protocol); got != expectedURL {
-			t.Fatalf("getDefaultAPIBase(%q) = %q, want %q", protocol, got, expectedURL)
-		}
-	}
-}
-
-func TestGetDefaultAPIBase_QwenUSAliases(t *testing.T) {
-	expectedURL := "https://dashscope-us.aliyuncs.com/compatible-mode/v1"
-	for _, protocol := range []string{"qwen-us", "dashscope-us"} {
-		if got := getDefaultAPIBase(protocol); got != expectedURL {
-			t.Fatalf("getDefaultAPIBase(%q) = %q, want %q", protocol, got, expectedURL)
-		}
-	}
-}
-
-func TestBuildModelProviderAliasMap(t *testing.T) {
-	aliases := buildModelProviderAliasMap()
-	if len(aliases) == 0 {
-		t.Fatal("buildModelProviderAliasMap() returned empty map")
-	}
-
-	seenAliases := make(map[string]string, len(aliases))
-	for provider, option := range providerMetadataByName {
-		got, ok := aliases[provider]
-		if !ok {
-			t.Fatalf("canonical provider %q missing from alias map", provider)
-		}
-		if got != provider {
-			t.Fatalf("canonical provider %q mapped to %q", provider, got)
-		}
-		if existing, ok := seenAliases[provider]; ok {
-			t.Fatalf("canonical provider key %q collides with provider %q", provider, existing)
-		}
-		seenAliases[provider] = provider
-		for _, alias := range option.Aliases {
-			normalized := strings.ToLower(strings.TrimSpace(alias))
-			if normalized == "" {
-				t.Fatalf("provider %q includes empty alias", provider)
-			}
-			if existing, ok := seenAliases[normalized]; ok && existing != provider {
-				t.Fatalf("alias %q for provider %q collides with provider %q", alias, provider, existing)
-			}
-			seenAliases[normalized] = provider
-			got, ok := aliases[normalized]
-			if !ok {
-				t.Fatalf("alias %q for provider %q missing from alias map", alias, provider)
-			}
-			if got != provider {
-				t.Fatalf("alias %q normalized to %q, want %q", alias, got, provider)
-			}
-		}
-	}
-}
-
-func TestCreateProviderFromConfig_MinimaxInjectsReasoningSplit(t *testing.T) {
-	var requestBody map[string]any
-
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if err := json.NewDecoder(r.Body).Decode(&requestBody); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(`{"choices":[{"message":{"content":"ok"},"finish_reason":"stop"}]}`))
-	}))
-	defer server.Close()
-
-	cfg := &config.ModelConfig{
-		ModelName: "test-minimax",
-		Model:     "minimax/MiniMax-M2.5",
-		APIBase:   server.URL,
-	}
-	cfg.SetAPIKey("test-key")
-
-	provider, modelID, err := CreateProviderFromConfig(cfg)
-	if err != nil {
-		t.Fatalf("CreateProviderFromConfig() error = %v", err)
-	}
-	if provider == nil {
-		t.Fatal("CreateProviderFromConfig() returned nil provider")
-	}
-	if modelID != "MiniMax-M2.5" {
-		t.Errorf("modelID = %q, want %q", modelID, "MiniMax-M2.5")
-	}
-
-	_, err = provider.Chat(
-		t.Context(),
-		[]Message{{Role: "user", Content: "hi"}},
-		nil,
-		modelID,
-		nil,
-	)
-	if err != nil {
-		t.Fatalf("Chat() error = %v", err)
-	}
-
-	// Verify reasoning_split is automatically injected
-	if got, ok := requestBody["reasoning_split"]; !ok || got != true {
-		t.Fatalf("reasoning_split = %v, want true", got)
-	}
-}
-
-func TestCreateProviderFromConfig_MinimaxPreservesUserExtraBody(t *testing.T) {
-	var requestBody map[string]any
-
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if err := json.NewDecoder(r.Body).Decode(&requestBody); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(`{"choices":[{"message":{"content":"ok"},"finish_reason":"stop"}]}`))
-	}))
-	defer server.Close()
-
-	cfg := &config.ModelConfig{
-		ModelName: "test-minimax-custom",
-		Model:     "minimax/MiniMax-M2.5",
-		APIBase:   server.URL,
-		ExtraBody: map[string]any{"custom_field": "test"},
-	}
-	cfg.SetAPIKey("test-key")
-
-	provider, modelID, err := CreateProviderFromConfig(cfg)
-	if err != nil {
-		t.Fatalf("CreateProviderFromConfig() error = %v", err)
-	}
-
-	_, err = provider.Chat(
-		t.Context(),
-		[]Message{{Role: "user", Content: "hi"}},
-		nil,
-		modelID,
-		nil,
-	)
-	if err != nil {
-		t.Fatalf("Chat() error = %v", err)
-	}
-
-	// Verify reasoning_split is automatically injected
-	if got, ok := requestBody["reasoning_split"]; !ok || got != true {
-		t.Fatalf("reasoning_split = %v, want true", got)
-	}
-	// Verify user's custom field is preserved
-	if got, ok := requestBody["custom_field"]; !ok || got != "test" {
-		t.Fatalf("custom_field = %v, want test", got)
-	}
-}
-
 func TestCreateProviderFromConfig_CustomHeaders(t *testing.T) {
 	var gotSource, gotAuth, gotPath string
 
@@ -1289,13 +436,6 @@ func TestCreateProviderFromConfig_UserAgent(t *testing.T) {
 			wantUA:   defaultUA,
 			chatOpts: map[string]any{"max_tokens": 1024},
 		},
-		{
-			name:     "azure default user agent",
-			model:    "azure/my-deployment",
-			apiKey:   "test-azure-key",
-			response: openaiResponsesResponse,
-			wantUA:   defaultUA,
-		},
 	}
 
 	for _, tt := range tests {
@@ -1342,87 +482,12 @@ func TestCreateProviderFromConfig_UserAgent(t *testing.T) {
 	}
 }
 
-func TestCreateProviderFromConfig_Bedrock(t *testing.T) {
-	// Set dummy AWS env vars to make test deterministic
-	t.Setenv("AWS_ACCESS_KEY_ID", "test-key")
-	t.Setenv("AWS_SECRET_ACCESS_KEY", "test-secret")
-	t.Setenv("AWS_EC2_METADATA_DISABLED", "true")
-	// Clear profile-related env vars to avoid loading shared config
-	t.Setenv("AWS_PROFILE", "")
-	t.Setenv("AWS_DEFAULT_PROFILE", "")
-	t.Setenv("AWS_SDK_LOAD_CONFIG", "")
-	t.Setenv("AWS_SHARED_CREDENTIALS_FILE", "")
-
-	cfg := &config.ModelConfig{
-		ModelName: "bedrock-claude",
-		Model:     "bedrock/us.anthropic.claude-sonnet-4-20250514-v1:0",
-		APIBase:   "us-west-2", // Region (also sets AWS region)
-	}
-
-	provider, modelID, err := CreateProviderFromConfig(cfg)
-	if err == nil {
-		// Provider created successfully (built with -tags bedrock)
-		if provider == nil {
-			t.Error("provider is nil on success")
-		}
-		if modelID != "us.anthropic.claude-sonnet-4-20250514-v1:0" {
-			t.Errorf("modelID = %q, want %q", modelID, "us.anthropic.claude-sonnet-4-20250514-v1:0")
-		}
-		return
-	}
-	errMsg := err.Error()
-	// When built without -tags bedrock, expect stub error
-	if strings.Contains(errMsg, "build with -tags bedrock") {
-		return // Expected stub error
-	}
-	// Unexpected error - fail the test
-	t.Errorf("unexpected error from bedrock provider: %v", err)
-}
-
-func TestCreateProviderFromConfig_BedrockWithEndpointURL(t *testing.T) {
-	// Set dummy AWS env vars to make test deterministic
-	t.Setenv("AWS_ACCESS_KEY_ID", "test-key")
-	t.Setenv("AWS_SECRET_ACCESS_KEY", "test-secret")
-	t.Setenv("AWS_REGION", "us-east-1") // Required when using endpoint URL
-	t.Setenv("AWS_EC2_METADATA_DISABLED", "true")
-	// Clear profile-related env vars to avoid loading shared config
-	t.Setenv("AWS_PROFILE", "")
-	t.Setenv("AWS_DEFAULT_PROFILE", "")
-	t.Setenv("AWS_SDK_LOAD_CONFIG", "")
-	t.Setenv("AWS_SHARED_CREDENTIALS_FILE", "")
-
-	cfg := &config.ModelConfig{
-		ModelName: "bedrock-claude",
-		Model:     "bedrock/us.anthropic.claude-sonnet-4-20250514-v1:0",
-		APIBase:   "https://bedrock-runtime.us-east-1.amazonaws.com", // Full endpoint URL
-	}
-
-	provider, modelID, err := CreateProviderFromConfig(cfg)
-	if err == nil {
-		// Provider created successfully (built with -tags bedrock)
-		if provider == nil {
-			t.Error("provider is nil on success")
-		}
-		if modelID != "us.anthropic.claude-sonnet-4-20250514-v1:0" {
-			t.Errorf("modelID = %q, want %q", modelID, "us.anthropic.claude-sonnet-4-20250514-v1:0")
-		}
-		return
-	}
-	errMsg := err.Error()
-	// When built without -tags bedrock, expect stub error
-	if strings.Contains(errMsg, "build with -tags bedrock") {
-		return // Expected stub error
-	}
-	// Unexpected error - fail the test
-	t.Errorf("unexpected error from bedrock provider: %v", err)
-}
-
 func TestCreateProviderFromConfig_ToolSchemaTransformWrapsProvider(t *testing.T) {
 	cfg := &config.ModelConfig{
-		ModelName:           "claude-cli-test",
-		Provider:            "claude-cli",
+		ModelName:           "anthropic-test",
+		Provider:            "anthropic",
 		Model:               "claude-sonnet-4.6",
-		Workspace:           t.TempDir(),
+		APIKeys:             config.SimpleSecureStrings("test-key"),
 		ToolSchemaTransform: "simple",
 	}
 
@@ -1433,17 +498,17 @@ func TestCreateProviderFromConfig_ToolSchemaTransformWrapsProvider(t *testing.T)
 	if modelID != "claude-sonnet-4.6" {
 		t.Fatalf("modelID = %q, want %q", modelID, "claude-sonnet-4.6")
 	}
-	if _, ok := provider.(*toolSchemaTransformProvider); !ok {
-		t.Fatalf("provider = %T, want *toolSchemaTransformProvider", provider)
+	if _, ok := provider.(*toolSchemaStreamingProvider); !ok {
+		t.Fatalf("provider = %T, want *toolSchemaStreamingProvider", provider)
 	}
 }
 
 func TestCreateProviderFromConfig_InvalidToolSchemaTransform(t *testing.T) {
 	cfg := &config.ModelConfig{
-		ModelName:           "claude-cli-test",
-		Provider:            "claude-cli",
+		ModelName:           "anthropic-test",
+		Provider:            "anthropic",
 		Model:               "claude-sonnet-4.6",
-		Workspace:           t.TempDir(),
+		APIKeys:             config.SimpleSecureStrings("test-key"),
 		ToolSchemaTransform: "invalid",
 	}
 

@@ -23,8 +23,8 @@ import (
 type OAuthProviderConfig struct {
 	Issuer       string
 	ClientID     string
-	ClientSecret string // Required for Google OAuth (confidential client)
-	TokenURL     string // Override token endpoint (Google uses a different URL than issuer)
+	ClientSecret string // Optional confidential-client secret
+	TokenURL     string // Optional override for the token endpoint
 	Scopes       string
 	Originator   string
 	Port         int
@@ -47,32 +47,6 @@ func OpenAIOAuthConfig() OAuthProviderConfig {
 		Originator: "codex_cli_rs",
 		Port:       1455,
 	}
-}
-
-// GoogleAntigravityOAuthConfig returns the OAuth configuration for Google Cloud Code Assist (Antigravity).
-// Client credentials are the same ones used by OpenCode/pi-ai for Cloud Code Assist access.
-func GoogleAntigravityOAuthConfig() OAuthProviderConfig {
-	// These are the same client credentials used by the OpenCode antigravity plugin.
-	clientID := decodeBase64(
-		"MTA3MTAwNjA2MDU5MS10bWhzc2luMmgyMWxjcmUyMzV2dG9sb2poNGc0MDNlcC5hcHBzLmdvb2dsZXVzZXJjb250ZW50LmNvbQ==",
-	)
-	clientSecret := decodeBase64("R09DU1BYLUs1OEZXUjQ4NkxkTEoxbUxCOHNYQzR6NnFEQWY=")
-	return OAuthProviderConfig{
-		Issuer:       "https://accounts.google.com/o/oauth2/v2",
-		TokenURL:     "https://oauth2.googleapis.com/token",
-		ClientID:     clientID,
-		ClientSecret: clientSecret,
-		Scopes:       "https://www.googleapis.com/auth/cloud-platform https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/cclog https://www.googleapis.com/auth/experimentsandconfigs",
-		Port:         51121,
-	}
-}
-
-func decodeBase64(s string) string {
-	data, err := base64.StdEncoding.DecodeString(s)
-	if err != nil {
-		return s
-	}
-	return string(data)
 }
 
 // GenerateState generates a random state string for OAuth CSRF protection.
@@ -503,27 +477,15 @@ func buildAuthorizeURL(cfg OAuthProviderConfig, pkce PKCECodes, state, redirectU
 		"state":                 {state},
 	}
 
-	isGoogle := strings.Contains(strings.ToLower(cfg.Issuer), "accounts.google.com")
-	if isGoogle {
-		// Google OAuth requires these for refresh token support
-		params.Set("access_type", "offline")
-		params.Set("prompt", "consent")
-	} else {
-		// OpenAI-specific parameters
-		params.Set("id_token_add_organizations", "true")
-		params.Set("codex_cli_simplified_flow", "true")
-		if strings.Contains(strings.ToLower(cfg.Issuer), "auth.openai.com") {
-			params.Set("originator", "picoclaw")
-		}
-		if cfg.Originator != "" {
-			params.Set("originator", cfg.Originator)
-		}
+	params.Set("id_token_add_organizations", "true")
+	params.Set("codex_cli_simplified_flow", "true")
+	if strings.Contains(strings.ToLower(cfg.Issuer), "auth.openai.com") {
+		params.Set("originator", "picoclaw")
+	}
+	if cfg.Originator != "" {
+		params.Set("originator", cfg.Originator)
 	}
 
-	// Google uses /auth path, OpenAI uses /oauth/authorize
-	if isGoogle {
-		return cfg.Issuer + "/auth?" + params.Encode()
-	}
 	return cfg.Issuer + "/oauth/authorize?" + params.Encode()
 }
 
@@ -547,9 +509,6 @@ func ExchangeCodeForTokens(cfg OAuthProviderConfig, code, codeVerifier, redirect
 
 	// Determine provider name from config
 	provider := "openai"
-	if cfg.TokenURL != "" && strings.Contains(cfg.TokenURL, "googleapis.com") {
-		provider = "google-antigravity"
-	}
 
 	resp, err := http.PostForm(tokenURL, data)
 	if err != nil {

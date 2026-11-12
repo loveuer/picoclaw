@@ -74,7 +74,7 @@ func TestFallback_AllFail(t *testing.T) {
 	candidates := []FallbackCandidate{
 		makeCandidate("openai", "gpt-4"),
 		makeCandidate("anthropic", "claude"),
-		makeCandidate("groq", "llama"),
+		makeCandidate("anthropic", "llama"),
 	}
 
 	run := func(ctx context.Context, provider, model string) (*LLMResponse, error) {
@@ -591,7 +591,7 @@ func TestFallbackCandidateStableKeyIncludesConfigIdentity(t *testing.T) {
 func TestResolveCandidates_Simple(t *testing.T) {
 	cfg := ModelConfig{
 		Primary:   "gpt-4",
-		Fallbacks: []string{"anthropic/claude-opus", "groq/llama-3"},
+		Fallbacks: []string{"anthropic/claude-opus", "anthropic/claude-test"},
 	}
 
 	candidates := ResolveCandidates(cfg, "openai")
@@ -605,7 +605,7 @@ func TestResolveCandidates_Simple(t *testing.T) {
 	if candidates[1].Provider != "anthropic" || candidates[1].Model != "claude-opus" {
 		t.Errorf("candidate[1] = %s/%s, want anthropic/claude-opus", candidates[1].Provider, candidates[1].Model)
 	}
-	if candidates[2].Provider != "groq" || candidates[2].Model != "llama-3" {
+	if candidates[2].Provider != "anthropic" || candidates[2].Model != "claude-test" {
 		t.Errorf("candidate[2] = %s/%s, want groq/llama-3", candidates[2].Provider, candidates[2].Model)
 	}
 }
@@ -654,7 +654,7 @@ func TestResolveCandidatesWithLookup_AliasResolvesToNestedModel(t *testing.T) {
 
 	lookup := func(raw string) (string, bool) {
 		if raw == "step-3.5-flash" {
-			return "openrouter/stepfun/step-3.5-flash:free", true
+			return "openai/stepfun/step-3.5-flash:free", true
 		}
 		return "", false
 	}
@@ -663,7 +663,7 @@ func TestResolveCandidatesWithLookup_AliasResolvesToNestedModel(t *testing.T) {
 	if len(candidates) != 1 {
 		t.Fatalf("candidates = %d, want 1", len(candidates))
 	}
-	if candidates[0].Provider != "openrouter" {
+	if candidates[0].Provider != "openai" {
 		t.Fatalf("provider = %q, want openrouter", candidates[0].Provider)
 	}
 	if candidates[0].Model != "stepfun/step-3.5-flash:free" {
@@ -674,12 +674,12 @@ func TestResolveCandidatesWithLookup_AliasResolvesToNestedModel(t *testing.T) {
 func TestResolveCandidatesWithLookup_DeduplicateAfterLookup(t *testing.T) {
 	cfg := ModelConfig{
 		Primary:   "step-3.5-flash",
-		Fallbacks: []string{"openrouter/stepfun/step-3.5-flash:free"},
+		Fallbacks: []string{"openai/stepfun/step-3.5-flash:free"},
 	}
 
 	lookup := func(raw string) (string, bool) {
 		if raw == "step-3.5-flash" {
-			return "openrouter/stepfun/step-3.5-flash:free", true
+			return "openai/stepfun/step-3.5-flash:free", true
 		}
 		return "", false
 	}

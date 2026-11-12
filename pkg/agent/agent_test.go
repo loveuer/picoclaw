@@ -3508,7 +3508,7 @@ func TestProcessMessage_SwitchModelShowModelConsistency(t *testing.T) {
 			},
 			{
 				ModelName: "deepseek",
-				Model:     "openrouter/deepseek/deepseek-v3.2",
+				Model:     "openai/deepseek/deepseek-v3.2",
 				APIBase:   "https://openrouter.ai/api/v1",
 				APIKeys:   config.SimpleSecureStrings("test-key"),
 			},
@@ -3536,7 +3536,7 @@ func TestProcessMessage_SwitchModelShowModelConsistency(t *testing.T) {
 		ChatID:   "chat1",
 		Content:  "/show model",
 	})
-	if !strings.Contains(showResp, "Current Model: deepseek (Provider: openrouter)") {
+	if !strings.Contains(showResp, "Current Model: deepseek (Provider: openai)") {
 		t.Fatalf("unexpected /show model reply after switch: %q", showResp)
 	}
 
@@ -3638,13 +3638,13 @@ func TestProcessMessage_SwitchModelRoutesSubsequentRequestsToSelectedProvider(t 
 			},
 			{
 				ModelName: "deepseek",
-				Model:     "openrouter/deepseek/deepseek-v3.2",
+				Model:     "openai/deepseek/deepseek-v3.2",
 				APIBase:   remoteServer.URL,
 				APIKeys:   config.SimpleSecureStrings("remote-key"),
 			},
 			{
 				ModelName: "deepseek",
-				Model:     "openrouter/deepseek/deepseek-v3.2",
+				Model:     "openai/deepseek/deepseek-v3.2",
 				APIBase:   remoteServer.URL,
 				APIKeys:   config.SimpleSecureStrings("remote-key-secondary"),
 			},
@@ -3906,14 +3906,14 @@ func TestProcessMessage_FallbackUsesPerCandidateProvider(t *testing.T) {
 		ModelList: []*config.ModelConfig{
 			{
 				ModelName: "mistral-primary",
-				Model:     "openrouter/mistralai/mistral-small-3.1",
+				Model:     "openai/mistralai/mistral-small-3.1",
 				APIBase:   primaryServer.URL,
 				APIKeys:   config.SimpleSecureStrings("primary-key"),
 				Workspace: workspace,
 			},
 			{
 				ModelName: "gemma-fallback",
-				Model:     "openrouter/gemma-3-27b-it",
+				Model:     "openai/gemma-3-27b-it",
 				APIBase:   fallbackServer.URL,
 				APIKeys:   config.SimpleSecureStrings("fallback-key"),
 				Workspace: workspace,
@@ -4012,7 +4012,7 @@ func TestProcessMessage_FallbackReceivesExplicitThinkingOff(t *testing.T) {
 		ModelList: []*config.ModelConfig{
 			{
 				ModelName: "primary-model",
-				Model:     "openrouter/primary-model",
+				Model:     "openai/primary-model",
 				APIBase:   primaryServer.URL,
 				APIKeys:   config.SimpleSecureStrings("primary-key"),
 				Workspace: workspace,
@@ -4106,7 +4106,7 @@ func TestProcessMessage_PrimaryThinkingOffDoesNotLeakToFallback(t *testing.T) {
 		ModelList: []*config.ModelConfig{
 			{
 				ModelName:     "primary-model",
-				Model:         "openrouter/primary-model",
+				Model:         "openai/primary-model",
 				APIBase:       primaryServer.URL,
 				APIKeys:       config.SimpleSecureStrings("primary-key"),
 				ThinkingLevel: "off",
@@ -4200,7 +4200,7 @@ func TestProcessMessage_FallbackThinkingOffUsesCandidateIdentity(t *testing.T) {
 		ModelList: []*config.ModelConfig{
 			{
 				ModelName: "primary-model",
-				Model:     "openrouter/primary-model",
+				Model:     "openai/primary-model",
 				APIBase:   primaryServer.URL,
 				APIKeys:   config.SimpleSecureStrings("primary-key"),
 				Workspace: workspace,
@@ -4278,13 +4278,13 @@ func TestProcessMessage_FallbackUsesActiveProviderWhenCandidateNotRegistered(t *
 				MaxTokens:         4096,
 				MaxToolIterations: 3,
 				// No model_list entry for this alias — absent from CandidateProviders.
-				ModelFallbacks: []string{"openrouter/fallback-model"},
+				ModelFallbacks: []string{"openai/fallback-model"},
 			},
 		},
 		ModelList: []*config.ModelConfig{
 			{
 				ModelName: "primary-model",
-				Model:     "openrouter/primary-model",
+				Model:     "openai/primary-model",
 				APIBase:   primaryServer.URL,
 				APIKeys:   config.SimpleSecureStrings("primary-key"),
 				Workspace: workspace,

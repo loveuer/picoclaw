@@ -29,6 +29,9 @@ func isProvidersMapEmpty(providers map[string]any) bool {
 }
 
 // v0ProvidersMapToModelList converts a V0 providers map to a model_list slice.
+// Legacy mappings preserve existing settings, including removed providers; they
+// do not register runtime providers. Users must select a supported protocol
+// before using those old entries with this fork.
 func v0ProvidersMapToModelList(providers map[string]any, userProvider, userModel string) []any {
 	// providerMigration defines migration rules for a provider
 	type providerMigration struct {

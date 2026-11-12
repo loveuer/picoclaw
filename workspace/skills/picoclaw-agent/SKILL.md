@@ -88,7 +88,6 @@ Notes:
 ```bash
 picoclaw auth login --provider openai
 picoclaw auth login --provider anthropic --setup-token
-picoclaw auth login --provider antigravity --device-code
 picoclaw auth models
 picoclaw auth status
 picoclaw auth logout --provider openai
@@ -151,64 +150,11 @@ Notes:
 
 ## Providers
 
-PicoClaw supports 30+ LLM providers through `model_list`.
+PicoClaw supports two chat protocols: `openai` (Responses and Chat Completions) and `anthropic` (native Messages).
 
-Credential patterns in PicoClaw are:
+Use `model_list[].api_keys`, or the existing `picoclaw auth login --provider openai` / `anthropic` flows. For compatible services, select one of these protocols and explicitly set `api_base` and the remote `model` ID. Other vendor presets, CLI proxies, Copilot, Antigravity, Gemini, Azure and Bedrock have been removed.
 
-- `model_list[].api_keys` for most hosted APIs
-- `picoclaw auth login --provider ...` for the built-in auth helper flows (`openai`, `anthropic`, `antigravity`)
-- local or self-hosted endpoints for providers like `ollama`, `lmstudio`, `vllm`, and `litellm`
-- external platform credentials for providers like `bedrock`, `azure`, and `github-copilot`
-
-`picoclaw auth login` does **not** cover every provider. For most providers, the normal path is adding a `model_list` entry with `provider`, `model`, and `api_keys`.
-
-### Common Provider Matrix
-
-| Provider | `provider` value | Auth path in PicoClaw |
-| --- | --- | --- |
-| OpenAI | `openai` | OAuth helper via `picoclaw auth login --provider openai`, or `model_list[].api_keys` |
-| Anthropic | `anthropic` | API key in `model_list[].api_keys`, or helper flow via `picoclaw auth login --provider anthropic` |
-| Anthropic Messages API | `anthropic-messages` | API key in `model_list[].api_keys` |
-| Google Gemini | `gemini` | API key in `model_list[].api_keys` |
-| OpenRouter | `openrouter` | API key in `model_list[].api_keys` |
-| Zhipu / GLM | `zhipu` | API key in `model_list[].api_keys` |
-| DeepSeek | `deepseek` | API key in `model_list[].api_keys` |
-| VolcEngine / Doubao | `volcengine` | API key in `model_list[].api_keys` |
-| Qwen / DashScope | `qwen` | API key in `model_list[].api_keys` |
-| Moonshot / Kimi | `moonshot` | API key in `model_list[].api_keys` |
-| MiniMax | `minimax` | API key in `model_list[].api_keys` |
-| Mistral | `mistral` | API key in `model_list[].api_keys` |
-| Groq | `groq` | API key in `model_list[].api_keys` |
-| NVIDIA NIM | `nvidia` | API key in `model_list[].api_keys` |
-| Cerebras | `cerebras` | API key in `model_list[].api_keys` |
-| Azure OpenAI | `azure` | `api_key` in `model_list`, or Microsoft Entra ID if built with `azidentity` support |
-| AWS Bedrock | `bedrock` | AWS credentials plus Bedrock-enabled build (`go build -tags bedrock`) |
-| Antigravity | `antigravity` | OAuth helper via `picoclaw auth login --provider antigravity` |
-| GitHub Copilot | `github-copilot` | External Copilot gRPC endpoint, default `localhost:4321` |
-| Ollama | `ollama` | Local endpoint, no API key required |
-| LM Studio | `lmstudio` | Local endpoint, API key optional |
-| vLLM | `vllm` | Local OpenAI-compatible endpoint |
-| LiteLLM | `litellm` | Proxy endpoint and whichever credential model the proxy expects |
-| Claude CLI | `claude-cli` | Local Claude CLI provider, configured by workspace/runtime |
-| Codex CLI | `codex-cli` | Local Codex CLI provider, configured by workspace/runtime |
-
-### Additional OpenAI-Compatible Vendors
-
-PicoClaw also carries first-class metadata or routing support for additional vendors such as:
-
-- `venice`
-- `vivgrid`
-- `longcat`
-- `modelscope`
-- `mimo`
-- `novita`
-- `byteplus`
-- `shengsuanyun`
-- `avian`
-- `zai-coding`
-- `gpt4free`
-
-For the full provider matrix, default API bases, protocol families, and vendor-specific examples, read `docs/guides/providers.md`.
+The legacy `anthropic-messages` spelling is an alias of `anthropic`. Model-specific HTTP headers, extra body parameters, thinking, streaming, schema transforms, multiple keys and fallback remain configurable. Speech-only services have separate selection logic and are not chat providers.
 
 ## Built-in Tool Families
 
@@ -449,7 +395,7 @@ model_list:
 | Groq Whisper | `groq/whisper-large-v3-turbo` | Fast OpenAI-compatible Whisper transcription and a common default choice |
 | OpenAI Whisper | `openai/whisper-1` | Standard Whisper transcription through the OpenAI-compatible audio endpoint |
 | ElevenLabs Scribe | `provider: elevenlabs`, `model: scribe_v1` | Uses PicoClaw's dedicated ElevenLabs transcription path |
-| Audio-capable chat models | `gemini/gemini-2.5-flash`, `openai/gpt-4o-audio-preview` | Multimodal audio transcription path; some model combinations are still evolving |
+| Audio-capable chat models | `openai/gpt-4o-audio-preview` | Multimodal audio transcription path; some model combinations are still evolving |
 
 Detection behavior that matters:
 

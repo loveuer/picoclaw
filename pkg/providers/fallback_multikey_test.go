@@ -17,7 +17,7 @@ func TestMultiKeyFailover(t *testing.T) {
 		Fallbacks: []string{"glm-4.7__key_1", "glm-4.7__key_2"},
 	}
 
-	candidates := ResolveCandidates(cfg, "zhipu")
+	candidates := ResolveCandidates(cfg, "openai")
 
 	if len(candidates) != 3 {
 		t.Fatalf("expected 3 candidates, got %d: %v", len(candidates), candidates)
@@ -79,7 +79,7 @@ func TestMultiKeyFailoverAllFail(t *testing.T) {
 		Fallbacks: []string{"glm-4.7__key_1", "glm-4.7__key_2"},
 	}
 
-	candidates := ResolveCandidates(cfg, "zhipu")
+	candidates := ResolveCandidates(cfg, "openai")
 
 	cooldown := NewCooldownTracker()
 	chain := NewFallbackChain(cooldown, nil)
@@ -124,7 +124,7 @@ func TestMultiKeyFailoverCooldown(t *testing.T) {
 		Fallbacks: []string{"glm-4.7__key_1"},
 	}
 
-	candidates := ResolveCandidates(cfg, "zhipu")
+	candidates := ResolveCandidates(cfg, "openai")
 
 	cooldown := NewCooldownTracker()
 	chain := NewFallbackChain(cooldown, nil)
@@ -180,7 +180,7 @@ func TestMultiKeyFailoverWithFormatError(t *testing.T) {
 		Fallbacks: []string{"glm-4.7__key_1"},
 	}
 
-	candidates := ResolveCandidates(cfg, "zhipu")
+	candidates := ResolveCandidates(cfg, "openai")
 
 	cooldown := NewCooldownTracker()
 	chain := NewFallbackChain(cooldown, nil)
@@ -219,20 +219,20 @@ func TestMultiKeyFailoverWithFormatError(t *testing.T) {
 }
 
 // TestMultiKeyWithModelFallback tests multi-key failover combined with model fallback.
-// This simulates the scenario: api_keys: ["k1", "k2"] + fallbacks: ["minimax"]
+// This simulates the scenario: api_keys: ["k1", "k2"] + fallbacks: ["anthropic"]
 // Expected failover order: glm-4.7 (k1) → glm-4.7__key_1 (k2) → minimax
 func TestMultiKeyWithModelFallback(t *testing.T) {
 	// Simulate expanded config from:
-	// { "model_name": "glm-4.7", "api_keys": ["k1", "k2"], "fallbacks": ["minimax"] }
-	// After ExpandMultiKeyModels, primaryEntry.Fallbacks = ["glm-4.7__key_1", "minimax"]
-	// Note: In production, "minimax" would be resolved via model lookup to "minimax/minimax"
+	// { "model_name": "glm-4.7", "api_keys": ["k1", "k2"], "fallbacks": ["anthropic"] }
+	// After ExpandMultiKeyModels, primaryEntry.Fallbacks = ["glm-4.7__key_1", "anthropic"]
+	// Note: In production, "anthropic" would be resolved via model lookup to "anthropic/claude-test"
 	// In this test, we use the full format to avoid needing a lookup function.
 	cfg := ModelConfig{
 		Primary:   "glm-4.7",
-		Fallbacks: []string{"glm-4.7__key_1", "minimax/minimax"},
+		Fallbacks: []string{"glm-4.7__key_1", "anthropic/claude-test"},
 	}
 
-	candidates := ResolveCandidates(cfg, "zhipu")
+	candidates := ResolveCandidates(cfg, "openai")
 
 	// Should have 3 candidates: glm-4.7 (zhipu), glm-4.7__key_1 (zhipu), minimax (minimax)
 	if len(candidates) != 3 {
@@ -240,23 +240,23 @@ func TestMultiKeyWithModelFallback(t *testing.T) {
 	}
 
 	// Verify candidate order
-	if candidates[0].Model != "glm-4.7" || candidates[0].Provider != "zhipu" {
+	if candidates[0].Model != "glm-4.7" || candidates[0].Provider != "openai" {
 		t.Errorf(
-			"expected first candidate to be zhipu/glm-4.7, got: %s/%s",
+			"expected first candidate to be openai/glm-4.7, got: %s/%s",
 			candidates[0].Provider,
 			candidates[0].Model,
 		)
 	}
-	if candidates[1].Model != "glm-4.7__key_1" || candidates[1].Provider != "zhipu" {
+	if candidates[1].Model != "glm-4.7__key_1" || candidates[1].Provider != "openai" {
 		t.Errorf(
-			"expected second candidate to be zhipu/glm-4.7__key_1, got: %s/%s",
+			"expected second candidate to be openai/glm-4.7__key_1, got: %s/%s",
 			candidates[1].Provider,
 			candidates[1].Model,
 		)
 	}
-	if candidates[2].Model != "minimax" || candidates[2].Provider != "minimax" {
+	if candidates[2].Model != "claude-test" || candidates[2].Provider != "anthropic" {
 		t.Errorf(
-			"expected third candidate to be minimax/minimax, got: %s/%s",
+			"expected third candidate to be anthropic/claude-test, got: %s/%s",
 			candidates[2].Provider,
 			candidates[2].Model,
 		)
@@ -304,14 +304,14 @@ func TestMultiKeyWithModelFallback(t *testing.T) {
 	if len(calledModels) != 3 {
 		t.Fatalf("expected 3 called models, got %d", len(calledModels))
 	}
-	if calledModels[0] != "zhipu/glm-4.7" {
-		t.Errorf("expected first call to zhipu/glm-4.7, got: %s", calledModels[0])
+	if calledModels[0] != "openai/glm-4.7" {
+		t.Errorf("expected first call to openai/glm-4.7, got: %s", calledModels[0])
 	}
-	if calledModels[1] != "zhipu/glm-4.7__key_1" {
-		t.Errorf("expected second call to zhipu/glm-4.7__key_1, got: %s", calledModels[1])
+	if calledModels[1] != "openai/glm-4.7__key_1" {
+		t.Errorf("expected second call to openai/glm-4.7__key_1, got: %s", calledModels[1])
 	}
-	if calledModels[2] != "minimax/minimax" {
-		t.Errorf("expected third call to minimax/minimax, got: %s", calledModels[2])
+	if calledModels[2] != "anthropic/claude-test" {
+		t.Errorf("expected third call to anthropic/claude-test, got: %s", calledModels[2])
 	}
 
 	// Verify 2 failed attempts recorded
@@ -334,7 +334,7 @@ func TestMultiKeyFailoverMixedErrors(t *testing.T) {
 		Fallbacks: []string{"glm-4.7__key_1", "glm-4.7__key_2"},
 	}
 
-	candidates := ResolveCandidates(cfg, "zhipu")
+	candidates := ResolveCandidates(cfg, "openai")
 
 	cooldown := NewCooldownTracker()
 	chain := NewFallbackChain(cooldown, nil)

@@ -9,9 +9,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sipeed/picoclaw/pkg/audio"
 	"github.com/sipeed/picoclaw/pkg/config"
 	"github.com/sipeed/picoclaw/pkg/media"
-	"github.com/sipeed/picoclaw/pkg/providers"
 )
 
 type TTSProvider interface {
@@ -28,18 +28,18 @@ func providerFromModelConfig(mc *config.ModelConfig) TTSProvider {
 		return nil
 	}
 
-	protocol, modelID := providers.ExtractProtocol(mc)
+	protocol, modelID, apiBase := audio.ResolveModel(mc)
 	if modelID == "" {
 		modelID = strings.TrimSpace(mc.Model)
 	}
 
 	switch protocol {
 	case "mimo":
-		return NewMimoTTSProvider(mc.APIKey(), providers.ResolveAPIBase(mc), modelID, mc.Proxy)
+		return NewMimoTTSProvider(mc.APIKey(), apiBase, modelID, mc.Proxy)
 	default:
 		return NewOpenAITTSProviderWithOptions(
 			mc.APIKey(),
-			providers.ResolveAPIBase(mc),
+			apiBase,
 			mc.Proxy,
 			modelID,
 			openAITTSOptionsFromModelConfig(mc),

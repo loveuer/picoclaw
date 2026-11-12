@@ -628,13 +628,8 @@ func (c ModelStreamingConfig) IsZero() bool {
 	return !c.Enabled
 }
 
-// ModelConfig represents a model-centric provider configuration.
-// It allows adding new providers (especially OpenAI-compatible ones) via configuration only.
-// The Model field may be either a plain model identifier or a provider-prefixed
-// identifier such as "openai/gpt-5.4" or "nvidia/z-ai/glm-5.1".
-// Supported providers include openai, anthropic, antigravity, claude-cli,
-// codex-cli, github-copilot, and named OpenAI-compatible protocols such as
-// groq, deepseek, modelscope, and novita.
+// ModelConfig selects OpenAI or Anthropic, optionally using a compatible endpoint.
+// Model may be a plain ID or a legacy protocol-prefixed ID such as openai/gpt-5.4.
 type ModelConfig struct {
 	// Required fields
 	ModelName string `json:"model_name"` // User-facing alias for the model
@@ -646,10 +641,10 @@ type ModelConfig struct {
 	Proxy     string   `json:"proxy,omitempty"`     // HTTP proxy URL
 	Fallbacks []string `json:"fallbacks,omitempty"` // Fallback model names for failover
 
-	// Special providers (CLI-based, OAuth, etc.)
+	// Authentication and legacy CLI settings (CLI fields are ignored).
 	AuthMethod  string `json:"auth_method,omitempty"`  // Authentication method: oauth, token
-	ConnectMode string `json:"connect_mode,omitempty"` // Connection mode: stdio, grpc
-	Workspace   string `json:"workspace,omitempty"`    // Workspace path for CLI-based providers
+	ConnectMode string `json:"connect_mode,omitempty"` // Deprecated: retained only for loading old configs
+	Workspace   string `json:"workspace,omitempty"`    // Deprecated: retained only for loading old configs
 
 	// Optional optimizations
 	RPM                 int                  `json:"rpm,omitempty"`              // Requests per minute limit

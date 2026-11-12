@@ -26,11 +26,6 @@ type AuthStore struct {
 	Credentials map[string]*AuthCredential `json:"credentials"`
 }
 
-const (
-	providerGoogleAntigravity = "google-antigravity"
-	providerAntigravityAlias  = "antigravity"
-)
-
 func (c *AuthCredential) IsExpired() bool {
 	if c.ExpiresAt.IsZero() {
 		return false
@@ -50,13 +45,7 @@ func authFilePath() string {
 }
 
 func canonicalProvider(provider string) string {
-	normalized := strings.ToLower(strings.TrimSpace(provider))
-	switch normalized {
-	case providerAntigravityAlias:
-		return providerGoogleAntigravity
-	default:
-		return normalized
-	}
+	return strings.ToLower(strings.TrimSpace(provider))
 }
 
 func cloneCredential(cred *AuthCredential) *AuthCredential {
