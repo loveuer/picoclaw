@@ -1,568 +1,187 @@
-<div align="center">
-<img src="assets/logo.webp" alt="PicoClaw" width="512">
+# PicoClaw · 精简 fork
 
-<h1>PicoClaw: Ultra-Efficient AI Assistant in Go</h1>
+这是 [sipeed/picoclaw](https://github.com/sipeed/picoclaw) 的个人 fork，使用 Go 构建，通过命令行或 IM 运行 AI 助手。当前版本以 CLI、Gateway 和常用消息渠道为主，已移除网页管理界面与一批渠道及其依赖。
 
-<h3>$10 Hardware · 10MB RAM · ms Boot · Let's Go, PicoClaw!</h3>
-  <p>
-    <img src="https://img.shields.io/badge/Go-1.25+-00ADD8?style=flat&logo=go&logoColor=white" alt="Go">
-    <img src="https://img.shields.io/badge/Arch-x86__64%2C%20ARM64%2C%20MIPS%2C%20RISC--V%2C%20LoongArch-blue" alt="Hardware">
-    <img src="https://img.shields.io/badge/license-MIT-green" alt="License">
-    <br>
-    <a href="https://picoclaw.io"><img src="https://img.shields.io/badge/Website-picoclaw.io-blue?style=flat&logo=google-chrome&logoColor=white" alt="Website"></a>
-    <a href="https://docs.picoclaw.io/"><img src="https://img.shields.io/badge/Docs-Official-007acc?style=flat&logo=read-the-docs&logoColor=white" alt="Docs"></a>
-    <a href="https://deepwiki.com/sipeed/picoclaw"><img src="https://img.shields.io/badge/Wiki-DeepWiki-FFA500?style=flat&logo=wikipedia&logoColor=white" alt="Wiki"></a>
-    <br>
-    <a href="https://x.com/SipeedIO"><img src="https://img.shields.io/badge/X_(Twitter)-SipeedIO-black?style=flat&logo=x&logoColor=white" alt="Twitter"></a>
-    <a href="./assets/wechat.png"><img src="https://img.shields.io/badge/WeChat-Group-41d56b?style=flat&logo=wechat&logoColor=white"></a>
-    <a href="https://discord.gg/V4sAZ9XWpN"><img src="https://img.shields.io/badge/Discord-Community-4c60eb?style=flat&logo=discord&logoColor=white" alt="Discord"></a>
-  </p>
+本仓库的功能、配置和构建产物与上游不同，使用时请以本仓库代码和说明为准。
 
-[中文](docs/project/README.zh.md) | [日本語](docs/project/README.ja.md) | [한국어](docs/project/README.ko.md) | [Português](docs/project/README.pt-br.md) | [Tiếng Việt](docs/project/README.vi.md) | [Français](docs/project/README.fr.md) | [Italiano](docs/project/README.it.md) | [Bahasa Indonesia](docs/project/README.id.md) | [Malay](docs/project/README.ms.md) | **English**
+## 当前功能
 
-</div>
+- **CLI 与 Gateway**：本地交互、单次提问，或通过消息渠道持续运行。
+- **模型接入**：支持多种模型提供商、OpenAI 兼容接口、多模型配置与切换。
+- **会话管理**：保存对话上下文，支持摘要压缩，以及通过 `/new` 清空上下文后重新提问。
+- **工具与扩展**：文件操作、命令执行、网页搜索与抓取、MCP、Skills 和定时任务。
+- **语音能力**：保留语音识别与合成，实际可用能力取决于模型、服务及渠道配置。
 
----
+已移除 WebUI、launcher、桌面托盘及相关前端构建；网页搜索和网页抓取工具仍然保留。
 
-> **PicoClaw** is an independent open-source project initiated by [Sipeed](https://sipeed.com), written entirely in **Go** from scratch — not a fork of OpenClaw, NanoBot, or any other project.
+## 消息渠道
 
-**PicoClaw** is an ultra-lightweight personal AI assistant inspired by [NanoBot](https://github.com/HKUDS/nanobot). It was rebuilt from the ground up in **Go** through a "self-bootstrapping" process — the AI Agent itself drove the architecture migration and code optimization.
+目前支持 7 种 IM 渠道和 MQTT：
 
-**Runs on $10 hardware with <10MB RAM** — that's 99% less memory than OpenClaw and 98% cheaper than a Mac mini!
+| 配置类型 | 渠道 | 接入方式与文档 |
+| --- | --- | --- |
+| `weixin` | 个人微信 | [iLink 接口、扫码登录](docs/channels/weixin/README.zh.md) |
+| `wecom` | 企业微信 | [AI Bot WebSocket](docs/channels/wecom/README.zh.md) |
+| `feishu` | 飞书 / Lark | [WebSocket 长连接](docs/channels/feishu/README.zh.md) |
+| `dingtalk` | 钉钉 | [Stream 模式](docs/channels/dingtalk/README.zh.md) |
+| `qq` | QQ 官方机器人 | [官方机器人接口](docs/channels/qq/README.zh.md) |
+| `onebot` | OneBot v11 | [WebSocket，需外部 OneBot 实现](docs/channels/onebot/README.zh.md) |
+| `telegram` | Telegram | [Bot 长轮询](docs/channels/telegram/README.zh.md) |
+| `mqtt` | MQTT | [Broker 发布 / 订阅](docs/channels/mqtt/README.zh.md) |
 
-<table align="center">
-<tr align="center">
-<td align="center" valign="top">
-<p align="center">
-<img src="assets/picoclaw_mem.gif" width="360" height="240">
-</p>
-</td>
-<td align="center" valign="top">
-<p align="center">
-<img src="assets/licheervnano.png" width="400" height="240">
-</p>
-</td>
-</tr>
-</table>
+各渠道支持的消息类型、群聊触发方式和权限配置不同，请按对应文档配置。
 
-> [!CAUTION]
-> **Security Notice**
->
-> * **NO CRYPTO:** PicoClaw has **not** issued any official tokens or cryptocurrency. All claims on `pump.fun` or other trading platforms are **scams**.
-> * **OFFICIAL DOMAIN:** The **ONLY** official website is **[picoclaw.io](https://picoclaw.io)**, and company website is **[sipeed.com](https://sipeed.com)**
-> * **BEWARE:** Many `.ai/.org/.com/.net/...` domains have been registered by third parties. Do not trust them.
-> * **NOTE:** PicoClaw is in early rapid development. There may be unresolved security issues. Do not deploy to production before v1.0.
-> * **NOTE:** PicoClaw has recently merged many PRs. Recent builds may use 10-20MB RAM. Resource optimization is planned after feature stabilization.
+## 从源码构建
 
-## 📢 News
-
-2026-05-11 🛒 **LicheeRV-Claw on AliExpress!** You can now purchase LicheeRV-Claw from [AliExpress](https://www.aliexpress.com/item/1005006519668532.html), making it easier to try PicoClaw on compact RISC-V hardware.
-
-<p align="center">
-  <a href="https://www.aliexpress.com/item/1005006519668532.html">
-    <img src="assets/licheerv-claw.jpg" alt="LicheeRV-Claw on AliExpress" width="520">
-  </a>
-</p>
-
-2026-05-14 🚀 **v0.2.8 Released!** MCP CLI commands (`show`, `add`, `list`, `remove`, `test`, `edit`), empty object instead of null for MCP tool parameters, and build fixes.
-
-2026-05-07 🚀 **v0.2.7 Released!** Configurable Sogou-backed web search, channel tool feedback animation, linter fixes.
-
-2026-04-23 🚀 **v0.2.6 Released!** Hooks with respond action and comprehensive documentation, isolation support, help banner fix.
-
-2026-04-11 🚀 **v0.2.5 Released!** Zoneinfo from TZ/ZONEINFO env, Matrix CommonMark rendering alignment, `read_file` by lines.
-
-2026-03-25 🚀 **v0.2.4 Released!** Agent architecture overhaul (SubTurn, Hooks, Steering, EventBus), WeChat/WeCom integration, security hardening (.security.yml, sensitive data filtering), new providers (AWS Bedrock, Azure, Xiaomi MiMo), and 35 bug fixes. PicoClaw has reached **26K Stars**!
-
-2026-03-17 🚀 **v0.2.3 Released!** System tray UI (Windows & Linux), sub-agent status query (`spawn_status`), experimental Gateway hot-reload, Cron security gating, and 2 security fixes. PicoClaw has reached **25K Stars**!
-
-2026-03-09 🎉 **v0.2.1 — Biggest update yet!** MCP protocol support, 4 new channels (Matrix/IRC/WeCom/Discord Proxy), 3 new providers (Kimi/Minimax/Avian), vision pipeline, JSONL memory store, model routing.
-
-<details>
-<summary>Earlier news...</summary>
-
-2026-02-26 🎉 PicoClaw hits **20K Stars** in just 17 days! Channel auto-orchestration and capability interfaces are live.
-
-2026-02-16 🎉 PicoClaw breaks 12K Stars in one week! Community maintainer roles and [Roadmap](ROADMAP.md) officially launched.
-
-2026-02-13 🎉 PicoClaw breaks 5000 Stars in 4 days! Project roadmap and developer groups in progress.
-
-2026-02-09 🎉 **PicoClaw Released!** Built in 1 day to bring AI Agents to $10 hardware with <10MB RAM. Let's Go, PicoClaw!
-
-</details>
-
-## ✨ Features
-
-🪶 **Ultra-lightweight**: Core memory footprint <10MB — 99% smaller than OpenClaw.*
-
-💰 **Minimal cost**: Efficient enough to run on $10 hardware — 98% cheaper than a Mac mini.
-
-⚡️ **Lightning-fast boot**: 400x faster startup. Boots in <1s even on a 0.6GHz single-core processor.
-
-🌍 **Truly portable**: Single binary across RISC-V, ARM, MIPS, and x86 architectures. One binary, runs everywhere!
-
-🤖 **AI-bootstrapped**: Pure Go native implementation — 95% of core code was generated by an Agent and fine-tuned through human-in-the-loop review.
-
-🔌 **MCP support**: Native [Model Context Protocol](https://modelcontextprotocol.io/) integration — connect any MCP server to extend Agent capabilities.
-
-👁️ **Vision pipeline**: Send images and files directly to the Agent — automatic base64 encoding for multimodal LLMs.
-
-🧠 **Smart routing**: Rule-based model routing — simple queries go to lightweight models, saving API costs.
-
-_*Recent builds may use 10-20MB due to rapid PR merges. Resource optimization is planned. Boot speed comparison based on 0.8GHz single-core benchmarks (see table below)._
-
-<div align="center">
-
-|                                | OpenClaw      | NanoBot                  | **PicoClaw**                           |
-| ------------------------------ | ------------- | ------------------------ | -------------------------------------- |
-| **Language**                   | TypeScript    | Python                   | **Go**                                 |
-| **RAM**                        | >1GB          | >100MB                   | **< 10MB***                            |
-| **Boot time**</br>(0.8GHz core) | >500s         | >30s                     | **<1s**                                |
-| **Cost**                       | Mac Mini $599 | Most Linux boards ~$50   | **Any Linux board**</br>**from $10**   |
-
-<img src="assets/compare.jpg" alt="PicoClaw" width="512">
-
-</div>
-
-> **[Hardware Compatibility List](docs/guides/hardware-compatibility.md)** — See all tested boards, from $5 RISC-V to Raspberry Pi to Android phones. Your board not listed? Submit a PR!
-
-<p align="center">
-<img src="assets/hardware-banner.jpg" alt="PicoClaw Hardware Compatibility" width="100%">
-</p>
-
-## 🦾 Demonstration
-
-### 🛠️ Standard Assistant Workflows
-
-<table align="center">
-<tr align="center">
-<th><p align="center">Full-Stack Engineer Mode</p></th>
-<th><p align="center">Logging & Planning</p></th>
-<th><p align="center">Web Search & Learning</p></th>
-</tr>
-<tr>
-<td align="center"><p align="center"><img src="assets/picoclaw_code.gif" width="240" height="180"></p></td>
-<td align="center"><p align="center"><img src="assets/picoclaw_memory.gif" width="240" height="180"></p></td>
-<td align="center"><p align="center"><img src="assets/picoclaw_search.gif" width="240" height="180"></p></td>
-</tr>
-<tr>
-<td align="center">Develop · Deploy · Scale</td>
-<td align="center">Schedule · Automate · Remember</td>
-<td align="center">Discover · Insights · Trends</td>
-</tr>
-</table>
-
-### 🐜 Innovative Low-Footprint Deployment
-
-PicoClaw can be deployed on virtually any Linux device!
-
-- $9.9 [LicheeRV-Nano](https://www.aliexpress.com/item/1005006519668532.html) E(Ethernet) or W(WiFi6) edition, for a minimal home assistant
-- $30~50 [NanoKVM](https://www.aliexpress.com/item/1005007369816019.html), or $100 [NanoKVM-Pro](https://www.aliexpress.com/item/1005010048471263.html), for automated server operations
-
-<https://private-user-images.githubusercontent.com/83055338/547056448-e7b031ff-d6f5-4468-bcca-5726b6fecb5c.mp4>
-
-🌟 More Deployment Cases Await!
-
-## 📦 Install
-
-### Download from picoclaw.io (Recommended)
-
-Visit **[picoclaw.io](https://picoclaw.io)** — the official website auto-detects your platform and provides one-click download. No need to manually pick an architecture.
-
-### Download precompiled binary
-
-Alternatively, download the binary for your platform from the [GitHub Releases](https://github.com/sipeed/picoclaw/releases) page.
-
-### Build from source (for development)
-
-Prerequisites:
-
-- Go 1.25.13+
+需要 Git、Make，以及满足 [go.mod](go.mod) 要求的 Go 工具链（当前为 Go 1.25.13）。
 
 ```bash
-git clone https://github.com/sipeed/picoclaw.git
-
+git clone https://github.com/loveuer/picoclaw.git
 cd picoclaw
-make deps
-
-# Build the core binary for the current platform
 make build
-
-# Build core binaries for all Makefile-managed platforms
-make build-all
-
-# Build for Raspberry Pi Zero 2 W
-# 32-bit: make build-linux-arm
-# 64-bit: make build-linux-arm64
-make build-pi-zero
-
-# Build and install
-make install
+./build/picoclaw version
 ```
 
-**Raspberry Pi Zero 2 W:** Use the binary that matches your OS: 32-bit Raspberry Pi OS -> `make build-linux-arm`; 64-bit -> `make build-linux-arm64`. Or run `make build-pi-zero` to build both.
+`make build` 会生成内嵌资源，默认使用 `stdjson` 构建标签并关闭 CGO。当前平台的可执行文件入口为 `build/picoclaw`。
 
-## 🚀 Quick Start Guide
-
-### CLI
-
-**1. Initialize**
+交叉编译 Linux amd64：
 
 ```bash
-picoclaw onboard
+make build GOOS=linux GOARCH=amd64
+# 产物：build/picoclaw-linux-amd64
 ```
 
-This creates `~/.picoclaw/config.json` and the workspace directory.
+如需使用 `picoclaw-beta` 名称，同时指定命令源码目录：
 
-**2. Configure** (`~/.picoclaw/config.json`)
+```bash
+make build GOOS=linux GOARCH=amd64 \
+  BINARY_NAME=picoclaw-beta CMD_DIR=cmd/picoclaw
+# 产物：build/picoclaw-beta-linux-amd64
+```
+
+## 配置与运行
+
+### 1. 初始化
+
+```bash
+./build/picoclaw onboard
+```
+
+默认使用以下路径，可通过 `PICOCLAW_HOME` 更改数据目录：
+
+| 路径 | 用途 |
+| --- | --- |
+| `~/.picoclaw/config.json` | 模型、渠道、工具等配置 |
+| `~/.picoclaw/.security.yml` | 密钥等敏感配置，加载时与主配置合并 |
+| `~/.picoclaw/workspace/` | 工作区与助手上下文文件 |
+
+### 2. 配置模型
+
+编辑 `~/.picoclaw/config.json`。下面是仅使用 CLI 的最小配置示例，请替换模型 ID 和 API Key：
 
 ```json
 {
   "version": 3,
   "agents": {
     "defaults": {
-      "model_name": "gpt-5.4"
+      "model_name": "main"
     }
   },
   "model_list": [
     {
-      "model_name": "gpt-5.4",
+      "model_name": "main",
       "provider": "openai",
-      "model": "gpt-5.4",
-      "api_keys": [
-        "sk-your-api-key"
-      ]
+      "model": "your-model-id",
+      "api_keys": ["YOUR_API_KEY"]
     }
   ]
 }
 ```
 
-> See `config/config.example.json` in the repo for a complete configuration template with all available options.
+`model_name` 是本地别名，`agents.defaults.model_name` 用它选择默认模型；`provider` 指定提供商，`model` 是远端模型 ID。使用兼容接口时，可在该模型条目中添加 `api_base`。
 
-**3. Chat**
+已有 `.security.yml` 中的值可能覆盖主配置中的同名设置。修改密钥时请同时检查该文件。完整字段示例见 [config/config.example.json](config/config.example.json)，提供商说明见[模型配置文档](docs/guides/providers.zh.md)。
 
-```bash
-# One-shot question
-picoclaw agent -m "What is 2+2?"
-
-# Interactive mode
-picoclaw agent
-
-# Start gateway for chat app integration
-picoclaw gateway
-```
-
-<details>
-<summary><b>Docker (alternative)</b></summary>
+### 3. 使用 CLI
 
 ```bash
-# 1. Clone this repo
-git clone https://github.com/sipeed/picoclaw.git
-cd picoclaw
+# 单次提问
+./build/picoclaw agent -m "帮我整理今天的待办"
 
-# 2. First run — auto-generates docker/data/config.json then exits
-#    (only triggers when both config.json and workspace/ are missing)
-docker compose -f docker/docker-compose.yml --profile gateway up
-# The container prints "First-run setup complete." and stops.
-
-# 3. Set your API keys
-vim docker/data/config.json
-
-# 4. Start
-docker compose -f docker/docker-compose.yml --profile gateway up -d
+# 交互模式
+./build/picoclaw agent
 ```
 
-> **Docker / VM users:** The Gateway listens on `127.0.0.1` by default. For host access, set `PICOCLAW_GATEWAY_HOST=0.0.0.0` and publish the required ports in Compose.
+### 4. 启动 Gateway
+
+按上面的渠道文档，在配置中启用并填写至少一个渠道。微信和企业微信也可通过 CLI 扫码配置：
 
 ```bash
-# Check logs
-docker compose -f docker/docker-compose.yml logs -f
-
-# Stop
-docker compose -f docker/docker-compose.yml --profile gateway down
-
-# Update
-docker compose -f docker/docker-compose.yml pull
-docker compose -f docker/docker-compose.yml --profile gateway up -d
+./build/picoclaw auth weixin
+# 或
+./build/picoclaw auth wecom
 ```
 
-</details>
-
-<a id="-run-on-old-android-phones"></a>
-### 📱 Android (Termux)
-
-1. Install [Termux](https://github.com/termux/termux-app) (download from [GitHub Releases](https://github.com/termux/termux-app/releases), or search in F-Droid / Google Play)
-2. Run the following commands:
+配置完成后启动：
 
 ```bash
-# Download the latest release
-wget https://github.com/sipeed/picoclaw/releases/latest/download/picoclaw_Linux_arm64.tar.gz
-tar xzf picoclaw_Linux_arm64.tar.gz
-pkg install proot
-termux-chroot ./picoclaw onboard   # chroot provides a standard Linux filesystem layout
+./build/picoclaw gateway
 ```
 
-<img src="assets/termux.jpg" alt="PicoClaw on Termux" width="512">
+Gateway 会连接已启用的渠道。可用 `./build/picoclaw status` 查看状态，或用 `./build/picoclaw --help` 查看其他命令。
 
-[Android Termux Guide](docs/guides/android-termux.md).
+## 在 IM 中开始新对话
 
-## 🔌 Providers (LLM)
+发送以下命令可以丢弃当前会话的历史消息和摘要：
 
-PicoClaw supports 30+ LLM providers through the `model_list` configuration. Use the `protocol/model` format:
-
-| Provider | Protocol | API Key | Notes |
-|----------|----------|---------|-------|
-| [OpenAI](https://platform.openai.com/api-keys) | `openai/` | Required | GPT-5.4, GPT-4o, o3, etc. |
-| [Anthropic](https://console.anthropic.com/settings/keys) | `anthropic/` | Required | Claude Opus 4.6, Sonnet 4.6, etc. |
-| [Google Gemini](https://aistudio.google.com/apikey) | `gemini/` | Required | Gemini 3 Flash, 2.5 Pro, etc. |
-| [OpenRouter](https://openrouter.ai/keys) | `openrouter/` | Required | 200+ models, unified API |
-| [Zhipu (GLM)](https://open.bigmodel.cn/usercenter/proj-mgmt/apikeys) | `zhipu/` | Required | GLM-4.7, GLM-5, etc. |
-| [DeepSeek](https://platform.deepseek.com/api_keys) | `deepseek/` | Required | DeepSeek-V3, DeepSeek-R1 |
-| [Volcengine](https://console.volcengine.com) | `volcengine/` | Required | Doubao, Ark models |
-| [Qwen](https://dashscope.console.aliyun.com/apiKey) | `qwen/` | Required | Qwen3, Qwen-Max, etc. |
-| [Groq](https://console.groq.com/keys) | `groq/` | Required | Fast inference (Llama, Mixtral) |
-| [Moonshot (Kimi)](https://platform.moonshot.cn/console/api-keys) | `moonshot/` | Required | Kimi models |
-| [Minimax](https://platform.minimaxi.com/user-center/basic-information/interface-key) | `minimax/` | Required | MiniMax models |
-| [Mistral](https://console.mistral.ai/api-keys) | `mistral/` | Required | Mistral Large, Codestral |
-| [NVIDIA NIM](https://build.nvidia.com/) | `nvidia/` | Required | NVIDIA hosted models |
-| [Cerebras](https://cloud.cerebras.ai/) | `cerebras/` | Required | Fast inference |
-| [NEAR AI Cloud](https://near.ai/) | `nearai/` | Required | TEE inference, OpenAI-compatible |
-| [Novita AI](https://novita.ai/) | `novita/` | Required | Various open models |
-| [Xiaomi MiMo](https://platform.xiaomimimo.com/) | `mimo/` | Required | MiMo models |
-| [Ollama](https://ollama.com/) | `ollama/` | Not needed | Local models, self-hosted |
-| [vLLM](https://docs.vllm.ai/) | `vllm/` | Not needed | Local deployment, OpenAI-compatible |
-| [LiteLLM](https://docs.litellm.ai/) | `litellm/` | Varies | Proxy for 100+ providers |
-| [Azure OpenAI](https://portal.azure.com/) | `azure/` | API key or Entra ID** | Enterprise Azure deployment |
-| [GitHub Copilot](https://github.com/features/copilot) | `github-copilot/` | OAuth | Device code login |
-| [Antigravity](https://console.cloud.google.com/) | `antigravity/` | OAuth | Google Cloud AI |
-| [AWS Bedrock](https://console.aws.amazon.com/bedrock)* | `bedrock/` | AWS credentials | Claude, Llama, Mistral on AWS |
-
-> \* AWS Bedrock requires build tag: `go build -tags bedrock`. Set `api_base` to a region name (e.g., `us-east-1`) for automatic endpoint resolution across all AWS partitions (aws, aws-cn, aws-us-gov). When using a full endpoint URL instead, you must also configure `AWS_REGION` via environment variable or AWS config/profile.
->
-> \*\* Azure OpenAI uses `api_key` when set. If `api_key` is omitted, the provider falls back to Microsoft Entra ID via `DefaultAzureCredential` (env vars, workload identity, managed identity, Azure CLI, etc.). The Entra ID path requires build tag: `go build -tags azidentity`.
-
-<details>
-<summary><b>Local deployment (Ollama, vLLM, etc.)</b></summary>
-
-**Ollama:**
-```json
-{
-  "model_list": [
-    {
-      "model_name": "local-llama",
-      "model": "ollama/llama3.1:8b",
-      "api_base": "http://localhost:11434/v1"
-    }
-  ]
-}
+```text
+/new
 ```
 
-**vLLM:**
-```json
-{
-  "model_list": [
-    {
-      "model_name": "local-vllm",
-      "model": "vllm/your-model",
-      "api_base": "http://localhost:8000/v1"
-    }
-  ]
-}
+它等同于 `/clear`，只清理上下文，不调用模型。也可以在同一条消息里直接带上新问题：
+
+```text
+/new 帮我查查今天成都的天气
+/new 看看今天有啥新咖啡
 ```
 
-For full provider configuration details, see [Providers & Models](docs/guides/providers.md).
+此时先清理上下文，再执行新问题；后续消息继续这段新对话。这是重置当前会话的模型上下文，不会创建一个可单独切回的历史会话，也不会删除工作区文件或长期记忆。
 
-</details>
+如果当前会话还有运行中或待处理的任务，`/new` 会提示稍后重试，不会中断任务或重置上下文。
 
-## 💬 Channels (Chat Apps)
+## 从旧版或上游配置升级
 
-Talk to your PicoClaw through 19+ messaging platforms:
+已移除的渠道类型如下：
 
-| Channel | Setup | Protocol | Docs |
-|---------|-------|----------|------|
-| **Telegram** | Easy (bot token) | Long polling | [Guide](docs/channels/telegram/README.md) |
-| **Weixin** | Easy (Native QR scan) | iLink API | [Guide](docs/guides/chat-apps.md#weixin) |
-| **QQ** | Easy (AppID + AppSecret) | WebSocket | [Guide](docs/channels/qq/README.md) |
-| **DingTalk** | Medium (client credentials) | Stream | [Guide](docs/channels/dingtalk/README.md) |
-| **Feishu / Lark** | Medium (App ID + Secret) | WebSocket/SDK | [Guide](docs/channels/feishu/README.md) |
-| **WeCom** | Easy (QR login or manual) | WebSocket | [Guide](docs/channels/wecom/README.md) |
-| **OneBot** | Medium (WebSocket URL) | OneBot v11 | [Guide](docs/channels/onebot/README.md) |
-| **MQTT** | Easy (broker + agent_id) | MQTT pub/sub | [Guide](docs/channels/mqtt/README.md) |
+- `pico`、`pico_client`、`maixcam`
+- `slack`、`slack_webhook`、`teams_webhook`、`matrix`、`deltachat`、`irc`、`vk`
+- `line`、`whatsapp`、`whatsapp_native`、`discord`
 
-> All webhook-based channels share a single Gateway HTTP server (`gateway.host`:`gateway.port`, default `127.0.0.1:18790`). Feishu uses WebSocket/SDK mode and does not use the shared HTTP server.
+升级时，需要从 `config.json` **和** `.security.yml` 的 `channels` 中删除这些渠道条目。仅设置 `enabled: false` 仍可能因未知渠道类型而导致启动失败，例如：
 
-> Log verbosity is controlled by `gateway.log_level` (default: `warn`). Supported values: `debug`, `info`, `warn`, `error`, `fatal`. Can also be set via `PICOCLAW_LOG_LEVEL`. See [Configuration](docs/guides/configuration.md#gateway-log-level) for details.
+```text
+channel "maixcam" has unknown type "maixcam"
+```
 
-For detailed channel setup instructions, see [Chat Apps Configuration](docs/guides/chat-apps.md).
+不再使用上游的 WebUI、launcher 或相关构建命令。部署时请使用本 fork 构建的二进制，避免混用上游发行产物。
 
-## 🔧 Tools
+## 更多说明
 
-### 🔍 Web Search
+- [配置指南](docs/guides/configuration.zh.md)
+- [会话管理](docs/guides/session-guide.zh.md)
+- [工具配置](docs/reference/tools_configuration.zh.md)
+- [MCP 命令](docs/reference/mcp-cli.md)
+- [定时任务](docs/reference/cron.md)
 
-PicoClaw can search the web to provide up-to-date information. Configure in `tools.web`:
+部分专题文档沿用上游内容；如与本页的功能范围不一致，以当前源码和配置示例为准。
 
-| Search Engine | API Key | Free Tier | Link |
-|--------------|---------|-----------|------|
-| DuckDuckGo | Not needed | Unlimited | Built-in fallback |
-| [Gemini Google Search](https://aistudio.google.com/apikey) | Required | Varies | Gemini with Google Search grounding |
-| [Baidu Search](https://cloud.baidu.com/doc/qianfan-api/s/Wmbq4z7e5) | Required | 1500/month (daily allocation) | AI-powered, China-optimized |
-| [Tavily](https://tavily.com) | Required | 1000 queries/month | Optimized for AI Agents |
-| [Brave Search](https://brave.com/search/api) | Required | 2000 queries/month | Fast and private |
-| [Kagi Search](https://help.kagi.com/kagi/api/search.html) | Required | Paid/limited by API setup | Premium search results |
-| [Perplexity](https://www.perplexity.ai) | Required | Paid | AI-powered search |
-| [SearXNG](https://github.com/searxng/searxng) | Not needed | Self-hosted | Free metasearch engine |
-| [GLM Search](https://open.bigmodel.cn/) | Required | Varies | Zhipu web search |
-
-### ⚙️ Other Tools
-
-PicoClaw includes built-in tools for file operations, code execution, scheduling, and more. See [Tools Configuration](docs/reference/tools_configuration.md) for details.
-
-## 🎯 Skills
-
-Skills are modular capabilities that extend your Agent. They are loaded from `SKILL.md` files in your workspace.
-
-**Install skills from ClawHub:**
+开发检查：
 
 ```bash
-picoclaw skills search "web scraping"
-picoclaw skills install <skill-name>
+go test -tags stdjson ./...
+make lint-docs
 ```
 
-**Configure skill registries**:
+## 来源与许可
 
-Add to your `config.json`:
-```json
-{
-  "tools": {
-    "skills": {
-      "registries": {
-        "clawhub": {
-          "auth_token": "your-clawhub-token"
-        },
-        "github": {
-          "base_url": "https://github.com",
-          "auth_token": "your-github-token",
-          "proxy": ""
-        }
-      }
-    }
-  }
-}
-```
-
-`tools.skills.github.*` is deprecated. Use `tools.skills.registries.github.*` instead.
-
-For more details, see [Tools Configuration - Skills](docs/reference/tools_configuration.md#skills-tool).
-
-## 🔗 MCP (Model Context Protocol)
-
-PicoClaw natively supports [MCP](https://modelcontextprotocol.io/) — connect any MCP server to extend your Agent's capabilities with external tools and data sources.
-
-```json
-{
-  "tools": {
-    "mcp": {
-      "enabled": true,
-      "servers": {
-        "filesystem": {
-          "enabled": true,
-          "command": "npx",
-          "args": ["-y", "@modelcontextprotocol/server-filesystem", "/tmp"]
-        }
-      }
-    }
-  }
-}
-```
-
-You can manage common MCP setups directly from the CLI instead of editing JSON by hand:
-
-```bash
-picoclaw mcp add filesystem -- npx -y @modelcontextprotocol/server-filesystem /tmp
-picoclaw mcp list
-picoclaw mcp test filesystem
-```
-
-`picoclaw mcp` is a configuration manager: it updates `config.json` under `tools.mcp.servers`, but it does not keep the server process running itself.
-
-Use `picoclaw mcp edit` when you need advanced fields that are not covered by `picoclaw mcp add`.
-For example, `picoclaw mcp add` supports `--deferred` and `--env-file`, while `picoclaw mcp edit` is still useful for direct JSON editing and uncommon MCP settings.
-
-For full MCP configuration (stdio, SSE, HTTP transports, Tool Discovery), see [Tools Configuration - MCP](docs/reference/tools_configuration.md#mcp-tool). For CLI usage and examples, see [MCP Server CLI](docs/reference/mcp-cli.md).
-
-## <img src="assets/clawdchat-icon.png" width="24" height="24" alt="ClawdChat"> Join the Agent Social Network
-
-Connect PicoClaw to the Agent Social Network simply by sending a single message via the CLI or any integrated Chat App.
-
-**Read `https://clawdchat.ai/skill.md` and follow the instructions to join [ClawdChat.ai](https://clawdchat.ai)**
-
-## 🖥️ CLI Reference
-
-| Command                   | Description                      |
-| ------------------------- | -------------------------------- |
-| `picoclaw onboard`        | Initialize config & workspace    |
-| `picoclaw auth weixin` | Connect WeChat account via QR |
-| `picoclaw agent -m "..."` | Chat with the agent              |
-| `picoclaw agent`          | Interactive chat mode            |
-| `picoclaw gateway`        | Start the gateway                |
-| `picoclaw status`         | Show status                      |
-| `picoclaw version`        | Show version info                |
-| `picoclaw model`          | View or switch the default model |
-| `picoclaw mcp list`       | List configured MCP servers      |
-| `picoclaw mcp add ...`    | Add or update an MCP server entry |
-| `picoclaw mcp test`       | Probe a configured MCP server    |
-| `picoclaw mcp edit`       | Open config for advanced MCP editing |
-| `picoclaw mcp remove`     | Remove an MCP server entry       |
-| `picoclaw cron list`      | List all scheduled jobs          |
-| `picoclaw cron add ...`   | Add a scheduled job              |
-| `picoclaw cron disable`   | Disable a scheduled job          |
-| `picoclaw cron remove`    | Remove a scheduled job           |
-| `picoclaw skills list`    | List installed skills            |
-| `picoclaw skills install` | Install a skill                  |
-| `picoclaw migrate`        | Migrate data from older versions |
-| `picoclaw auth login`     | Authenticate with providers      |
-
-### ⏰ Scheduled Tasks / Reminders
-
-PicoClaw supports scheduled reminders and recurring tasks through the `cron` tool:
-
-* **One-time reminders**: "Remind me in 10 minutes" -> triggers once after 10min
-* **Recurring tasks**: "Remind me every 2 hours" -> triggers every 2 hours
-* **Cron expressions**: "Remind me at 9am daily" -> uses cron expression
-
-See [docs/reference/cron.md](docs/reference/cron.md) for current schedule types, execution modes, command-job gates, and persistence details.
-
-## 📚 Documentation
-
-For detailed guides beyond this README:
-
-| Topic | Description |
-|-------|-------------|
-| [Docker & Quick Start](docs/guides/docker.md) | Docker Compose setup, Gateway/Agent modes |
-| [Chat Apps](docs/guides/chat-apps.md) | All 18+ channel setup guides |
-| [Configuration](docs/guides/configuration.md) | Environment variables, workspace layout, security sandbox |
-| [MCP Server CLI](docs/reference/mcp-cli.md) | Add, list, test, edit, and remove MCP server entries from the CLI |
-| [Scheduled Tasks and Cron Jobs](docs/reference/cron.md) | Cron schedule types, deliver modes, command gates, job storage |
-| [Providers & Models](docs/guides/providers.md) | 30+ LLM providers, model routing, model_list configuration |
-| [Spawn & Async Tasks](docs/guides/spawn-tasks.md) | Quick tasks, long tasks with spawn, async sub-agent orchestration |
-| [Hooks](docs/architecture/hooks/README.md) | Event-driven hook system: observers, interceptors, approval hooks |
-| [Steering](docs/architecture/steering.md) | Inject messages into a running agent loop between tool calls |
-| [SubTurn](docs/architecture/subturn.md) | Subagent coordination, concurrency control, lifecycle |
-| [Troubleshooting](docs/operations/troubleshooting.md) | Common issues and solutions |
-| [Tools Configuration](docs/reference/tools_configuration.md) | Per-tool enable/disable, exec policies, MCP, Skills |
-| [Hardware Compatibility](docs/guides/hardware-compatibility.md) | Tested boards, minimum requirements |
-
-## 🤝 Contribute & Roadmap
-
-PRs welcome! The codebase is intentionally small and readable.
-
-See our [Community Roadmap](https://github.com/sipeed/picoclaw/issues/988) and [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
-
-Developer group building, join after your first merged PR!
-
-User Groups:
-
-Discord: <https://discord.gg/V4sAZ9XWpN>
-
-WeChat:
-<img src="assets/wechat.png" alt="WeChat group QR code" width="512">
+本项目基于 [sipeed/picoclaw](https://github.com/sipeed/picoclaw) 修改，感谢上游及其贡献者。继续使用 [MIT License](LICENSE)，版权声明见许可文件。Go module 路径保留为 `github.com/sipeed/picoclaw`。
