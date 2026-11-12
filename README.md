@@ -185,6 +185,39 @@ Gateway 会连接已启用的渠道。可用 `./build/picoclaw status` 查看版
 
 当前配置使用 `channel_list`：`enabled`、`type`、`allow_from` 等公共字段放在渠道条目中，Token、App ID、代理地址等渠道专有字段放在 `settings` 中。请以 [配置示例](config/config.example.json) 的结构为准。
 
+## 办公文件 Skills
+
+默认内置 `docx`、`xlsx`、`pptx`，用于 Word、Excel 和 PowerPoint 文件的读取、创建和修改。依赖在独立 Docker 镜像中运行，宿主机只需要 Bash 和可访问的 Docker daemon，不必安装 Python、Node.js 或 LibreOffice。
+
+新工作区通过 `onboard` 安装；已有工作区用以下命令添加，默认保留已有同名目录：
+
+```bash
+./build/picoclaw skills list-builtin
+./build/picoclaw skills install-builtin docx xlsx pptx
+```
+
+在运行 Gateway 的同一个用户下准备环境（工作区自定义时替换路径）：
+
+```bash
+bash ~/.picoclaw/workspace/tools/office/office.sh setup
+bash ~/.picoclaw/workspace/tools/office/office.sh check
+```
+
+首次构建需要网络和磁盘空间；重复执行会复用 Docker 构建缓存。镜像包含中文字体及公式重算、文档转换工具。普通文档任务不会自动安装或升级环境。
+
+之后可在 IM 中提出“根据这些数据生成 Excel，并计算合计”“把这份 Word 修改为正式报告”“根据提纲制作 PowerPoint”等请求。输入文件需要位于工作区；只挂载当前工作区，产物也保存在工作区中。这里操作的是办公文件，飞书在线文档和在线表格需要另外接入 API。
+
+也可直接调用工具，例如读取 Word：
+
+```bash
+bash ~/.picoclaw/workspace/tools/office/office.sh run -- \
+  pandoc -t markdown /home/your-user/.picoclaw/workspace/report.docx
+```
+
+容器以当前用户身份运行，无网络访问，不挂载用户配置或 Docker socket。更新内置资源时可用 `skills install-builtin docx xlsx pptx --force`，这会替换所选 Skill 和共享办公环境资源；本地修改过这些目录时请先自行保留需要的内容，然后重新执行 `setup`、`check`。
+
+详细用法、验证命令和限制见[办公环境说明](docs/guides/office-skills.zh.md)。
+
 ## 在 IM 中开始新对话
 
 发送以下命令可以丢弃当前会话的历史消息和摘要：

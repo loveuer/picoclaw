@@ -8,5 +8,5 @@ import "embed"
 // tracked `workspace/` tree, instead of relying on a generated copy inside
 // `cmd/...` that may be absent in clean checkouts and CI lint runs.
 //
-//go:embed workspace
+//go:embed all:workspace
 var OnboardWorkspace embed.FS

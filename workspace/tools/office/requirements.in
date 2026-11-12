@@ -1,0 +1,9 @@
+openpyxl==3.1.5
+pandas==2.3.3
+markitdown[docx,xlsx,pptx]==0.1.4
+Pillow==12.0.0
+defusedxml==0.7.1
+lxml==6.0.2
+python-pptx==1.0.2
+# Debian bookworm ships Python 3.11.2; newer soupsieve requires >=3.11.5.
+soupsieve==2.8

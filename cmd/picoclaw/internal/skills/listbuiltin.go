@@ -7,8 +7,8 @@ func newListBuiltinCommand() *cobra.Command {
 		Use:     "list-builtin",
 		Short:   "List available builtin skills",
 		Example: `picoclaw skills list-builtin`,
-		Run: func(_ *cobra.Command, _ []string) {
-			skillsListBuiltinCmd()
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			return listBuiltinSkills(cmd.OutOrStdout())
 		},
 	}
 
