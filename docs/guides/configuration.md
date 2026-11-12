@@ -188,7 +188,7 @@ dammi le ultime news
 - Unknown slash command (for example `/foo`) passes through to normal LLM processing.
 - `/new` clears the current session's history and summary, like `/clear`. `/new <prompt>` clears them and immediately runs the supplied prompt; subsequent messages continue that fresh conversation. The model, workspace, and system instructions remain active. Spaces, tabs, and newlines can separate the command from its prompt.
 - If the same session already has a running or queued task, `/new` (with or without a prompt) replies with the current task's name and asks you to retry later. It does not interrupt the task or queue the new prompt. Other sessions can still use `/new`.
-- Registered but unsupported command on the current channel (for example `/show` on WhatsApp) returns an explicit user-facing error and stops further processing.
+- Registered but unsupported command on the current channel returns an explicit user-facing error and stops further processing.
 
 ### Session Isolation
 
@@ -455,7 +455,7 @@ Use `mode = lines` when:
 
 | Config Key | Type | Default | Description |
 |------------|------|---------|-------------|
-| `tools.exec.allow_remote` | bool | `false` | Allow exec tool from remote channels (Telegram/Discord etc.) |
+| `tools.exec.allow_remote` | bool | `false` | Allow exec tool from remote channels (Telegram/Feishu etc.) |
 | `tools.exec.enable_deny_patterns` | bool | `true` | Enable dangerous command interception |
 | `tools.exec.custom_deny_patterns` | string[] | `[]` | Custom regex patterns to block |
 | `tools.exec.custom_allow_patterns` | string[] | `[]` | Custom regex patterns to allow |

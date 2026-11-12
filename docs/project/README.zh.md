@@ -365,13 +365,10 @@ PicoClaw 通过 `model_list` 配置支持 30+ LLM Provider，使用 `协议/模�
 | Channel | 配置难度 | 协议 | 文档 |
 |---------|----------|------|------|
 | **Telegram** | 简单（bot token） | 长轮询 | [指南](../channels/telegram/README.zh.md) |
-| **Discord** | 简单（bot token + intents） | WebSocket | [指南](../channels/discord/README.zh.md) |
-| **WhatsApp** | 简单（扫码或 bridge URL） | 原生 / Bridge | [指南](../guides/chat-apps.zh.md#whatsapp) |
 | **微信 (Weixin)** | 简单（扫码登录） | iLink API | [指南](../guides/chat-apps.zh.md#weixin) |
 | **QQ** | 简单（AppID + AppSecret） | WebSocket | [指南](../channels/qq/README.zh.md) |
 | **钉钉** | 中等（client credentials） | Stream | [指南](../channels/dingtalk/README.zh.md) |
 | **飞书 / Lark** | 中等（App ID + Secret） | WebSocket/SDK | [指南](../channels/feishu/README.zh.md) |
-| **LINE** | 中等（credentials + webhook） | Webhook | [指南](../channels/line/README.zh.md) |
 | **企业微信** | 简单（扫码登录或手动配置） | WebSocket | [指南](../channels/wecom/README.zh.md) |
 | **OneBot** | 中等（WebSocket URL） | OneBot v11 | [指南](../channels/onebot/README.zh.md) |
 

@@ -182,7 +182,7 @@ dammi le ultime news
 - 未注册的斜杠命令（例如 `/foo`）会透传给 LLM 按普通输入处理。
 - `/new` 与 `/clear` 一样，清除当前会话的历史和摘要。`/new <prompt>` 会先清除，再立即执行后面的新问题，后续消息继续这段新对话。当前模型、工作区和系统提示保持生效；命令与问题之间可以使用空格、制表符或换行分隔。
 - 如果同一会话已有正在执行或等待执行的任务，`/new`（包括带新问题的形式）会回复当前任务名称，提示稍后重试；不会打断旧任务，也不会将新问题加入队列。其他会话仍可使用 `/new`。
-- 已注册但当前 channel 不支持的命令（例如 WhatsApp 上的 `/show`）会返回明确的用户可见错误，并停止后续处理。
+- 已注册但当前 channel 不支持的命令会返回明确的用户可见错误，并停止后续处理。
 
 ### Session 隔离
 
@@ -321,7 +321,7 @@ PicoClaw 默认在沙箱环境中运行。Agent 只能访问配置的工作区�
 
 | 配置键 | 类型 | 默认值 | 描述 |
 |--------|------|--------|------|
-| `tools.exec.allow_remote` | bool | `false` | 允许从远程渠道（Telegram/Discord 等）执行 exec 工具 |
+| `tools.exec.allow_remote` | bool | `false` | 允许从远程渠道（Telegram/Feishu 等）执行 exec 工具 |
 | `tools.exec.enable_deny_patterns` | bool | `true` | 启用危险命令拦截 |
 | `tools.exec.custom_deny_patterns` | string[] | `[]` | 自定义阻止的正则表达式模式 |
 | `tools.exec.custom_allow_patterns` | string[] | `[]` | 自定义允许的正则表达式模式 |

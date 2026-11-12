@@ -16,11 +16,9 @@ type VoiceCapabilityProvider interface {
 // Deprecated: Channels should implement VoiceCapabilityProvider instead.
 // To be removed once all existing capable channels conform to the interface.
 var asrCapableChannels = map[string]bool{
-	"discord":  true,
 	"telegram": true,
 	"qq":       true,
 	"weixin":   true,
-	"line":     true,
 	"feishu":   true,
 	"onebot":   true,
 }

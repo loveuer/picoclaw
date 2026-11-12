@@ -362,14 +362,14 @@ func TestSpawnStatusTool_ChannelFiltering_GetByID(t *testing.T) {
 	manager.mu.Lock()
 	manager.tasks["subagent-99"] = &SubagentTask{
 		ID: "subagent-99", Task: "secret", Status: "completed", Result: "private data",
-		OriginChannel: "discord", OriginChatID: "room-Z",
+		OriginChannel: "testchat", OriginChatID: "room-Z",
 	}
 	manager.mu.Unlock()
 
 	tool := NewSpawnStatusTool(manager)
 
 	// Different chat trying to look up subagent-99 by ID.
-	ctx := WithToolContext(context.Background(), "discord", "room-OTHER")
+	ctx := WithToolContext(context.Background(), "testchat", "room-OTHER")
 	result := tool.Execute(ctx, map[string]any{"task_id": "subagent-99"})
 
 	if !result.IsError {

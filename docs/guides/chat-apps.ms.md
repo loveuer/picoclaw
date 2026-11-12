@@ -4,18 +4,14 @@
 
 ## 💬 Aplikasi Sembang
 
-Berbual dengan picoclaw anda melalui Telegram, Discord, WhatsApp, QQ, DingTalk, LINE, WeCom, Feishu, OneBot, MQTT
+Berbual dengan picoclaw anda melalui Telegram, QQ, DingTalk, WeCom, Feishu, OneBot, MQTT
 
-> **Nota**: Semua saluran berasaskan webhook (LINE, WeCom, dan sebagainya) diservis pada satu pelayan HTTP Gateway yang dikongsi (`gateway.host`:`gateway.port`, lalai `127.0.0.1:18790`). Tiada port khusus per saluran untuk dikonfigurasikan. Nota: Feishu menggunakan mod WebSocket/SDK dan tidak menggunakan pelayan HTTP webhook yang dikongsi.
 
 | Saluran          | Penyediaan                                 |
 | ---------------- | ------------------------------------------ |
 | **Telegram**     | Mudah (hanya token)                        |
-| **Discord**      | Mudah (token bot + intents)                |
-| **WhatsApp**     | Mudah (asli: imbas QR; atau bridge URL)    |
 | **QQ**           | Mudah (AppID + AppSecret)                  |
 | **DingTalk**     | Sederhana (kelayakan aplikasi)             |
-| **LINE**         | Sederhana (kelayakan + webhook URL)        |
 | **WeCom AI Bot** | Sederhana (Token + kunci AES)              |
 | **Feishu**       | Sederhana (App ID + Secret, mod WebSocket) |
 | **OneBot**       | Sederhana (QQ melalui protokol OneBot)     |
@@ -71,108 +67,6 @@ Anda juga boleh mengurus skill yang dipasang terus dari Telegram:
 
 **4. Pemformatan Lanjutan**
 Anda boleh menetapkan `use_markdown_v2: true` untuk mengaktifkan pilihan pemformatan yang lebih maju. Ini membolehkan bot menggunakan keseluruhan set ciri Telegram MarkdownV2, termasuk gaya bersarang, spoiler, dan blok lebar tetap tersuai.
-
-</details>
-
-<details>
-<summary><b>Discord</b></summary>
-
-**1. Cipta bot**
-
-* Pergi ke <https://discord.com/developers/applications>
-* Cipta aplikasi → Bot → Add Bot
-* Salin token bot
-
-**2. Aktifkan intents**
-
-* Dalam tetapan Bot, aktifkan **MESSAGE CONTENT INTENT**
-* (Pilihan) Aktifkan **SERVER MEMBERS INTENT** jika anda bercadang menggunakan allow list berasaskan data ahli
-
-**3. Dapatkan User ID anda**
-* Discord Settings → Advanced → aktifkan **Developer Mode**
-* Klik kanan avatar anda → **Copy User ID**
-
-**4. Konfigurasi**
-
-```json
-{
-  "channel_list": {
-    "discord": {
-      "enabled": true,
-      "type": "discord",
-      "token": "YOUR_BOT_TOKEN",
-      "allow_from": ["YOUR_USER_ID"]
-    }
-  }
-}
-```
-
-**5. Jemput bot**
-
-* OAuth2 → URL Generator
-* Scopes: `bot`
-* Bot Permissions: `Send Messages`, `Read Message History`
-* Buka URL jemputan yang dijana dan tambahkan bot ke pelayan anda
-
-**Pilihan: Mod trigger kumpulan**
-
-Secara lalai bot membalas semua mesej dalam saluran pelayan. Untuk mengehadkan balasan kepada @mention sahaja, tambah:
-
-```json
-{
-  "channel_list": {
-    "discord": {
-      "group_trigger": { "mention_only": true }
-    }
-  }
-}
-```
-
-Anda juga boleh mencetuskan dengan awalan kata kunci (contohnya `!bot`):
-
-```json
-{
-  "channel_list": {
-    "discord": {
-      "group_trigger": { "prefixes": ["!bot"] }
-    }
-  }
-}
-```
-
-**6. Jalankan**
-
-```bash
-picoclaw gateway
-```
-
-</details>
-
-<details>
-<summary><b>WhatsApp</b> (asli melalui whatsmeow)</summary>
-
-PicoClaw boleh menyambung ke WhatsApp dalam dua cara:
-
-- **Asli (disyorkan):** Dalam proses menggunakan [whatsmeow](https://github.com/tulir/whatsmeow). Tiada bridge berasingan. Tetapkan `"use_native": true` dan biarkan `bridge_url` kosong. Pada larian pertama, imbas kod QR dengan WhatsApp (Linked Devices). Sesi disimpan di bawah workspace anda (contohnya `workspace/whatsapp/`). Saluran asli ini adalah **pilihan** untuk memastikan binari lalai kekal kecil; bina dengan `-tags whatsapp_native` (contohnya `make build-whatsapp-native` atau `go build -tags whatsapp_native ./cmd/...`).
-- **Bridge:** Sambung ke bridge WebSocket luaran. Tetapkan `bridge_url` (contohnya `ws://localhost:3001`) dan biarkan `use_native` sebagai false.
-
-**Konfigurasi (asli)**
-
-```json
-{
-  "channel_list": {
-    "whatsapp": {
-      "enabled": true,
-      "type": "whatsapp",
-      "use_native": true,
-      "session_store_path": "",
-      "allow_from": []
-    }
-  }
-}
-```
-
-Jika `session_store_path` kosong, sesi akan disimpan dalam `<workspace>/whatsapp/`. Jalankan `picoclaw gateway`; pada larian pertama, imbas kod QR yang dipaparkan dalam terminal menggunakan WhatsApp → Linked Devices.
 
 </details>
 
@@ -245,55 +139,6 @@ picoclaw gateway
 </details>
 
 <details>
-<summary><b>LINE</b></summary>
-
-**1. Cipta Akaun Rasmi LINE**
-
-- Pergi ke [LINE Developers Console](https://developers.line.biz/)
-- Cipta provider → Cipta saluran Messaging API
-- Salin **Channel Secret** dan **Channel Access Token**
-
-**2. Konfigurasi**
-
-```json
-{
-  "channel_list": {
-    "line": {
-      "enabled": true,
-      "type": "line",
-      "channel_secret": "YOUR_CHANNEL_SECRET",
-      "channel_access_token": "YOUR_CHANNEL_ACCESS_TOKEN",
-      "webhook_path": "/webhook/line",
-      "allow_from": []
-    }
-  }
-}
-```
-
-> Webhook LINE diservis pada pelayan Gateway yang dikongsi (`gateway.host`:`gateway.port`, lalai `127.0.0.1:18790`).
-
-**3. Tetapkan Webhook URL**
-
-LINE memerlukan HTTPS untuk webhook. Gunakan reverse proxy atau tunnel:
-
-```bash
-# Contoh dengan ngrok (port lalai gateway ialah 18790)
-ngrok http 18790
-```
-
-Kemudian tetapkan Webhook URL dalam LINE Developers Console kepada `https://your-domain/webhook/line` dan aktifkan **Use webhook**.
-
-**4. Jalankan**
-
-```bash
-picoclaw gateway
-```
-
-> Dalam sembang kumpulan, bot hanya membalas apabila @disebut. Balasan akan memetik mesej asal.
-
-</details>
-
-<details>
 <summary><b>WeCom (企业微信)</b></summary>
 
 PicoClaw menyokong tiga jenis integrasi WeCom:
@@ -329,7 +174,6 @@ Lihat [Panduan Konfigurasi WeCom](../channels/wecom/README.zh.md) untuk arahan p
 }
 ```
 
-> Webhook WeCom diservis pada pelayan Gateway yang dikongsi (`gateway.host`:`gateway.port`, lalai `127.0.0.1:18790`).
 
 **Quick Setup - WeCom App:**
 

@@ -114,8 +114,6 @@ type OpenClawAgentTools struct {
 
 type OpenClawChannels struct {
 	Telegram    *OpenClawTelegramConfig    `json:"telegram"`
-	Discord     *OpenClawDiscordConfig     `json:"discord"`
-	WhatsApp    *OpenClawWhatsAppConfig    `json:"whatsapp"`
 	Signal      *OpenClawSignalConfig      `json:"signal"`
 	GoogleChat  *OpenClawGoogleChatConfig  `json:"googlechat"`
 	Mattermost  *OpenClawMattermostConfig  `json:"mattermost"`
@@ -133,24 +131,6 @@ type OpenClawTelegramConfig struct {
 	DmPolicy      *string  `json:"dmPolicy"`
 	Enabled       *bool    `json:"enabled"`
 	UseMarkdownV2 *bool    `json:"useMarkdownV2"`
-}
-
-type OpenClawDiscordConfig struct {
-	Token       *string         `json:"token"`
-	Guilds      json.RawMessage `json:"guilds"`
-	DmPolicy    *string         `json:"dmPolicy"`
-	GroupPolicy *string         `json:"groupPolicy"`
-	AllowFrom   []string        `json:"allowFrom"`
-	Enabled     *bool           `json:"enabled"`
-}
-
-type OpenClawWhatsAppConfig struct {
-	AuthDir     *string  `json:"authDir"`
-	DmPolicy    *string  `json:"dmPolicy"`
-	AllowFrom   []string `json:"allowFrom"`
-	GroupPolicy *string  `json:"groupPolicy"`
-	Enabled     *bool    `json:"enabled"`
-	BridgeURL   *string  `json:"bridgeUrl"`
 }
 
 type OpenClawSignalConfig struct {
@@ -315,10 +295,6 @@ func (c *OpenClawConfig) IsChannelEnabled(name string) bool {
 	switch name {
 	case "telegram":
 		return c.Channels.Telegram == nil || c.Channels.Telegram.Enabled == nil || *c.Channels.Telegram.Enabled
-	case "discord":
-		return c.Channels.Discord == nil || c.Channels.Discord.Enabled == nil || *c.Channels.Discord.Enabled
-	case "whatsapp":
-		return c.Channels.WhatsApp == nil || c.Channels.WhatsApp.Enabled == nil || *c.Channels.WhatsApp.Enabled
 	case "feishu":
 		return c.Channels.Feishu == nil || c.Channels.Feishu.Enabled == nil || *c.Channels.Feishu.Enabled
 	default:
@@ -329,16 +305,6 @@ func (c *OpenClawConfig) IsChannelEnabled(name string) bool {
 func GetChannelAllowFrom(ch any) []string {
 	switch c := ch.(type) {
 	case *OpenClawTelegramConfig:
-		if c == nil {
-			return nil
-		}
-		return c.AllowFrom
-	case *OpenClawDiscordConfig:
-		if c == nil {
-			return nil
-		}
-		return c.AllowFrom
-	case *OpenClawWhatsAppConfig:
 		if c == nil {
 			return nil
 		}
@@ -560,19 +526,10 @@ type PeerMatch struct {
 }
 
 type ChannelsConfig struct {
-	WhatsApp WhatsAppConfig `json:"whatsapp"`
 	Telegram TelegramConfig `json:"telegram"`
 	Feishu   FeishuConfig   `json:"feishu"`
-	Discord  DiscordConfig  `json:"discord"`
 	QQ       QQConfig       `json:"qq"`
 	DingTalk DingTalkConfig `json:"dingtalk"`
-	LINE     LINEConfig     `json:"line"`
-}
-
-type WhatsAppConfig struct {
-	Enabled   bool     `json:"enabled"`
-	BridgeURL string   `json:"bridge_url"`
-	AllowFrom []string `json:"allow_from"`
 }
 
 type TelegramConfig struct {
@@ -592,13 +549,6 @@ type FeishuConfig struct {
 	AllowFrom         []string `json:"allow_from"`
 }
 
-type DiscordConfig struct {
-	Enabled     bool     `json:"enabled"`
-	Token       string   `json:"token"`
-	MentionOnly bool     `json:"mention_only"`
-	AllowFrom   []string `json:"allow_from"`
-}
-
 type QQConfig struct {
 	Enabled   bool     `json:"enabled"`
 	AppID     string   `json:"app_id"`
@@ -611,16 +561,6 @@ type DingTalkConfig struct {
 	ClientID     string   `json:"client_id"`
 	ClientSecret string   `json:"client_secret"`
 	AllowFrom    []string `json:"allow_from"`
-}
-
-type LINEConfig struct {
-	Enabled            bool     `json:"enabled"`
-	ChannelSecret      string   `json:"channel_secret"`
-	ChannelAccessToken string   `json:"channel_access_token"`
-	WebhookHost        string   `json:"webhook_host"`
-	WebhookPort        int      `json:"webhook_port"`
-	WebhookPath        string   `json:"webhook_path"`
-	AllowFrom          []string `json:"allow_from"`
 }
 
 type GatewayConfig struct {
@@ -695,28 +635,6 @@ func (c *OpenClawConfig) convertChannels(warnings *[]string) ChannelsConfig {
 		}
 		if c.Channels.Telegram.BotToken != nil {
 			channels.Telegram.Token = *c.Channels.Telegram.BotToken
-		}
-	}
-
-	if c.Channels.Discord != nil {
-		enabled := c.Channels.Discord.Enabled == nil || *c.Channels.Discord.Enabled
-		channels.Discord = DiscordConfig{
-			Enabled:   enabled,
-			AllowFrom: c.Channels.Discord.AllowFrom,
-		}
-		if c.Channels.Discord.Token != nil {
-			channels.Discord.Token = *c.Channels.Discord.Token
-		}
-	}
-
-	if c.Channels.WhatsApp != nil {
-		enabled := c.Channels.WhatsApp.Enabled == nil || *c.Channels.WhatsApp.Enabled
-		channels.WhatsApp = WhatsAppConfig{
-			Enabled:   enabled,
-			AllowFrom: c.Channels.WhatsApp.AllowFrom,
-		}
-		if c.Channels.WhatsApp.BridgeURL != nil {
-			channels.WhatsApp.BridgeURL = *c.Channels.WhatsApp.BridgeURL
 		}
 	}
 
@@ -881,11 +799,6 @@ func (c *PicoClawConfig) ToStandardConfig() *config.Config {
 func (c ChannelsConfig) ToStandardChannels() config.ChannelsConfig {
 	channels := make(config.ChannelsConfig)
 
-	setChannel(channels, "whatsapp", map[string]any{
-		"enabled":    c.WhatsApp.Enabled,
-		"bridge_url": c.WhatsApp.BridgeURL,
-	})
-
 	setChannel(channels, "telegram", func() map[string]any {
 		m := map[string]any{
 			"enabled": c.Telegram.Enabled,
@@ -914,17 +827,6 @@ func (c ChannelsConfig) ToStandardChannels() config.ChannelsConfig {
 		return m
 	}())
 
-	setChannel(channels, "discord", func() map[string]any {
-		m := map[string]any{
-			"enabled":      c.Discord.Enabled,
-			"mention_only": c.Discord.MentionOnly,
-		}
-		if c.Discord.Token != "" {
-			m["token"] = config.NewSecureString(c.Discord.Token)
-		}
-		return m
-	}())
-
 	setChannel(channels, "qq", func() map[string]any {
 		m := map[string]any{
 			"enabled": c.QQ.Enabled,
@@ -943,22 +845,6 @@ func (c ChannelsConfig) ToStandardChannels() config.ChannelsConfig {
 		}
 		if c.DingTalk.ClientSecret != "" {
 			m["client_secret"] = config.NewSecureString(c.DingTalk.ClientSecret)
-		}
-		return m
-	}())
-
-	setChannel(channels, "line", func() map[string]any {
-		m := map[string]any{
-			"enabled":      c.LINE.Enabled,
-			"webhook_host": c.LINE.WebhookHost,
-			"webhook_port": c.LINE.WebhookPort,
-			"webhook_path": c.LINE.WebhookPath,
-		}
-		if c.LINE.ChannelSecret != "" {
-			m["channel_secret"] = config.NewSecureString(c.LINE.ChannelSecret)
-		}
-		if c.LINE.ChannelAccessToken != "" {
-			m["channel_access_token"] = config.NewSecureString(c.LINE.ChannelAccessToken)
 		}
 		return m
 	}())

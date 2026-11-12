@@ -24,7 +24,6 @@
 ```
 pkg/channels/
 ├── telegram.go          # Each channel directly in the channels package
-├── discord.go
 ├── manager.go           # Manager directly references each channel type
 ├── ...
 ```
@@ -56,10 +55,7 @@ pkg/channels/
 │   ├── init.go          # Factory registration
 │   ├── telegram.go      # Implementation
 │   └── telegram_commands.go
-├── discord/
-│   ├── init.go
-│   └── discord.go
-├── line/ onebot/ dingtalk/ feishu/ wecom/ qq/ whatsapp/ whatsapp_native/ mqtt/
+├── onebot/ dingtalk/ feishu/ wecom/ qq/ mqtt/
 │   └── ...
 
 pkg/bus/
@@ -78,9 +74,9 @@ pkg/identity/
 ```
 ┌────────────┐      InboundMessage       ┌───────────┐      LLM + Tools      ┌────────────┐
 │  Telegram   │──┐                        │           │                        │            │
-│  Discord    │──┤   PublishInbound()     │           │   PublishOutbound()   │            │
+│  Weixin     │──┤   PublishInbound()     │           │   PublishOutbound()   │            │
 │  Feishu     │──┼──────────────────────▶ │ MessageBus │ ◀─────────────────── │ AgentLoop  │
-│  LINE       │──┤   (buffered chan, 64)  │           │   (buffered chan, 64) │            │
+│  OneBot     │──┤   (buffered chan, 64)  │           │   (buffered chan, 64) │            │
 │  ...        │──┘                        │           │                        │            │
 └────────────┘                            └─────┬─────┘                        └────────────┘
                                                 │
@@ -125,18 +121,15 @@ pkg/identity/
 
 On the main branch, channel files were directly in `pkg/channels/` top level, e.g.:
 - `pkg/channels/telegram.go`
-- `pkg/channels/discord.go`
 
 After refactoring, these files have been removed and code moved to corresponding sub-packages:
 - `pkg/channels/telegram/telegram.go`
-- `pkg/channels/discord/discord.go`
 
 #### Step 2: Understand the structural change mapping
 
 | main branch file | Refactored branch location | Changes |
 |---|---|---|
 | `pkg/channels/telegram.go` | `pkg/channels/telegram/telegram.go` + `init.go` | Package name changed from `channels` to `telegram` |
-| `pkg/channels/discord.go` | `pkg/channels/discord/discord.go` + `init.go` | Same as above |
 | `pkg/channels/manager.go` | `pkg/channels/manager.go` | Extensively rewritten |
 | _(did not exist)_ | `pkg/channels/base.go` | New shared abstraction layer |
 | _(did not exist)_ | `pkg/channels/registry.go` | New factory registry |
@@ -144,7 +137,6 @@ After refactoring, these files have been removed and code moved to corresponding
 | _(did not exist)_ | `pkg/channels/interfaces.go` | New optional capability interfaces |
 | _(did not exist)_ | `pkg/channels/media.go` | New MediaSender interface |
 | _(did not exist)_ | `pkg/channels/webhook.go` | New WebhookHandler/HealthChecker |
-| _(did not exist)_ | `pkg/channels/whatsapp_native/` | New WhatsApp native mode (whatsmeow) |
 | _(did not exist)_ | `pkg/channels/split.go` | New message splitting (migrated from utils) |
 | _(did not exist)_ | `pkg/bus/types.go` | New structured message types |
 | _(did not exist)_ | `pkg/media/store.go` | New media file lifecycle management |
@@ -343,7 +335,6 @@ func init() {
 // cmd/picoclaw/internal/gateway/helpers.go
 import (
     _ "github.com/sipeed/picoclaw/pkg/channels/telegram"   // Triggers init() registration
-    _ "github.com/sipeed/picoclaw/pkg/channels/discord"
     _ "github.com/sipeed/picoclaw/pkg/channels/your_new_channel"  // New addition
 )
 ```
@@ -766,9 +757,9 @@ if c.owner != nil && c.placeholderRecorder != nil {
 ```
 
 **This means**:
-- Channels implementing `TypingCapable` (Telegram, Discord, LINE) do not need to manually call `StartTyping` + `RecordTypingStop` in `handleMessage`
+- Channels implementing `TypingCapable` (Telegram) do not need to manually call `StartTyping` + `RecordTypingStop` in `handleMessage`
 - Channels implementing `ReactionCapable` (OneBot) do not need to manually call `AddReaction` + `RecordTypingStop` in `handleMessage`
-- Channels implementing `PlaceholderCapable` (Telegram, Discord) do not need to manually send placeholder messages and call `RecordPlaceholder` in `handleMessage`
+- Channels implementing `PlaceholderCapable` (Telegram) do not need to manually send placeholder messages and call `RecordPlaceholder` in `handleMessage`
 - Channels only need to implement the corresponding interface; `HandleMessage` handles orchestration automatically
 - Channels that don't implement these interfaces are unaffected (type assertions will fail and be skipped)
 - `PlaceholderCapable`'s `SendPlaceholder` method internally decides whether to send based on the configured `PlaceholderConfig.Enabled`; returning `("", nil)` skips registration
@@ -829,14 +820,6 @@ The Manager uses `InitChannelList()` to validate types and decode settings,
 then looks up factories by `bc.Type`. No per-channel entry needed in Manager —
 just register the factory and the config entry.
 
-> **Note**: If your channel has multiple modes (like WhatsApp Bridge vs Native),
-> register both types in `channelSettingsFactory` and branch on config:
-> ```go
-> // In config_channel.go:
-> ChannelWhatsApp:       (WhatsAppSettings{}),
-> ChannelWhatsAppNative: (WhatsAppSettings{}),
-> ```
-
 #### Add blank import in Gateway
 
 ```go
@@ -894,7 +877,7 @@ type Peer struct {
 
 // Sender identity information
 type SenderInfo struct {
-    Platform    string `json:"platform,omitempty"`     // "telegram", "discord", ...
+    Platform    string `json:"platform,omitempty"`     // "telegram", "feishu", ...
     PlatformID  string `json:"platform_id,omitempty"`  // Platform-native ID
     CanonicalID string `json:"canonical_id,omitempty"` // "platform:id" canonical format
     Username    string `json:"username,omitempty"`
@@ -1070,8 +1053,6 @@ type channelWorker struct {
 ```go
 var channelRateConfig = map[string]float64{
     "telegram": 20,   // 20 msg/s
-    "discord":  1,    // 1 msg/s
-    "line":     10,   // 10 msg/s
 }
 // Default: 10 msg/s
 // burst = max(1, ceil(rate/2))
@@ -1297,15 +1278,11 @@ make test                                       # Full test suite
 | Sub-package | Registered Name | Optional Interfaces |
 |-------------|----------------|-------------------|
 | `pkg/channels/telegram/` | `"telegram"` | TypingCapable, PlaceholderCapable, MessageEditor, MediaSender |
-| `pkg/channels/discord/` | `"discord"` | TypingCapable, PlaceholderCapable, MessageEditor, MediaSender |
-| `pkg/channels/line/` | `"line"` | TypingCapable, MediaSender, WebhookHandler |
 | `pkg/channels/onebot/` | `"onebot"` | ReactionCapable, MediaSender |
 | `pkg/channels/dingtalk/` | `"dingtalk"` | — |
 | `pkg/channels/feishu/` | `"feishu"` | — (architecture-specific build tags: `feishu_32.go` / `feishu_64.go`) |
 | `pkg/channels/wecom/` | `"wecom"` | MediaSender |
 | `pkg/channels/qq/` | `"qq"` | — |
-| `pkg/channels/whatsapp/` | `"whatsapp"` | — (Bridge mode) |
-| `pkg/channels/whatsapp_native/` | `"whatsapp_native"` | — (Native whatsmeow mode) |
 | `pkg/channels/mqtt/` | `"mqtt"` | — |
 
 ### A.3 Interface Quick Reference
@@ -1405,8 +1382,6 @@ agentLoop.Stop()               // Stop Agent
 | Channel | Rate (msg/s) | Burst |
 |---------|-------------|-------|
 | telegram | 20 | 10 |
-| discord | 1 | 1 |
-| line | 10 | 5 |
 | _others_ | 10 (default) | 5 |
 
 ### A.6 Known Limitations and Caveats
@@ -1417,10 +1392,8 @@ agentLoop.Stop()               // Stop Agent
 
 3. **WeCom is now a single channel**: `"wecom"` is implemented as a WebSocket-based AI Bot channel with route persistence. Access control uses the shared channel allowlist mechanism. It no longer exposes the legacy webhook/app split.
 
-4. **WhatsApp has two modes**: `"whatsapp"` (Bridge mode, communicates via external bridge URL) and `"whatsapp_native"` (native whatsmeow mode, connects directly to WhatsApp). Manager selects which to initialize based on `WhatsAppConfig.UseNative`.
-
 5. **DingTalk uses Stream mode**: DingTalk uses the SDK's Stream/WebSocket mode (not HTTP webhook), so it does not implement `WebhookHandler`.
 
-6. **PlaceholderConfig vs implementation**: `PlaceholderConfig` appears in 4 channel configs (Telegram, Discord, LINE, OneBot), but only channels that implement both `PlaceholderCapable` + `MessageEditor` (Telegram, Discord) can actually use placeholder message editing. The rest are reserved fields.
+6. **PlaceholderConfig vs implementation**: `PlaceholderConfig` appears in 2 channel configs (Telegram, OneBot), but only channels that implement both `PlaceholderCapable` + `MessageEditor` (Telegram) can actually use placeholder message editing. The rest are reserved fields.
 
-7. **ReasoningChannelID**: Most channel configs include a `reasoning_channel_id` field to route LLM reasoning/thinking output to a designated channel (WhatsApp, Telegram, Feishu, Discord, QQ, DingTalk, LINE, OneBot, WeCom). `BaseChannel` exposes this via the `WithReasoningChannelID` option and `ReasoningChannelID()` method.
+7. **ReasoningChannelID**: Most channel configs include a `reasoning_channel_id` field to route LLM reasoning/thinking output to a designated channel (Telegram, Feishu, QQ, DingTalk, OneBot, WeCom). `BaseChannel` exposes this via the `WithReasoningChannelID` option and `ReasoningChannelID()` method.

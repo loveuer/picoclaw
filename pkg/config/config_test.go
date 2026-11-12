@@ -2873,11 +2873,6 @@ func TestFilterSensitiveData_AllTokenTypes(t *testing.T) {
 			want:    "Telegram token: [FILTERED]",
 		},
 		{
-			name:    "discord_token",
-			content: "Discord token: discord-bot-token-xyz789",
-			want:    "Discord token: [FILTERED]",
-		},
-		{
 			name:    "brave_api_key",
 			content: "Brave key: brave-api-key",
 			want:    "Brave key: [FILTERED]",
@@ -3081,7 +3076,6 @@ func testChannelsConfigWithTokens() ChannelsConfig {
 	}
 	defs := []chDef{
 		{"telegram", TelegramSettings{Token: *NewSecureString("telegram-bot-token-abcdef")}},
-		{"discord", DiscordSettings{Token: *NewSecureString("discord-bot-token-xyz789")}},
 		{
 			"feishu",
 			FeishuSettings{

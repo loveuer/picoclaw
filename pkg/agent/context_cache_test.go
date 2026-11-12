@@ -156,8 +156,8 @@ func TestBuildMessages_CurrentSenderDynamicContext(t *testing.T) {
 		},
 		{
 			name:        "id only",
-			senderID:    "discord:123",
-			wantLine:    "Current sender: discord:123",
+			senderID:    "testchat:123",
+			wantLine:    "Current sender: testchat:123",
 			wantSection: true,
 		},
 		{
@@ -168,7 +168,7 @@ func TestBuildMessages_CurrentSenderDynamicContext(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			msgs := cb.BuildMessages(nil, "", "hello", nil, "discord", "chat1", tt.senderID, tt.senderDisplayName)
+			msgs := cb.BuildMessages(nil, "", "hello", nil, "testchat", "chat1", tt.senderID, tt.senderDisplayName)
 			sys := msgs[0].Content
 
 			if tt.wantSection {

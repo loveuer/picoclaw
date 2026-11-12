@@ -23,7 +23,7 @@ type testTelegramConfig struct {
 	Token         SecureString    `json:"token,omitzero"      yaml:"token,omitempty"`
 }
 
-type testDiscordConfig struct {
+type testWeixinConfig struct {
 	MentionOnly bool          `json:"mention_only"      yaml:"-"`
 	Token       SecureString  `json:"token,omitzero"    yaml:"token,omitempty"`
 	ApiKeys     SecureStrings `json:"api_keys,omitzero" yaml:"api_keys,omitempty"`
@@ -373,8 +373,8 @@ func TestExtractSecureFieldNames(t *testing.T) {
 		assert.Equal(t, map[string]struct{}{"token": {}}, names)
 	})
 
-	t.Run("discord extend", func(t *testing.T) {
-		names := extractSecureFieldNames(&testDiscordConfig{})
+	t.Run("weixin extend", func(t *testing.T) {
+		names := extractSecureFieldNames(&testWeixinConfig{})
 		assert.Equal(t, map[string]struct{}{"token": {}, "api_keys": {}}, names)
 	})
 
@@ -509,10 +509,10 @@ func TestChannel_MultipleChannels(t *testing.T) {
 				"type": "telegram",
 				"settings": {"base_url": "https://custom-api.example.com", "proxy": "socks5://proxy:1080", "token": "[NOT_HERE]"}
 			},
-			"discord1": {
+			"weixin1": {
 				"enabled": true,
-				"type": "discord",
-				"settings": {"mention_only": true, "token": "[NOT_HERE]"}
+				"type": "weixin",
+				"group_trigger": {"mention_only": true}, "settings": {"token": "[NOT_HERE]"}
 			}
 		}
 	}`
@@ -528,8 +528,8 @@ func TestChannel_MultipleChannels(t *testing.T) {
 		case "telegram":
 			var tc testTelegramConfig
 			require.NoError(t, ch.Decode(&tc))
-		case "discord":
-			var dc testDiscordConfig
+		case "weixin":
+			var dc testWeixinConfig
 			require.NoError(t, ch.Decode(&dc))
 		default:
 			t.Logf("Unknown channel type: %s for channel %s", ch.Type, name)
@@ -545,9 +545,9 @@ channels:
   tg2:
     settings:
       token: "TOKEN_2"
-  discord1:
+  weixin1:
     settings:
-      token: "DISCORD_TOKEN"
+      token: "WEIXIN_TOKEN"
 `
 	require.NoError(t, yaml.Unmarshal([]byte(yamlData), &wrapper))
 
@@ -564,11 +564,11 @@ channels:
 	assert.Equal(t, "socks5://proxy:1080", tg2.Proxy)
 	assert.Equal(t, "TOKEN_2", tg2.Token.String())
 
-	// Verify discord
-	var disc testDiscordConfig
-	require.NoError(t, wrapper.Channels["discord1"].Decode(&disc))
-	assert.True(t, disc.MentionOnly)
-	assert.Equal(t, "DISCORD_TOKEN", disc.Token.String())
+	// Verify weixin
+	var disc testWeixinConfig
+	require.NoError(t, wrapper.Channels["weixin1"].Decode(&disc))
+	assert.True(t, wrapper.Channels["weixin1"].GroupTrigger.MentionOnly)
+	assert.Equal(t, "WEIXIN_TOKEN", disc.Token.String())
 
 	// Save JSON → all tokens removed
 	outJSON, err := json.MarshalIndent(wrapper, "", "  ")
@@ -576,14 +576,14 @@ channels:
 	t.Logf("Saved extend.json:\n%s", string(outJSON))
 	assert.NotContains(t, string(outJSON), "token")
 	assert.NotContains(t, string(outJSON), "TOKEN_1")
-	assert.NotContains(t, string(outJSON), "DISCORD_TOKEN")
+	assert.NotContains(t, string(outJSON), "WEIXIN_TOKEN")
 
 	// Save YAML → only tokens
 	outYAML, err := yaml.Marshal(wrapper)
 	require.NoError(t, err)
 	t.Logf("Saved security.yml:\n%s", string(outYAML))
 	assert.Contains(t, string(outYAML), "TOKEN_1")
-	assert.Contains(t, string(outYAML), "DISCORD_TOKEN")
+	assert.Contains(t, string(outYAML), "WEIXIN_TOKEN")
 	assert.NotContains(t, string(outYAML), "base_url")
 	assert.NotContains(t, string(outYAML), "NOT_HERE")
 }
@@ -645,7 +645,7 @@ func TestChannel_MultipleChannels_PartialYAMLMerge(t *testing.T) {
 		"channels": {
 			"tg1": {"enabled": true, "type": "telegram", "settings": {"base_url": "https://api.telegram.org", "token": "[NOT_HERE]"}},
 			"tg2": {"enabled": true, "type": "telegram", "settings": {"base_url": "https://custom-api.example.com", "token": "[NOT_HERE]"}},
-			"discord1": {"enabled": true, "type": "discord", "settings": {"mention_only": true, "token": "[NOT_HERE]"}}
+			"weixin1": {"enabled": true, "type": "weixin", "group_trigger": {"mention_only": true}, "settings": {"token": "[NOT_HERE]"}}
 		}
 	}`
 	var wrapper ChannelsWrapper
@@ -659,9 +659,9 @@ channels:
   tg1:
     settings:
       token: "TOKEN_1"
-  discord1:
+  weixin1:
     settings:
-      token: "DISCORD_TOKEN"
+      token: "WEIXIN_TOKEN"
 `
 	//var yamlWrapper struct {
 	//	Channels map[string]struct {
@@ -696,11 +696,11 @@ channels:
 	assert.Equal(t, "", tg2.Token.String())
 	assert.Equal(t, "https://custom-api.example.com", tg2.BaseURL)
 
-	// discord1: merged from YAML
-	var disc DiscordSettings
-	require.NoError(t, wrapper.Channels["discord1"].Decode(&disc))
-	assert.Equal(t, "DISCORD_TOKEN", disc.Token.String())
-	assert.True(t, disc.MentionOnly)
+	// weixin1: merged from YAML
+	var disc WeixinSettings
+	require.NoError(t, wrapper.Channels["weixin1"].Decode(&disc))
+	assert.Equal(t, "WEIXIN_TOKEN", disc.Token.String())
+	assert.True(t, wrapper.Channels["weixin1"].GroupTrigger.MentionOnly)
 }
 
 // ═══════════════════════════════════════════════════
@@ -715,11 +715,11 @@ channels:
     type: telegram
     settings:
       token: "TG_TOKEN_FROM_YAML"
-  discord_bot:
+  weixin_bot:
     enabled: true
-    type: discord
+    type: weixin
     settings:
-      token: "DISCORD_TOKEN_FROM_YAML"
+      token: "WEIXIN_TOKEN_FROM_YAML"
 `
 
 	type ChannelsWrapper struct {
@@ -734,9 +734,9 @@ channels:
 	require.NoError(t, wrapper.Channels["tg_bot"].Decode(&tg))
 	assert.Equal(t, "TG_TOKEN_FROM_YAML", tg.Token.String())
 
-	var disc testDiscordConfig
-	require.NoError(t, wrapper.Channels["discord_bot"].Decode(&disc))
-	assert.Equal(t, "DISCORD_TOKEN_FROM_YAML", disc.Token.String())
+	var disc testWeixinConfig
+	require.NoError(t, wrapper.Channels["weixin_bot"].Decode(&disc))
+	assert.Equal(t, "WEIXIN_TOKEN_FROM_YAML", disc.Token.String())
 }
 
 // ═══════════════════════════════════════════════════
@@ -799,7 +799,7 @@ func TestChannel_SecureStrings_ApiKeys(t *testing.T) {
 	// Step 1: Load from extend.json
 	jsonData := `{
 		"enabled": true,
-		"type": "discord",
+		"type": "weixin",
 		"settings": {
 			"mention_only": true,
 			"token": "[NOT_HERE]",
@@ -812,7 +812,7 @@ func TestChannel_SecureStrings_ApiKeys(t *testing.T) {
 	// Step 2: Merge secure from security.yml
 	yamlData := `
 settings:
-  token: "DISCORD_BOT_TOKEN"
+  token: "WEIXIN_BOT_TOKEN"
   api_keys:
     - "KEY_1"
     - "KEY_2"
@@ -820,10 +820,10 @@ settings:
 	require.NoError(t, yaml.Unmarshal([]byte(yamlData), &ch))
 
 	// Step 3: Decode — both SecureString and SecureStrings should be populated
-	var cfg testDiscordConfig
+	var cfg testWeixinConfig
 	require.NoError(t, ch.Decode(&cfg))
 	assert.True(t, cfg.MentionOnly)
-	assert.Equal(t, "DISCORD_BOT_TOKEN", cfg.Token.String())
+	assert.Equal(t, "WEIXIN_BOT_TOKEN", cfg.Token.String())
 	require.Len(t, cfg.ApiKeys, 2)
 	assert.Equal(t, "KEY_1", cfg.ApiKeys[0].String())
 	assert.Equal(t, "KEY_2", cfg.ApiKeys[1].String())
@@ -834,7 +834,7 @@ settings:
 	t.Logf("Saved extend.json:\n%s", string(outJSON))
 	assert.NotContains(t, string(outJSON), "token")
 	assert.NotContains(t, string(outJSON), "api_keys")
-	assert.NotContains(t, string(outJSON), "DISCORD_BOT_TOKEN")
+	assert.NotContains(t, string(outJSON), "WEIXIN_BOT_TOKEN")
 	assert.NotContains(t, string(outJSON), "KEY")
 	assert.Contains(t, string(outJSON), "mention_only")
 
@@ -842,7 +842,7 @@ settings:
 	outYAML, err := yaml.Marshal(ch)
 	require.NoError(t, err)
 	t.Logf("Saved security.yml:\n%s", string(outYAML))
-	assert.Contains(t, string(outYAML), "DISCORD_BOT_TOKEN")
+	assert.Contains(t, string(outYAML), "WEIXIN_BOT_TOKEN")
 	assert.Contains(t, string(outYAML), "KEY_1")
 	assert.Contains(t, string(outYAML), "KEY_2")
 	assert.NotContains(t, string(outYAML), "mention_only")
@@ -853,7 +853,7 @@ func TestChannel_SecureStrings_ApiKeys_EmptyInJSON(t *testing.T) {
 	// JSON has no api_keys field
 	jsonData := `{
 		"enabled": true,
-		"type": "discord",
+		"type": "weixin",
 		"settings": {
 			"mention_only": true,
 			"token": "[NOT_HERE]"
@@ -871,7 +871,7 @@ settings:
 `
 	require.NoError(t, yaml.Unmarshal([]byte(yamlData), &ch))
 
-	var cfg testDiscordConfig
+	var cfg testWeixinConfig
 	require.NoError(t, ch.Decode(&cfg))
 	assert.Equal(t, "MY_TOKEN", cfg.Token.String())
 	require.Len(t, cfg.ApiKeys, 1)
@@ -882,7 +882,7 @@ func TestChannel_SecureStrings_ApiKeys_NoMerge(t *testing.T) {
 	// JSON only, no merge — SecureStrings should be empty
 	jsonData := `{
 		"enabled": true,
-		"type": "discord",
+		"type": "weixin",
 		"settings": {
 			"mention_only": true,
 			"token": "[NOT_HERE]",
@@ -892,7 +892,7 @@ func TestChannel_SecureStrings_ApiKeys_NoMerge(t *testing.T) {
 	var ch Channel
 	require.NoError(t, json.Unmarshal([]byte(jsonData), &ch))
 
-	var cfg testDiscordConfig
+	var cfg testWeixinConfig
 	require.NoError(t, ch.Decode(&cfg))
 	assert.True(t, cfg.MentionOnly)
 	assert.Equal(t, "", cfg.Token.String())

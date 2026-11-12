@@ -36,7 +36,7 @@ PicoClaw 里用户能直接感知到的“路由”主要有两部分：
 }
 ```
 
-### 只处理某个 Discord server 里的 @提及
+### 只处理某个 Feishu group 里的 @提及
 
 ```json
 {
@@ -48,11 +48,11 @@ PicoClaw 里用户能直接感知到的“路由”主要有两部分：
     "dispatch": {
       "rules": [
         {
-          "name": "discord mentions",
+          "name": "feishu mentions",
           "agent": "support",
           "when": {
-            "channel": "discord",
-            "space": "guild:t001",
+            "channel": "feishu",
+            "chat": "oc_group001",
             "mentioned": true
           }
         }
@@ -109,7 +109,7 @@ agents.dispatch.rules
 
 | 字段 | 含义 | 示例 |
 | --- | --- | --- |
-| `channel` | Channel 名称 | `telegram`、`discord`、`feishu` |
+| `channel` | Channel 名称 | `telegram`、`weixin`、`feishu` |
 | `account` | 归一化后的 account ID | `default`、`bot2` |
 | `space` | workspace、guild 等上层容器 | `guild:t001`、`guild:123456` |
 | `chat` | 私聊、群或频道 | `direct:user123`、`group:-100123`、`channel:c123` |
@@ -202,7 +202,7 @@ agents.dispatch.rules
 {
   "session": {
     "identity_links": {
-      "john": ["discord:u123", "legacy-user-42"]
+      "john": ["feishu:u123", "legacy-user-42"]
     }
   },
   "agents": {

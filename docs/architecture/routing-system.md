@@ -89,11 +89,11 @@ This means dispatch rules must match the normalized shape, for example:
           }
         },
         {
-          "name": "discord-mentions",
+          "name": "feishu-mentions",
           "agent": "support",
           "when": {
-            "channel": "discord",
-            "space": "guild:t001",
+            "channel": "feishu",
+            "chat": "oc_group001",
             "mentioned": true
           }
         }

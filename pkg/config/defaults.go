@@ -518,11 +518,6 @@ func DefaultConfig() *Config {
 
 func defaultChannels() ChannelsConfig {
 	defs := map[string]any{
-		"whatsapp": map[string]any{
-			"settings": map[string]any{
-				"bridge_url": "ws://localhost:3001",
-			},
-		},
 		"telegram": map[string]any{
 			"typing":      map[string]any{"enabled": true},
 			"placeholder": map[string]any{"enabled": true, "text": []string{"Thinking... 💭"}},
@@ -531,20 +526,11 @@ func defaultChannels() ChannelsConfig {
 				"media_group_delay_ms": 500,
 			},
 		},
-		"feishu":  map[string]any{},
-		"discord": map[string]any{},
+		"feishu": map[string]any{},
 		"qq": map[string]any{
 			"settings": map[string]any{"max_message_length": 2000},
 		},
 		"dingtalk": map[string]any{},
-		"line": map[string]any{
-			"group_trigger": map[string]any{"mention_only": true},
-			"settings": map[string]any{
-				"webhook_host": "0.0.0.0",
-				"webhook_port": 18791,
-				"webhook_path": "/webhook/line",
-			},
-		},
 		"onebot": map[string]any{
 			"settings": map[string]any{
 				"ws_url":             "ws://127.0.0.1:3001",

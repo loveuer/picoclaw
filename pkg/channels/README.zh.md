@@ -24,7 +24,6 @@
 ```
 pkg/channels/
 ├── telegram.go          # 每个 channel 直接放在 channels 包内
-├── discord.go
 ├── manager.go           # Manager 直接引用各 channel 类型
 ├── ...
 ```
@@ -56,10 +55,7 @@ pkg/channels/
 │   ├── init.go          # 工厂注册
 │   ├── telegram.go      # 实现
 │   └── telegram_commands.go
-├── discord/
-│   ├── init.go
-│   └── discord.go
-├── line/ onebot/ dingtalk/ feishu/ wecom/ qq/ whatsapp/ whatsapp_native/ mqtt/
+├── onebot/ dingtalk/ feishu/ wecom/ qq/ mqtt/
 │   └── ...
 
 pkg/bus/
@@ -78,9 +74,9 @@ pkg/identity/
 ```
 ┌────────────┐      InboundMessage       ┌───────────┐      LLM + Tools      ┌────────────┐
 │  Telegram   │──┐                        │           │                        │            │
-│  Discord    │──┤   PublishInbound()     │           │   PublishOutbound()   │            │
+│  Weixin     │──┤   PublishInbound()     │           │   PublishOutbound()   │            │
 │  Feishu     │──┼──────────────────────▶ │ MessageBus │ ◀─────────────────── │ AgentLoop  │
-│  LINE       │──┤   (buffered chan, 64)  │           │   (buffered chan, 64) │            │
+│  OneBot     │──┤   (buffered chan, 64)  │           │   (buffered chan, 64) │            │
 │  ...        │──┘                        │           │                        │            │
 └────────────┘                            └─────┬─────┘                        └────────────┘
                                                 │
@@ -125,18 +121,15 @@ pkg/identity/
 
 在 main 分支上，Channel 文件直接位于 `pkg/channels/` 顶层，例如：
 - `pkg/channels/telegram.go`
-- `pkg/channels/discord.go`
 
 重构后，这些文件已被删除，代码移动到了对应子包：
 - `pkg/channels/telegram/telegram.go`
-- `pkg/channels/discord/discord.go`
 
 #### 步骤 2：理解结构变化映射
 
 | main 分支文件 | 重构分支位置 | 变化 |
 |---|---|---|
 | `pkg/channels/telegram.go` | `pkg/channels/telegram/telegram.go` + `init.go` | 包名从 `channels` 变为 `telegram` |
-| `pkg/channels/discord.go` | `pkg/channels/discord/discord.go` + `init.go` | 同上 |
 | `pkg/channels/manager.go` | `pkg/channels/manager.go` | 大幅重写 |
 | _(不存在)_ | `pkg/channels/base.go` | 新增共享抽象层 |
 | _(不存在)_ | `pkg/channels/registry.go` | 新增工厂注册表 |
@@ -144,7 +137,6 @@ pkg/identity/
 | _(不存在)_ | `pkg/channels/interfaces.go` | 新增可选能力接口 |
 | _(不存在)_ | `pkg/channels/media.go` | 新增 MediaSender 接口 |
 | _(不存在)_ | `pkg/channels/webhook.go` | 新增 WebhookHandler/HealthChecker |
-| _(不存在)_ | `pkg/channels/whatsapp_native/` | 新增 WhatsApp 原生模式（whatsmeow） |
 | _(不存在)_ | `pkg/channels/split.go` | 新增消息分割（从 utils 迁入） |
 | _(不存在)_ | `pkg/bus/types.go` | 新增结构化消息类型 |
 | _(不存在)_ | `pkg/media/store.go` | 新增媒体文件生命周期管理 |
@@ -343,7 +335,6 @@ func init() {
 // cmd/picoclaw/internal/gateway/helpers.go
 import (
     _ "github.com/sipeed/picoclaw/pkg/channels/telegram"   // 触发 init() 注册
-    _ "github.com/sipeed/picoclaw/pkg/channels/discord"
     _ "github.com/sipeed/picoclaw/pkg/channels/your_new_channel"  // 新增
 )
 ```
@@ -765,9 +756,9 @@ if c.owner != nil && c.placeholderRecorder != nil {
 ```
 
 **这意味着**：
-- 实现 `TypingCapable` 的 channel（Telegram、Discord、LINE）无需在 `handleMessage` 中手动调用 `StartTyping` + `RecordTypingStop`
+- 实现 `TypingCapable` 的 channel（Telegram）无需在 `handleMessage` 中手动调用 `StartTyping` + `RecordTypingStop`
 - 实现 `ReactionCapable` 的 channel（OneBot）无需在 `handleMessage` 中手动调用 `AddReaction` + `RecordTypingStop`
-- 实现 `PlaceholderCapable` 的 channel（Telegram、Discord）无需在 `handleMessage` 中手动发送占位消息并调用 `RecordPlaceholder`
+- 实现 `PlaceholderCapable` 的 channel（Telegram）无需在 `handleMessage` 中手动发送占位消息并调用 `RecordPlaceholder`
 - Channel 只需实现对应接口，`HandleMessage` 会自动完成编排
 - 不实现这些接口的 channel 不受影响（类型断言会失败，跳过）
 - `PlaceholderCapable` 的 `SendPlaceholder` 方法内部根据配置的 `PlaceholderConfig.Enabled` 决定是否发送；返回 `("", nil)` 时跳过注册
@@ -827,14 +818,6 @@ Manager 使用 `InitChannelList()` 来验证类型和解码设置，
 然后通过 `bc.Type` 查找工厂。不需要在 Manager 中添加每个 channel 的条目——
 只需注册工厂和配置条目即可。
 
-> **注意**：如果你的 channel 有多种模式（如 WhatsApp Bridge vs Native），
-> 在 `channelSettingsFactory` 中注册两种类型，并根据配置分支：
-> ```go
-> // 在 config_channel.go 中：
-> ChannelWhatsApp:       (WhatsAppSettings{}),
-> ChannelWhatsAppNative: (WhatsAppSettings{}),
-> ```
-
 #### 在 Gateway 中添加 blank import
 
 ```go
@@ -892,7 +875,7 @@ type Peer struct {
 
 // 发送者身份信息
 type SenderInfo struct {
-    Platform    string `json:"platform,omitempty"`     // "telegram", "discord", ...
+    Platform    string `json:"platform,omitempty"`     // "telegram", "feishu", ...
     PlatformID  string `json:"platform_id,omitempty"`  // 平台原始 ID
     CanonicalID string `json:"canonical_id,omitempty"` // "platform:id" 规范格式
     Username    string `json:"username,omitempty"`
@@ -1068,8 +1051,6 @@ type channelWorker struct {
 ```go
 var channelRateConfig = map[string]float64{
     "telegram": 20,   // 20 msg/s
-    "discord":  1,    // 1 msg/s
-    "line":     10,   // 10 msg/s
 }
 // 默认: 10 msg/s
 // burst = max(1, ceil(rate/2))
@@ -1295,15 +1276,11 @@ make test                                       # 全量测试
 | 子包 | 注册名 | 可选接口 |
 |------|--------|----------|
 | `pkg/channels/telegram/` | `"telegram"` | TypingCapable, PlaceholderCapable, MessageEditor, MediaSender |
-| `pkg/channels/discord/` | `"discord"` | TypingCapable, PlaceholderCapable, MessageEditor, MediaSender |
-| `pkg/channels/line/` | `"line"` | TypingCapable, MediaSender, WebhookHandler |
 | `pkg/channels/onebot/` | `"onebot"` | ReactionCapable, MediaSender |
 | `pkg/channels/dingtalk/` | `"dingtalk"` | — |
 | `pkg/channels/feishu/` | `"feishu"` | — (架构特定 build tags: `feishu_32.go` / `feishu_64.go`) |
 | `pkg/channels/wecom/` | `"wecom"` | MediaSender |
 | `pkg/channels/qq/` | `"qq"` | — |
-| `pkg/channels/whatsapp/` | `"whatsapp"` | — (Bridge 模式) |
-| `pkg/channels/whatsapp_native/` | `"whatsapp_native"` | — (原生 whatsmeow 模式) |
 | `pkg/channels/mqtt/` | `"mqtt"` | — |
 
 ### A.3 接口速查表
@@ -1403,8 +1380,6 @@ agentLoop.Stop()               // 停止 Agent
 | Channel | 速率 (msg/s) | Burst |
 |---------|-------------|-------|
 | telegram | 20 | 10 |
-| discord | 1 | 1 |
-| line | 10 | 5 |
 | _其他_ | 10 (默认) | 5 |
 
 ### A.6 已知限制和注意事项
@@ -1415,10 +1390,8 @@ agentLoop.Stop()               // 停止 Agent
 
 3. **WeCom 现在只有一个 channel**：`"wecom"` 采用 WebSocket AI Bot 实现，带路由持久化；访问控制走统一的 channel 白名单机制，不再保留旧的 webhook/app 双分支。
 
-4. **WhatsApp 有两种模式**：`"whatsapp"`（Bridge 模式，通过外部 bridge URL 通信）和 `"whatsapp_native"`（原生 whatsmeow 模式，直接连接 WhatsApp）。Manager 根据 `WhatsAppConfig.UseNative` 决定初始化哪个。
-
 5. **DingTalk 使用 Stream 模式**：DingTalk 使用 SDK 的 Stream/WebSocket 模式（非 HTTP webhook），因此不实现 `WebhookHandler`。
 
-6. **PlaceholderConfig 的配置与实现**：`PlaceholderConfig` 出现在 4 个 channel config 中（Telegram、Discord、LINE、OneBot），但只有实现了 `PlaceholderCapable` + `MessageEditor` 的 channel（Telegram、Discord）能真正使用占位消息编辑功能。其余 channel 的 `PlaceholderConfig` 为预留字段。
+6. **PlaceholderConfig 的配置与实现**：`PlaceholderConfig` 出现在 2 个 channel config 中（Telegram、OneBot），但只有实现了 `PlaceholderCapable` + `MessageEditor` 的 channel（Telegram）能真正使用占位消息编辑功能。其余 channel 的 `PlaceholderConfig` 为预留字段。
 
-7. **ReasoningChannelID**：大多数 channel config 都包含 `reasoning_channel_id` 字段，用于将 LLM 的思维链（reasoning/thinking）路由到指定 channel（WhatsApp、Telegram、Feishu、Discord、QQ、DingTalk、LINE、OneBot、WeCom）。`BaseChannel` 通过 `WithReasoningChannelID` 选项和 `ReasoningChannelID()` 方法暴露此配置。
+7. **ReasoningChannelID**：大多数 channel config 都包含 `reasoning_channel_id` 字段，用于将 LLM 的思维链（reasoning/thinking）路由到指定 channel（Telegram、Feishu、QQ、DingTalk、OneBot、WeCom）。`BaseChannel` 通过 `WithReasoningChannelID` 选项和 `ReasoningChannelID()` 方法暴露此配置。

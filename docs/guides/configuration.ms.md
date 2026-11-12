@@ -135,7 +135,7 @@ dammi le ultime news
 - Generic slash command dilaksanakan melalui satu laluan dalam `pkg/agent/loop.go` melalui `commands.Executor`.
 - Adapter saluran tidak lagi menggunakan generic command secara setempat; ia memajukan teks masuk ke laluan bus/agent. Telegram masih auto-register arahan yang disokong semasa startup seperti `/start`, `/help`, `/show`, `/list`, `/use`, dan `/btw`.
 - Slash command yang tidak dikenali (contohnya `/foo`) akan diteruskan ke pemprosesan LLM biasa.
-- Arahan yang didaftarkan tetapi tidak disokong pada saluran semasa (contohnya `/show` di WhatsApp) akan memulangkan ralat yang jelas kepada pengguna dan menghentikan pemprosesan lanjut.
+- Arahan yang didaftarkan tetapi tidak disokong pada saluran semasa  akan memulangkan ralat yang jelas kepada pengguna dan menghentikan pemprosesan lanjut.
 
 ### 🔒 Security Sandbox
 
@@ -194,7 +194,7 @@ Walaupun dengan `restrict_to_workspace: false`, tool `exec` menyekat arahan berb
 
 | Kunci Config                       | Jenis    | Lalai   | Penerangan                                                   |
 | ---------------------------------- | -------- | ------- | ------------------------------------------------------------ |
-| `tools.exec.allow_remote`          | bool     | `false` | Benarkan tool exec dari saluran jauh (Telegram/Discord dll.) |
+| `tools.exec.allow_remote`          | bool     | `false` | Benarkan tool exec dari saluran jauh (Telegram/Feishu dll.) |
 | `tools.exec.enable_deny_patterns`  | bool     | `true`  | Aktifkan pemintasan arahan berbahaya                         |
 | `tools.exec.custom_deny_patterns`  | string[] | `[]`    | Corak regex tersuai untuk disekat                            |
 | `tools.exec.custom_allow_patterns` | string[] | `[]`    | Corak regex tersuai untuk dibenarkan                         |

@@ -20,8 +20,8 @@ The user's intent reaches the model **as soon as the current tool finishes**, no
 graph TD
     subgraph External Callers
         TG[Telegram]
-        DC[Discord]
-        SL[Discord]
+        DC[Feishu]
+        SL[Feishu]
     end
 
     subgraph AgentLoop
@@ -53,7 +53,7 @@ graph TD
 
 ### Message routing and worker pool
 
-Channels (Telegram, Discord, etc.) publish messages to the `MessageBus` via `PublishInbound`. The `Run()` loop consumes messages from the bus and routes each one based on its **session key**:
+Channels (Telegram, Feishu, etc.) publish messages to the `MessageBus` via `PublishInbound`. The `Run()` loop consumes messages from the bus and routes each one based on its **session key**:
 
 - **No active turn for the session**: The session key is atomically reserved via `LoadOrStore(sessionKey, struct{}{})`, and a **worker goroutine** is spawned to process the full turn lifecycle.
 - **Active turn exists for the session**: The message is enqueued directly into the steering queue via `enqueueSteeringMessage`. It will be picked up by the existing worker's steering drain loop.

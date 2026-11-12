@@ -50,18 +50,9 @@ func hiddenValues(key string, value map[string]any, ch *config.Channel) {
 		if settings, ok := v.(*config.TelegramSettings); ok {
 			value["token"] = settings.Token.String()
 		}
-	case "discord":
-		if settings, ok := v.(*config.DiscordSettings); ok {
-			value["token"] = settings.Token.String()
-		}
 	case "onebot":
 		if settings, ok := v.(*config.OneBotSettings); ok {
 			value["token"] = settings.AccessToken.String()
-		}
-	case "line":
-		if settings, ok := v.(*config.LINESettings); ok {
-			value["token"] = settings.ChannelAccessToken.String()
-			value["secret"] = settings.ChannelSecret.String()
 		}
 	case "wecom":
 		if settings, ok := v.(*config.WeComSettings); ok {

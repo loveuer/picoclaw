@@ -494,8 +494,8 @@ func TestProcessMessage_IncludesCurrentSenderInDynamicContext(t *testing.T) {
 	al := NewAgentLoop(cfg, msgBus, provider)
 
 	response, err := al.processMessage(context.Background(), testInboundMessage(bus.InboundMessage{
-		Channel:  "discord",
-		SenderID: "discord:123",
+		Channel:  "testchat",
+		SenderID: "testchat:123",
 		Sender: bus.SenderInfo{
 			DisplayName: "Alice",
 		},
@@ -513,7 +513,7 @@ func TestProcessMessage_IncludesCurrentSenderInDynamicContext(t *testing.T) {
 	}
 
 	systemPrompt := provider.lastMessages[0].Content
-	wantSender := "## Current Sender\nCurrent sender: Alice (ID: discord:123)"
+	wantSender := "## Current Sender\nCurrent sender: Alice (ID: testchat:123)"
 	if !strings.Contains(systemPrompt, wantSender) {
 		t.Fatalf("system prompt missing sender context %q:\n%s", wantSender, systemPrompt)
 	}
@@ -1178,8 +1178,8 @@ func TestProcessMessage_BtwCommandIncludesRequestContextAndMedia(t *testing.T) {
 	useTestSideQuestionProvider(al, provider)
 
 	response, err := al.processMessage(context.Background(), testInboundMessage(bus.InboundMessage{
-		Channel:  "discord",
-		SenderID: "discord:123",
+		Channel:  "testchat",
+		SenderID: "testchat:123",
 		Sender: bus.SenderInfo{
 			DisplayName: "Alice",
 		},
@@ -1198,10 +1198,10 @@ func TestProcessMessage_BtwCommandIncludesRequestContextAndMedia(t *testing.T) {
 	}
 
 	systemPrompt := provider.lastMessages[0].Content
-	if !strings.Contains(systemPrompt, "## Current Session\nChannel: discord\nChat ID: group-1") {
+	if !strings.Contains(systemPrompt, "## Current Session\nChannel: testchat\nChat ID: group-1") {
 		t.Fatalf("system prompt missing current session context:\n%s", systemPrompt)
 	}
-	if !strings.Contains(systemPrompt, "## Current Sender\nCurrent sender: Alice (ID: discord:123)") {
+	if !strings.Contains(systemPrompt, "## Current Sender\nCurrent sender: Alice (ID: testchat:123)") {
 		t.Fatalf("system prompt missing current sender context:\n%s", systemPrompt)
 	}
 
@@ -2006,7 +2006,7 @@ func TestAppendEventContextFields_IncludesInboundRouteAndScope(t *testing.T) {
 
 	appendEventContextFields(fields, &TurnContext{
 		Inbound: &bus.InboundContext{
-			Channel:   "discord",
+			Channel:   "testchat",
 			Account:   "workspace-a",
 			ChatID:    "C123",
 			ChatType:  "channel",
@@ -2018,20 +2018,20 @@ func TestAppendEventContextFields_IncludesInboundRouteAndScope(t *testing.T) {
 		},
 		Route: &routing.ResolvedRoute{
 			AgentID:   "support",
-			Channel:   "discord",
+			Channel:   "testchat",
 			AccountID: "workspace-a",
 			MatchedBy: "default",
 			SessionPolicy: routing.SessionPolicy{
 				Dimensions: []string{"chat", "sender"},
 				IdentityLinks: map[string][]string{
-					"canonical-user": {"discord:U123"},
+					"canonical-user": {"testchat:U123"},
 				},
 			},
 		},
 		Scope: &session.SessionScope{
 			Version:    session.ScopeVersionV1,
 			AgentID:    "support",
-			Channel:    "discord",
+			Channel:    "testchat",
 			Account:    "workspace-a",
 			Dimensions: []string{"chat", "sender"},
 			Values: map[string]string{
@@ -2041,8 +2041,8 @@ func TestAppendEventContextFields_IncludesInboundRouteAndScope(t *testing.T) {
 		},
 	})
 
-	if fields["inbound_channel"] != "discord" {
-		t.Fatalf("inbound_channel = %v, want discord", fields["inbound_channel"])
+	if fields["inbound_channel"] != "testchat" {
+		t.Fatalf("inbound_channel = %v, want testchat", fields["inbound_channel"])
 	}
 	if fields["inbound_topic_id"] != "thread-42" {
 		t.Fatalf("inbound_topic_id = %v, want thread-42", fields["inbound_topic_id"])
@@ -2090,7 +2090,7 @@ func TestResolveMessageRoute_UsesInboundContextAccount(t *testing.T) {
 
 	route, _, err := al.resolveMessageRoute(testInboundMessage(bus.InboundMessage{
 		Context: bus.InboundContext{
-			Channel:   "discord",
+			Channel:   "testchat",
 			Account:   "workspace-a",
 			ChatID:    "C123",
 			ChatType:  "channel",
@@ -5532,7 +5532,7 @@ func TestTargetReasoningChannelID_AllChannels(t *testing.T) {
 		"whatsapp": "rid-whatsapp",
 		"telegram": "rid-telegram",
 		"feishu":   "rid-feishu",
-		"discord":  "rid-discord",
+		"testchat": "rid-testchat",
 		"mqtt":     "rid-mqtt",
 		"qq":       "rid-qq",
 		"dingtalk": "rid-dingtalk",
@@ -5550,7 +5550,7 @@ func TestTargetReasoningChannelID_AllChannels(t *testing.T) {
 		{channel: "whatsapp", wantID: "rid-whatsapp"},
 		{channel: "telegram", wantID: "rid-telegram"},
 		{channel: "feishu", wantID: "rid-feishu"},
-		{channel: "discord", wantID: "rid-discord"},
+		{channel: "testchat", wantID: "rid-testchat"},
 		{channel: "mqtt", wantID: "rid-mqtt"},
 		{channel: "qq", wantID: "rid-qq"},
 		{channel: "dingtalk", wantID: "rid-dingtalk"},
@@ -5620,13 +5620,13 @@ func TestHandleReasoning(t *testing.T) {
 
 	t.Run("publishes one message for non telegram", func(t *testing.T) {
 		al, msgBus := newLoop(t)
-		al.handleReasoning(context.Background(), "hello reasoning", "discord", "channel-1")
+		al.handleReasoning(context.Background(), "hello reasoning", "testchat", "channel-1")
 
 		msg, ok := <-msgBus.OutboundChan()
 		if !ok {
 			t.Fatal("expected an outbound message")
 		}
-		if msg.Channel != "discord" || msg.ChatID != "channel-1" || msg.Content != "hello reasoning" {
+		if msg.Channel != "testchat" || msg.ChatID != "channel-1" || msg.Content != "hello reasoning" {
 			t.Fatalf("unexpected outbound message: %+v", msg)
 		}
 	})
@@ -5709,7 +5709,7 @@ func TestHandleReasoning(t *testing.T) {
 		defer cancel()
 
 		start := time.Now()
-		al.handleReasoning(ctx, "should timeout", "discord", "channel-full")
+		al.handleReasoning(ctx, "should timeout", "testchat", "channel-full")
 		elapsed := time.Since(start)
 
 		// handleReasoning uses a 5s internal timeout, but the parent ctx
@@ -6180,8 +6180,8 @@ func TestProcessMessage_DoesNotLeakReasoningContentInToolFeedback(t *testing.T) 
 	}
 }
 
-func TestProcessMessage_DoesNotPublishToolFeedbackForDiscordWhenDisabled(t *testing.T) {
-	assertToolFeedbackNotPublishedWhenDisabled(t, "discord")
+func TestProcessMessage_DoesNotPublishToolFeedbackForTestChatWhenDisabled(t *testing.T) {
+	assertToolFeedbackNotPublishedWhenDisabled(t, "testchat")
 }
 
 func assertToolFeedbackNotPublishedWhenDisabled(t *testing.T, channel string) {
@@ -6776,7 +6776,7 @@ func TestInjectPathTags_HandlesVariousChannelPlaceholders(t *testing.T) {
 		{"image_photo", "[image: photo]", "[image:/tmp/p.png]", "[image:/tmp/p.png]"},
 		// WeCom / WeChat / Line format
 		{"bare_image", "[image]", "[image:/tmp/p.png]", "[image:/tmp/p.png]"},
-		// QQ / Discord format with filename
+		// QQ / TestChat format with filename
 		{"image_filename", "[image: pic.jpg]", "[image:/tmp/p.png]", "[image:/tmp/p.png]"},
 		{"audio_with_filename", "[audio: voice.m4a]", "[audio:/tmp/a.m4a]", "[audio:/tmp/a.m4a]"},
 		{"bare_audio", "[audio]", "[audio:/tmp/a.m4a]", "[audio:/tmp/a.m4a]"},

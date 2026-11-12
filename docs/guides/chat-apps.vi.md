@@ -4,19 +4,15 @@
 
 ## 💬 Ứng Dụng Chat
 
-Trò chuyện với picoclaw của bạn qua Telegram, Discord, WhatsApp, QQ, DingTalk, LINE, WeCom, Feishu, OneBot, MQTT
+Trò chuyện với picoclaw của bạn qua Telegram, QQ, DingTalk, WeCom, Feishu, OneBot, MQTT
 
-> **Lưu ý**: Tất cả các kênh dựa trên webhook (LINE, WeCom, v.v.) được phục vụ trên một máy chủ HTTP Gateway chung (`gateway.host`:`gateway.port`, mặc định `127.0.0.1:18790`). Không có port riêng cho từng kênh. Lưu ý: Feishu sử dụng chế độ WebSocket/SDK và không sử dụng máy chủ HTTP webhook chung.
 
 | Kênh                 | Độ khó             | Mô tả                                                 | Tài liệu                                                                                                         |
 | -------------------- | ------------------ | ----------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
 | **Telegram**         | ⭐ Dễ              | Khuyến nghị, chuyển giọng nói thành văn bản, long polling (không cần IP công khai) | [Tài liệu](../channels/telegram/README.vi.md)                                              |
-| **Discord**          | ⭐ Dễ              | Socket Mode, hỗ trợ nhóm/DM, hệ sinh thái bot phong phú | [Tài liệu](../channels/discord/README.vi.md)                                                                  |
-| **WhatsApp**         | ⭐ Dễ              | Bản địa (quét QR) hoặc Bridge URL                     | [Tài liệu](#whatsapp)                                                                                            |
 | **Weixin**           | ⭐ Dễ              | Quét QR gốc (API Tencent iLink)                       | [Tài liệu](#weixin)                                                                                              |
 | **QQ**               | ⭐⭐ Trung bình    | API bot chính thức, cộng đồng Trung Quốc              | [Tài liệu](../channels/qq/README.vi.md)                                                                         |
 | **DingTalk**         | ⭐⭐ Trung bình    | Chế độ Stream (không cần IP công khai), doanh nghiệp  | [Tài liệu](../channels/dingtalk/README.vi.md)                                                                   |
-| **LINE**             | ⭐⭐⭐ Nâng cao    | Yêu cầu HTTPS Webhook                                 | [Tài liệu](../channels/line/README.vi.md)                                                                       |
 | **WeCom (企业微信)** | ⭐⭐⭐ Nâng cao    | Bot nhóm (Webhook), ứng dụng tùy chỉnh (API), AI Bot | [Hướng dẫn](../channels/wecom/README.vi.md) |
 | **Feishu (飞书)**    | ⭐⭐⭐ Nâng cao    | Cộng tác doanh nghiệp, nhiều tính năng                | [Tài liệu](../channels/feishu/README.vi.md)                                                                     |
 | **OneBot**           | ⭐⭐ Trung bình    | Tương thích NapCat/Go-CQHTTP, hệ sinh thái cộng đồng  | [Tài liệu](../channels/onebot/README.vi.md)                                                                     |
@@ -69,110 +65,6 @@ Ban cung co the quan ly skill da cai dat truc tiep tu Telegram:
 - `/use <skill>` roi gui yeu cau that o tin nhan tiep theo
 - `/use clear`
 - `/btw <question>` de hoi them mot cau ngoai le ngay lap tuc ma khong thay doi lich su phien dang hoat dong; `/btw` duoc xu ly nhu mot truy van truc tiep khong dung cong cu va khong di vao luong thuc thi cong cu thong thuong
-
-</details>
-
-<a id="discord"></a>
-<details>
-<summary><b>Discord</b></summary>
-
-**1. Tạo bot**
-
-* Truy cập <https://discord.com/developers/applications>
-* Tạo ứng dụng → Bot → Add Bot
-* Sao chép bot token
-
-**2. Bật intents**
-
-* Trong cài đặt Bot, bật **MESSAGE CONTENT INTENT**
-* (Tùy chọn) Bật **SERVER MEMBERS INTENT** nếu bạn muốn sử dụng danh sách cho phép dựa trên dữ liệu thành viên
-
-**3. Lấy User ID**
-* Cài đặt Discord → Nâng cao → bật **Developer Mode**
-* Nhấp chuột phải vào avatar → **Copy User ID**
-
-**4. Cấu hình**
-
-```json
-{
-  "channel_list": {
-    "discord": {
-      "enabled": true,
-      "type": "discord",
-      "token": "YOUR_BOT_TOKEN",
-      "allow_from": ["YOUR_USER_ID"]
-    }
-  }
-}
-```
-
-**5. Mời bot**
-
-* OAuth2 → URL Generator
-* Scopes: `bot`
-* Bot Permissions: `Send Messages`, `Read Message History`
-* Mở URL mời được tạo và thêm bot vào server của bạn
-
-**Tùy chọn: Chế độ kích hoạt nhóm**
-
-Mặc định bot phản hồi tất cả tin nhắn trong kênh server. Để giới hạn phản hồi chỉ khi @mention, thêm:
-
-```json
-{
-  "channel_list": {
-    "discord": {
-      "group_trigger": { "mention_only": true }
-    }
-  }
-}
-```
-
-Bạn cũng có thể kích hoạt bằng tiền tố từ khóa (ví dụ: `!bot`):
-
-```json
-{
-  "channel_list": {
-    "discord": {
-      "group_trigger": { "prefixes": ["!bot"] }
-    }
-  }
-}
-```
-
-**6. Chạy**
-
-```bash
-picoclaw gateway
-```
-
-</details>
-
-<a id="whatsapp"></a>
-<details>
-<summary><b>WhatsApp</b> (native qua whatsmeow)</summary>
-
-PicoClaw có thể kết nối WhatsApp theo hai cách:
-
-- **Native (khuyến nghị):** In-process sử dụng [whatsmeow](https://github.com/tulir/whatsmeow). Không cần bridge riêng. Đặt `"use_native": true` và để trống `bridge_url`. Lần chạy đầu tiên, quét mã QR bằng WhatsApp (Thiết bị liên kết). Phiên được lưu trong workspace (ví dụ: `workspace/whatsapp/`). Kênh native là **tùy chọn** để giữ binary mặc định nhỏ; build với `-tags whatsapp_native` (ví dụ: `make build-whatsapp-native` hoặc `go build -tags whatsapp_native ./cmd/...`).
-- **Bridge:** Kết nối đến bridge WebSocket bên ngoài. Đặt `bridge_url` (ví dụ: `ws://localhost:3001`) và giữ `use_native` là false.
-
-**Cấu hình (native)**
-
-```json
-{
-  "channel_list": {
-    "whatsapp": {
-      "enabled": true,
-      "type": "whatsapp",
-      "use_native": true,
-      "session_store_path": "",
-      "allow_from": []
-    }
-  }
-}
-```
-
-Nếu `session_store_path` trống, phiên được lưu tại `<workspace>/whatsapp/`. Chạy `picoclaw gateway`; lần chạy đầu tiên, quét mã QR hiển thị trong terminal bằng WhatsApp → Thiết bị liên kết.
 
 </details>
 
@@ -292,56 +184,6 @@ picoclaw gateway
 
 </details>
 
-<a id="line"></a>
-<details>
-<summary><b>LINE</b></summary>
-
-**1. Tạo Tài Khoản LINE Official**
-
-- Truy cập [LINE Developers Console](https://developers.line.biz/)
-- Tạo provider → Tạo kênh Messaging API
-- Sao chép **Channel Secret** và **Channel Access Token**
-
-**2. Cấu hình**
-
-```json
-{
-  "channel_list": {
-    "line": {
-      "enabled": true,
-      "type": "line",
-      "channel_secret": "YOUR_CHANNEL_SECRET",
-      "channel_access_token": "YOUR_CHANNEL_ACCESS_TOKEN",
-      "webhook_path": "/webhook/line",
-      "allow_from": []
-    }
-  }
-}
-```
-
-> Webhook LINE được phục vụ trên máy chủ Gateway chung (`gateway.host`:`gateway.port`, mặc định `127.0.0.1:18790`).
-
-**3. Thiết lập Webhook URL**
-
-LINE yêu cầu HTTPS cho webhook. Sử dụng reverse proxy hoặc tunnel:
-
-```bash
-# Ví dụ với ngrok (port mặc định gateway là 18790)
-ngrok http 18790
-```
-
-Sau đó đặt Webhook URL trong LINE Developers Console thành `https://your-domain/webhook/line` và bật **Use webhook**.
-
-**4. Chạy**
-
-```bash
-picoclaw gateway
-```
-
-> Trong chat nhóm, bot chỉ phản hồi khi được @mention. Phản hồi trích dẫn tin nhắn gốc.
-
-</details>
-
 <a id="wecom"></a>
 <details>
 <summary><b>WeCom (企业微信)</b></summary>
@@ -379,7 +221,6 @@ Xem [Hướng Dẫn Cấu Hình WeCom](../channels/wecom/README.vi.md) để bi�
 }
 ```
 
-> Webhook WeCom được phục vụ trên máy chủ Gateway chung (`gateway.host`:`gateway.port`, mặc định `127.0.0.1:18790`).
 
 **Thiết Lập Nhanh - WeCom App:**
 

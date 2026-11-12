@@ -385,20 +385,6 @@ picoclaw agent -m "こんにちは"
       "token": "123456:ABC...",
       "allow_from": ["123456789"]
     },
-    "discord": {
-      "enabled": true,
-      "type": "discord",
-      "token": "",
-      "allow_from": [""]
-    },
-    "whatsapp": {
-      "enabled": false,
-      "type": "whatsapp",
-      "bridge_url": "ws://localhost:3001",
-      "use_native": false,
-      "session_store_path": "",
-      "allow_from": []
-    },
     "feishu": {
       "enabled": false,
       "type": "feishu",

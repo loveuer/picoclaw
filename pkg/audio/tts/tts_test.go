@@ -301,7 +301,7 @@ func TestSynthesizeAndStore_UsesOggMetadataByDefault(t *testing.T) {
 		store,
 		"hello",
 		"",
-		"discord",
+		"testchat",
 		"chat123",
 	)
 	if err != nil {
@@ -333,7 +333,7 @@ func TestSynthesizeAndStore_UsesMp3MetadataForMimo(t *testing.T) {
 		store,
 		"hello",
 		"",
-		"discord",
+		"testchat",
 		"chat123",
 	)
 	if err != nil {

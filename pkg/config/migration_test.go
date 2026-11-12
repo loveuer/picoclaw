@@ -155,7 +155,7 @@ func TestMigrateV0ToV3(t *testing.T) {
 			"telegram": {
 				"token": "bot-token"
 			},
-			"discord": {
+			"weixin": {
 				"mention_only": true
 			}
 		}
@@ -202,11 +202,11 @@ func TestMigrateV0ToV3(t *testing.T) {
 	settings := telegram["settings"].(map[string]any)
 	require.Equal(t, "bot-token", settings["token"])
 
-	// discord channel should have group_trigger and mention_only in group_trigger
-	discord := channelList["discord"].(map[string]any)
-	require.Equal(t, "discord", discord["type"])
-	discordGroupTrigger := discord["group_trigger"].(map[string]any)
-	require.Equal(t, true, discordGroupTrigger["mention_only"])
+	// weixin channel should have group_trigger and mention_only in group_trigger
+	weixin := channelList["weixin"].(map[string]any)
+	require.Equal(t, "weixin", weixin["type"])
+	weixinGroupTrigger := weixin["group_trigger"].(map[string]any)
+	require.Equal(t, true, weixinGroupTrigger["mention_only"])
 }
 
 // TestMigrateV0ToV3_WithExistingModelList preserves existing model_list when present.
@@ -252,7 +252,7 @@ func TestMigrateV1ToV3(t *testing.T) {
 				"token": "bot-token",
 				"base_url": "https://custom.api.com"
 			},
-			"discord": {
+			"weixin": {
 				"mention_only": true,
 				"proxy": "socks5://localhost:1080"
 			},
@@ -289,14 +289,14 @@ func TestMigrateV1ToV3(t *testing.T) {
 	require.Equal(t, "bot-token", tgSettings["token"])
 	require.Equal(t, "https://custom.api.com", tgSettings["base_url"])
 
-	// discord: mention_only should be moved to group_trigger
-	discord := channelList["discord"].(map[string]any)
-	require.Equal(t, "discord", discord["type"])
-	require.Contains(t, discord, "group_trigger", "mention_only should be migrated to group_trigger")
-	gt := discord["group_trigger"].(map[string]any)
+	// weixin: mention_only should be moved to group_trigger
+	weixin := channelList["weixin"].(map[string]any)
+	require.Equal(t, "weixin", weixin["type"])
+	require.Contains(t, weixin, "group_trigger", "mention_only should be migrated to group_trigger")
+	gt := weixin["group_trigger"].(map[string]any)
 	require.Equal(t, true, gt["mention_only"])
-	discordSettings := discord["settings"].(map[string]any)
-	require.Equal(t, "socks5://localhost:1080", discordSettings["proxy"])
+	weixinSettings := weixin["settings"].(map[string]any)
+	require.Equal(t, "socks5://localhost:1080", weixinSettings["proxy"])
 
 	// onebot: group_trigger_prefix should be moved to group_trigger.prefixes
 	onebot := channelList["onebot"].(map[string]any)

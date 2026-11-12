@@ -326,9 +326,9 @@ func TestMigration_Integration_ChannelsConfigMigrated(t *testing.T) {
 			"defaults": {}
 		},
 		"channels": {
-			"discord": {
+			"weixin": {
 				"enabled": true,
-				"token": "discord-token",
+				"token": "weixin-token",
 				"mention_only": true
 			},
 			"onebot": {
@@ -362,10 +362,10 @@ func TestMigration_Integration_ChannelsConfigMigrated(t *testing.T) {
 		t.Fatalf("LoadConfig failed: %v", err)
 	}
 
-	// Discord: mention_only should be migrated to group_trigger.mention_only
-	discordBC := cfg.Channels.Get("discord")
-	if !discordBC.GroupTrigger.MentionOnly {
-		t.Error("Discord.GroupTrigger.MentionOnly should be true after migration")
+	// Weixin: mention_only should be migrated to group_trigger.mention_only
+	weixinBC := cfg.Channels.Get("weixin")
+	if !weixinBC.GroupTrigger.MentionOnly {
+		t.Error("Weixin.GroupTrigger.MentionOnly should be true after migration")
 	}
 
 	// OneBot: group_trigger_prefix should be migrated to group_trigger.prefixes
@@ -629,8 +629,8 @@ func TestMigration_PreservesExistingSecurityConfig(t *testing.T) {
 channels:
   telegram:
     token: existing-telegram-token-from-env
-  discord:
-    token: existing-discord-token-from-env
+  weixin:
+    token: existing-weixin-token-from-env
 web:
   brave:
     api_keys:
@@ -669,16 +669,16 @@ web:
 			tgCfg1.Token.String(), "existing-telegram-token-from-env")
 	}
 
-	// Discord token should be preserved (even though legacy config didn't have it)
-	var dcCfg1 *DiscordSettings
-	if bc := cfg.Channels.Get("discord"); bc != nil {
+	// Weixin token should be preserved (even though legacy config didn't have it)
+	var dcCfg1 *WeixinSettings
+	if bc := cfg.Channels.Get("weixin"); bc != nil {
 		if decoded, e := bc.GetDecoded(); e == nil && decoded != nil {
-			dcCfg1 = decoded.(*DiscordSettings)
+			dcCfg1 = decoded.(*WeixinSettings)
 		}
 	}
-	if dcCfg1.Token.String() != "existing-discord-token-from-env" {
-		t.Errorf("Discord token was overwritten: got %q, want %q",
-			dcCfg1.Token.String(), "existing-discord-token-from-env")
+	if dcCfg1.Token.String() != "existing-weixin-token-from-env" {
+		t.Errorf("Weixin token was overwritten: got %q, want %q",
+			dcCfg1.Token.String(), "existing-weixin-token-from-env")
 	}
 
 	// Model API key should be preserved
@@ -713,14 +713,14 @@ web:
 		t.Error("Telegram token not preserved in .security.yml file")
 	}
 
-	var dcCfgSec *DiscordSettings
-	if bc := reloadedSec.Channels.Get("discord"); bc != nil {
+	var dcCfgSec *WeixinSettings
+	if bc := reloadedSec.Channels.Get("weixin"); bc != nil {
 		if decoded, err := bc.GetDecoded(); err == nil && decoded != nil {
-			dcCfgSec = decoded.(*DiscordSettings)
+			dcCfgSec = decoded.(*WeixinSettings)
 		}
 	}
-	if dcCfgSec.Token.String() != "existing-discord-token-from-env" {
-		t.Error("Discord token not preserved in .security.yml file")
+	if dcCfgSec.Token.String() != "existing-weixin-token-from-env" {
+		t.Error("Weixin token not preserved in .security.yml file")
 	}
 }
 
@@ -844,20 +844,20 @@ web:
 //	assertEnabled("disabled-explicit", true) // false is zero value, migration infers from API key
 //}
 //
-//// TestMigrateChannelConfigs_DiscordMentionOnly verifies Discord mention_only migration.
-//func TestMigrateChannelConfigs_DiscordMentionOnly(t *testing.T) {
-//	channels := ChannelsConfig{"discord": makeBaseChannelFromConfig(DiscordSettings{MentionOnly: true})}
+//// TestMigrateChannelConfigs_WeixinMentionOnly verifies Weixin mention_only migration.
+//func TestMigrateChannelConfigs_WeixinMentionOnly(t *testing.T) {
+//	channels := ChannelsConfig{"weixin": makeBaseChannelFromConfig(WeixinSettings{MentionOnly: true})}
 //	v1 := &configV1{Config: Config{Channels: channels}}
 //	v1.migrateChannelConfigs()
-//	bc := v1.Channels.Get("discord")
+//	bc := v1.Channels.Get("weixin")
 //	if !bc.GroupTrigger.MentionOnly {
-//		t.Error("Discord GroupTrigger.MentionOnly should be set to true")
+//		t.Error("Weixin GroupTrigger.MentionOnly should be set to true")
 //	}
 //}
 //
-//// TestMigrateChannelConfigs_DiscordAlreadyMigrated is a no-op test.
-//func TestMigrateChannelConfigs_DiscordAlreadyMigrated(t *testing.T) {
-//	channels := ChannelsConfig{"discord": makeBaseChannelFromConfig(map[string]any{
+//// TestMigrateChannelConfigs_WeixinAlreadyMigrated is a no-op test.
+//func TestMigrateChannelConfigs_WeixinAlreadyMigrated(t *testing.T) {
+//	channels := ChannelsConfig{"weixin": makeBaseChannelFromConfig(map[string]any{
 //		"group_trigger": map[string]any{"mention_only": true},
 //	})}
 //	v1 := &configV1{Config: Config{Channels: channels}}
@@ -881,7 +881,7 @@ web:
 //		ModelList: []*ModelConfig{
 //			{ModelName: "gpt-4", Model: "openai/gpt-4", APIKeys: SimpleSecureStrings("sk-test")},
 //		},
-//		Channels: ChannelsConfig{"discord": makeBaseChannelFromConfig(DiscordSettings{MentionOnly: true})},
+//		Channels: ChannelsConfig{"weixin": makeBaseChannelFromConfig(WeixinSettings{MentionOnly: true})},
 //	}}
 //	result, err := v1.Migrate()
 //	if err != nil {
@@ -891,9 +891,9 @@ web:
 //	if !result.ModelList[0].Enabled {
 //		t.Error("model with API key should be enabled after V1→V2 migration")
 //	}
-//	dcResultBC := result.Channels.Get("discord")
+//	dcResultBC := result.Channels.Get("weixin")
 //	if !dcResultBC.GroupTrigger.MentionOnly {
-//		t.Error("Discord mention_only should be migrated after V1→V2 migration")
+//		t.Error("Weixin mention_only should be migrated after V1→V2 migration")
 //	}
 //}
 
@@ -918,7 +918,7 @@ func TestLoadConfig_V1ToV2Migration(t *testing.T) {
 			}
 		],
 		"channels": {
-			"discord": {
+			"weixin": {
 				"mention_only": true
 			}
 		},
@@ -957,10 +957,10 @@ func TestLoadConfig_V1ToV2Migration(t *testing.T) {
 		t.Error("local-model should be enabled after migration")
 	}
 
-	// Discord channel config should be migrated
-	dcMigBC := cfg.Channels.Get("discord")
+	// Weixin channel config should be migrated
+	dcMigBC := cfg.Channels.Get("weixin")
 	if !dcMigBC.GroupTrigger.MentionOnly {
-		t.Error("Discord mention_only should be migrated to group_trigger.mention_only")
+		t.Error("Weixin mention_only should be migrated to group_trigger.mention_only")
 	}
 
 	// Verify backup was created with date suffix

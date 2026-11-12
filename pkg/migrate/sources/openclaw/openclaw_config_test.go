@@ -267,10 +267,6 @@ func TestConvertToPicoClaw(t *testing.T) {
 		t.Errorf("expected telegram token 'test-token', got '%s'", picoCfg.Channels.Telegram.Token)
 	}
 
-	if picoCfg.Channels.WhatsApp.BridgeURL != "http://localhost:3000" {
-		t.Errorf("expected whatsapp bridge URL 'http://localhost:3000', got '%s'", picoCfg.Channels.WhatsApp.BridgeURL)
-	}
-
 	if picoCfg.Channels.Feishu.AppID != "app-id" {
 		t.Errorf("expected feishu app ID 'app-id', got '%s'", picoCfg.Channels.Feishu.AppID)
 	}
@@ -394,17 +390,11 @@ func TestChannelEnabled(t *testing.T) {
 			Telegram: &OpenClawTelegramConfig{
 				Enabled: boolPtr(true),
 			},
-			Discord: &OpenClawDiscordConfig{
-				Enabled: boolPtr(false),
-			},
 		},
 	}
 
 	if !cfg.IsChannelEnabled("telegram") {
 		t.Error("telegram should be enabled")
-	}
-	if cfg.IsChannelEnabled("discord") {
-		t.Error("discord should be disabled")
 	}
 	if cfg.IsChannelEnabled("line") {
 		t.Error("line should return false (not in switch cases)")
@@ -534,10 +524,6 @@ func TestToStandardConfig(t *testing.T) {
 				Enabled:   true,
 				Token:     "test-token",
 				AllowFrom: []string{"user1"},
-			},
-			WhatsApp: WhatsAppConfig{
-				Enabled:   true,
-				BridgeURL: "http://localhost:3000",
 			},
 		},
 		Gateway: GatewayConfig{

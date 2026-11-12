@@ -73,8 +73,8 @@ Session 数据保存在工作区目录下，通常是：
 
 适用场景：
 
-- Discord server 里的 assistant 想跨多个 channel 共享上下文
-- Discord guild 里的 assistant 想跨多个 channel 共享上下文
+- Feishu group 里的 assistant 想跨多个 channel 共享上下文
+- Feishu group 里的 assistant 想跨多个 channel 共享上下文
 
 ### 按线程或论坛 topic 隔离
 
@@ -212,7 +212,7 @@ Telegram forum 消息在默认 `chat` 模式下就会保留 topic 隔离。
   "session": {
     "dimensions": ["chat", "sender"],
     "identity_links": {
-      "john": ["discord:u123", "u123", "legacy-user-42"]
+      "john": ["feishu:u123", "u123", "legacy-user-42"]
     }
   }
 }
@@ -244,7 +244,7 @@ Telegram forum 消息在默认 `chat` 模式下就会保留 topic 隔离。
 }
 ```
 
-### 同一个用户在 Discord 和 Telegram 之间没有共享记忆
+### 同一个用户在 Feishu 和 Telegram 之间没有共享记忆
 
 这是当前实现下的预期行为。
 即使使用了 `sender`，PicoClaw 仍然会按 channel 做基础隔离。

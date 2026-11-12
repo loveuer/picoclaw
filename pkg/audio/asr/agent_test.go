@@ -56,7 +56,7 @@ func TestAgentHandleChunkCreatesSession(t *testing.T) {
 		SessionID:  "sess",
 		SpeakerID:  "speaker",
 		ChatID:     "chat",
-		Channel:    "discord",
+		Channel:    "testchat",
 		Sequence:   1,
 		Timestamp:  1,
 		SampleRate: 48000,
@@ -118,7 +118,7 @@ func TestAgentProcessUtteranceLeaveCommand(t *testing.T) {
 		chatID:    "chat",
 		speakerID: "speaker",
 		sessionID: "sess",
-		channel:   "discord",
+		channel:   "testchat",
 	}
 
 	agent.processUtterance(context.Background(), acc)
@@ -168,7 +168,7 @@ func TestAgentCheckSilencePublishesInboundAndCleansUp(t *testing.T) {
 		chatID:      "chat",
 		speakerID:   "speaker",
 		sessionID:   "sess",
-		channel:     "discord",
+		channel:     "testchat",
 	}
 
 	agent.mu.Lock()
@@ -179,7 +179,7 @@ func TestAgentCheckSilencePublishesInboundAndCleansUp(t *testing.T) {
 
 	select {
 	case msg := <-mb.InboundChan():
-		if msg.Channel != "discord" {
+		if msg.Channel != "testchat" {
 			t.Fatalf("unexpected inbound channel: %q", msg.Channel)
 		}
 		if !strings.Contains(msg.Content, "hello there") {

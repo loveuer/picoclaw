@@ -73,8 +73,8 @@ If your channel exposes a `space` value, you can route by workspace or guild ins
 
 Use this when:
 
-- a Discord server assistant should share context across channels
-- a Discord guild assistant should share context across channels
+- a Feishu group assistant should share context across channels
+- a Feishu group assistant should share context across channels
 
 ### Split by thread or forum topic
 
@@ -212,7 +212,7 @@ Example:
   "session": {
     "dimensions": ["chat", "sender"],
     "identity_links": {
-      "john": ["discord:u123", "u123", "legacy-user-42"]
+      "john": ["feishu:u123", "u123", "legacy-user-42"]
     }
   }
 }
@@ -244,7 +244,7 @@ Switch to:
 }
 ```
 
-### The same user does not share memory across Discord and Telegram
+### The same user does not share memory across Feishu and Telegram
 
 That is expected.
 PicoClaw still separates sessions by channel even if you use `sender`.

@@ -3017,8 +3017,8 @@ func TestBuildMediaScope_FastIDUniqueness(t *testing.T) {
 }
 
 func TestBuildMediaScope_WithMessageID(t *testing.T) {
-	scope := BuildMediaScope("discord", "chat99", "msg123")
-	expected := "discord:chat99:msg123"
+	scope := BuildMediaScope("testchat", "chat99", "msg123")
+	expected := "testchat:chat99:msg123"
 	if scope != expected {
 		t.Fatalf("expected %s, got %s", expected, scope)
 	}

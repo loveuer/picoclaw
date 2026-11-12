@@ -221,18 +221,9 @@ func TestAllSecurityKeysAccessible(t *testing.T) {
       "enabled": true,
       "app_id": "test_app_id"
     },
-    "discord": {
-      "enabled": true
-    },
     "dingtalk": {
       "enabled": true,
       "client_id": "test_client_id"
-    },
-    "line": {
-      "enabled": true,
-      "webhook_host": "localhost",
-      "webhook_port": 8080,
-      "webhook_path": "/webhook"
     },
     "onebot": {
       "enabled": true,
@@ -287,13 +278,8 @@ channels:
     app_secret: "feishu_test_app_secret"
     encrypt_key: "feishu_test_encrypt_key"
     verification_token: "feishu_test_verification_token"
-  discord:
-    token: "discord_test_bot_token_xyz"
   dingtalk:
     client_secret: "dingtalk_test_client_secret"
-  line:
-    channel_secret: "line_test_channel_secret"
-    channel_access_token: "line_test_channel_access_token"
   onebot:
     access_token: "onebot_test_access_token"
   wecom:
@@ -369,22 +355,10 @@ skills:
 		t.Logf("Feishu EncryptKey(): %s", secureStr(feiSec.(*FeishuSettings).EncryptKey))
 		t.Logf("Feishu VerificationToken(): %s", secureStr(feiSec.(*FeishuSettings).VerificationToken))
 
-		// Discord
-		discSec := decodeChannel("discord")
-		assert.Equal(t, "discord_test_bot_token_xyz", secureStr(discSec.(*DiscordSettings).Token))
-		t.Logf("Discord Token(): %s", secureStr(discSec.(*DiscordSettings).Token))
-
 		// DingTalk
 		dtSec := decodeChannel("dingtalk")
 		assert.Equal(t, "dingtalk_test_client_secret", secureStr(dtSec.(*DingTalkSettings).ClientSecret))
 		t.Logf("DingTalk ClientSecret(): %s", secureStr(dtSec.(*DingTalkSettings).ClientSecret))
-
-		// LINE
-		lineSec := decodeChannel("line")
-		assert.Equal(t, "line_test_channel_secret", secureStr(lineSec.(*LINESettings).ChannelSecret))
-		assert.Equal(t, "line_test_channel_access_token", secureStr(lineSec.(*LINESettings).ChannelAccessToken))
-		t.Logf("LINE ChannelSecret(): %s", secureStr(lineSec.(*LINESettings).ChannelSecret))
-		t.Logf("LINE ChannelAccessToken(): %s", secureStr(lineSec.(*LINESettings).ChannelAccessToken))
 
 		// OneBot
 		obSec := decodeChannel("onebot")

@@ -150,7 +150,7 @@ dammi le ultime news
 - Lệnh slash chung được thực thi qua một đường dẫn duy nhất trong `pkg/agent/loop.go` qua `commands.Executor`.
 - Adapter kênh không còn xử lý lệnh chung cục bộ; chúng chuyển tiếp văn bản đầu vào đến đường dẫn bus/agent. Telegram vẫn tự động đăng ký khi khởi động các lệnh được hỗ trợ như `/start`, `/help`, `/show`, `/list`, `/use`, va `/btw`.
 - Lệnh slash không xác định (ví dụ `/foo`) được chuyển sang xử lý LLM bình thường.
-- Lệnh đã đăng ký nhưng không được hỗ trợ trên kênh hiện tại (ví dụ `/show` trên WhatsApp) trả về lỗi rõ ràng cho người dùng và dừng xử lý tiếp.
+- Lệnh đã đăng ký nhưng không được hỗ trợ trên kênh hiện tại  trả về lỗi rõ ràng cho người dùng và dừng xử lý tiếp.
 
 ### 🔒 Sandbox Bảo Mật
 
@@ -209,7 +209,7 @@ Ngay cả khi `restrict_to_workspace: false`, công cụ `exec` chặn các lệ
 
 | Config Key | Type | Default | Description |
 |------------|------|---------|-------------|
-| `tools.exec.allow_remote` | bool | `false` | Allow exec tool from remote channels (Telegram/Discord etc.) |
+| `tools.exec.allow_remote` | bool | `false` | Allow exec tool from remote channels (Telegram/Feishu etc.) |
 | `tools.exec.enable_deny_patterns` | bool | `true` | Enable dangerous command interception |
 | `tools.exec.custom_deny_patterns` | string[] | `[]` | Custom regex patterns to block |
 | `tools.exec.custom_allow_patterns` | string[] | `[]` | Custom regex patterns to allow |

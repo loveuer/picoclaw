@@ -47,8 +47,6 @@ channels:
 
 	telegram:
 	  token: "1234567890:ABCdefGHIjklMNOpqrsTUVwxyz"
-	discord:
-	  token: "your-discord-bot-token"
 
 # Web Tool Keys
 # Brave, Tavily, Perplexity, Kagi: Use 'api_keys' array
@@ -110,7 +108,7 @@ Note: Sensitive fields are omitted because they're loaded from .security.yml
 	      "enabled": true
 	      // token is automatically loaded from .security.yml
 	    },
-	    "discord": {
+	    "weixin": {
 	      "enabled": true
 	      // token is automatically loaded from .security.yml
 	    }
@@ -204,17 +202,12 @@ channels:
 	  app_secret: "value"
 	  encrypt_key: "value"
 	  verification_token: "value"
-	discord:
-	  token: "value"
 	weixin:
 	  token: "value"
 	qq:
 	  app_secret: "value"
 	dingtalk:
 	  client_secret: "value"
-	line:
-	  channel_secret: "value"
-	  channel_access_token: "value"
 	onebot:
 	  access_token: "value"
 	wecom:
@@ -531,7 +524,7 @@ You can override any security value using environment variables:
 ```bash
 # Channels
 export PICOCLAW_CHANNELS_TELEGRAM_TOKEN="token-from-env"
-export PICOCLAW_CHANNELS_DISCORD_TOKEN="discord-token-from-env"
+export PICOCLAW_CHANNELS_WEIXIN_TOKEN="weixin-token-from-env"
 
 # Web Tools
 export PICOCLAW_TOOLS_WEB_BRAVE_API_KEY="brave-key-from-env"

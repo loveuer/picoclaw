@@ -150,7 +150,7 @@ dammi le ultime news
 - 汎用スラッシュコマンドは `pkg/agent/loop.go` 内の `commands.Executor` を通じて統一的に実行されます。
 - チャネルアダプターはローカルで汎用コマンドを消費しなくなりました。受信テキストを bus/agent パスに転送するだけです。Telegram は起動時に `/start`、`/help`、`/show`、`/list`、`/use`、`/btw` などのサポート済みコマンドを自動登録します。
 - 未登録のスラッシュコマンド（例: `/foo`）は通常の LLM 処理にパススルーされます。
-- 登録済みだが現在のチャネルでサポートされていないコマンド（例: WhatsApp での `/show`）は、明示的なユーザー向けエラーを返し、以降の処理を停止します。
+- 登録済みだが現在のチャネルでサポートされていないコマンドは、明示的なユーザー向けエラーを返し、以降の処理を停止します。
 
 ### 🔒 セキュリティサンドボックス
 
@@ -209,7 +209,7 @@ PicoClaw はデフォルトでサンドボックス環境で実行されます�
 
 | 設定キー | 型 | デフォルト値 | 説明 |
 |----------|------|-------------|------|
-| `tools.exec.allow_remote` | bool | `false` | リモートチャネル（Telegram/Discord など）からの exec ツール実行を許可 |
+| `tools.exec.allow_remote` | bool | `false` | リモートチャネル（Telegram/Feishu など）からの exec ツール実行を許可 |
 | `tools.exec.enable_deny_patterns` | bool | `true` | 危険なコマンドのインターセプトを有効化 |
 | `tools.exec.custom_deny_patterns` | string[] | `[]` | カスタムブロック正規表現パターン |
 | `tools.exec.custom_allow_patterns` | string[] | `[]` | カスタム許可正規表現パターン |

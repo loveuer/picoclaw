@@ -63,8 +63,8 @@ func TestBuildLegacyDirectAliases(t *testing.T) {
 }
 
 func TestBuildLegacyPeerAlias(t *testing.T) {
-	got := BuildLegacyPeerAlias("Main", "Discord", "channel", "C001")
-	if got != "agent:main:discord:channel:c001" {
+	got := BuildLegacyPeerAlias("Main", "TestChat", "channel", "C001")
+	if got != "agent:main:testchat:channel:c001" {
 		t.Fatalf("BuildLegacyPeerAlias() = %q", got)
 	}
 }
@@ -84,7 +84,7 @@ func TestResolveAgentID_PrefersSessionScope(t *testing.T) {
 		scope: &SessionScope{
 			Version: ScopeVersionV1,
 			AgentID: "Support",
-			Channel: "discord",
+			Channel: "testchat",
 		},
 	}
 

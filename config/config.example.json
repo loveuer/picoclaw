@@ -122,19 +122,6 @@
         }
       }
     },
-    "discord": {
-      "enabled": false,
-      "type": "discord",
-      "allow_from": [],
-      "group_trigger": {
-        "mention_only": false
-      },
-      "reasoning_channel_id": "",
-      "settings": {
-        "token": "YOUR_DISCORD_BOT_TOKEN",
-        "proxy": ""
-      }
-    },
     "qq": {
       "enabled": false,
       "type": "qq",
@@ -143,17 +130,6 @@
       "settings": {
         "app_id": "YOUR_QQ_APP_ID",
         "app_secret": "YOUR_QQ_APP_SECRET"
-      }
-    },
-    "whatsapp": {
-      "enabled": false,
-      "type": "whatsapp",
-      "allow_from": [],
-      "reasoning_channel_id": "",
-      "settings": {
-        "bridge_url": "ws://localhost:3001",
-        "use_native": false,
-        "session_store_path": ""
       }
     },
     "feishu": {
@@ -182,17 +158,6 @@
       "settings": {
         "client_id": "YOUR_CLIENT_ID",
         "client_secret": "YOUR_CLIENT_SECRET"
-      }
-    },
-    "line": {
-      "enabled": false,
-      "type": "line",
-      "allow_from": [],
-      "reasoning_channel_id": "",
-      "settings": {
-        "channel_secret": "YOUR_LINE_CHANNEL_SECRET",
-        "channel_access_token": "YOUR_LINE_CHANNEL_ACCESS_TOKEN",
-        "webhook_path": "/webhook/line"
       }
     },
     "onebot": {

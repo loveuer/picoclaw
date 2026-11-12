@@ -210,7 +210,8 @@ func (a *Agent) processUtterance(ctx context.Context, acc *speechAccumulator) {
 
 	channelType := acc.channel
 	if channelType == "" {
-		channelType = "discord" // fallback for legacy chunks
+		logger.WarnC("voice-agent", "Ignoring transcription without a source channel")
+		return
 	}
 
 	text := strings.ToLower(strings.TrimSpace(res.Text))

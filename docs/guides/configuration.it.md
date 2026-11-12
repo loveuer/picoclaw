@@ -116,7 +116,7 @@ export PICOCLAW_BUILTIN_SKILLS=/path/to/skills
 - I comandi slash generici vengono eseguiti tramite un unico percorso in `pkg/agent/loop.go` via `commands.Executor`.
 - Gli adattatori dei canali non consumano più localmente i comandi generici; inoltrano il testo in entrata al percorso bus/agent. Telegram registra ancora automaticamente i comandi supportati all'avvio.
 - Un comando slash sconosciuto (ad esempio `/foo`) viene passato all'elaborazione LLM come se fosse un messaggio dell'utente.
-- Un comando registrato ma non supportato sul canale corrente (ad esempio `/show` su WhatsApp) restituisce un errore esplicito all'utente e interrompe l'elaborazione.
+- Un comando registrato ma non supportato sul canale corrente  restituisce un errore esplicito all'utente e interrompe l'elaborazione.
 
 ### Allowlist dei Tool per Agent
 
@@ -238,7 +238,7 @@ Anche con `restrict_to_workspace: false`, lo strumento `exec` blocca questi coma
 
 | Chiave di configurazione | Tipo | Predefinito | Descrizione |
 |--------------------------|------|-------------|-------------|
-| `tools.exec.allow_remote` | bool | `false` | Consente lo strumento exec da canali remoti (Telegram/Discord ecc.) |
+| `tools.exec.allow_remote` | bool | `false` | Consente lo strumento exec da canali remoti (Telegram/Feishu ecc.) |
 | `tools.exec.enable_deny_patterns` | bool | `true` | Abilita l'intercettazione dei comandi pericolosi |
 | `tools.exec.custom_deny_patterns` | string[] | `[]` | Pattern regex personalizzati da bloccare |
 | `tools.exec.custom_allow_patterns` | string[] | `[]` | Pattern regex personalizzati da consentire |

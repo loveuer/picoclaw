@@ -213,7 +213,7 @@ func TestIsAllowedSender(t *testing.T) {
 		},
 		{
 			name:      "canonical format wrong platform",
-			allowList: []string{"discord:123456"},
+			allowList: []string{"testchat:123456"},
 			sender: bus.SenderInfo{
 				Platform:    "telegram",
 				PlatformID:  "123456",

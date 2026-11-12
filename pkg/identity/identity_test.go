@@ -13,8 +13,8 @@ func TestBuildCanonicalID(t *testing.T) {
 		want       string
 	}{
 		{"telegram", "123456", "telegram:123456"},
-		{"Discord", "98765432", "discord:98765432"},
-		{"DISCORD", "U123ABC", "discord:U123ABC"},
+		{"TestChat", "98765432", "testchat:98765432"},
+		{"TESTCHAT", "U123ABC", "testchat:U123ABC"},
 		{"", "123", ""},
 		{"telegram", "", ""},
 		{"  telegram  ", "  123  ", "telegram:123"},
@@ -37,8 +37,8 @@ func TestParseCanonicalID(t *testing.T) {
 		wantOk       bool
 	}{
 		{"telegram:123456", "telegram", "123456", true},
-		{"discord:98765432", "discord", "98765432", true},
-		{"discord:U123ABC", "discord", "U123ABC", true},
+		{"testchat:98765432", "testchat", "98765432", true},
+		{"testchat:U123ABC", "testchat", "U123ABC", true},
 		{"nocolon", "", "", false},
 		{"", "", "", false},
 		{":missing", "", "", false},
@@ -64,10 +64,10 @@ func TestMatchAllowed(t *testing.T) {
 		DisplayName: "Alice Smith",
 	}
 
-	discordSender := bus.SenderInfo{
-		Platform:    "discord",
+	testchatSender := bus.SenderInfo{
+		Platform:    "testchat",
 		PlatformID:  "98765432",
-		CanonicalID: "discord:98765432",
+		CanonicalID: "testchat:98765432",
 		Username:    "bob",
 		DisplayName: "bob#1234",
 	}
@@ -116,7 +116,7 @@ func TestMatchAllowed(t *testing.T) {
 		{
 			name: "plain entry does not match username",
 			sender: bus.SenderInfo{
-				Platform:   "discord",
+				Platform:   "testchat",
 				PlatformID: "999999",
 				Username:   "123456",
 			},
@@ -145,7 +145,7 @@ func TestMatchAllowed(t *testing.T) {
 		{
 			name: "compound matches by ID when username differs",
 			sender: bus.SenderInfo{
-				Platform:   "discord",
+				Platform:   "testchat",
 				PlatformID: "123456",
 				Username:   "not123456",
 			},
@@ -174,7 +174,7 @@ func TestMatchAllowed(t *testing.T) {
 		{
 			name:    "canonical wrong platform",
 			sender:  telegramSender,
-			allowed: "discord:123456",
+			allowed: "testchat:123456",
 			want:    false,
 		},
 		{
@@ -185,14 +185,14 @@ func TestMatchAllowed(t *testing.T) {
 		},
 		// Cross-platform canonical
 		{
-			name:    "discord canonical match",
-			sender:  discordSender,
-			allowed: "discord:98765432",
+			name:    "testchat canonical match",
+			sender:  testchatSender,
+			allowed: "testchat:98765432",
 			want:    true,
 		},
 		{
-			name:    "telegram canonical does not match discord sender",
-			sender:  discordSender,
+			name:    "telegram canonical does not match testchat sender",
+			sender:  testchatSender,
 			allowed: "telegram:98765432",
 			want:    false,
 		},
@@ -206,7 +206,7 @@ func TestMatchAllowed(t *testing.T) {
 		{
 			name:    "platform mismatch on fallback",
 			sender:  noCanonicalSender,
-			allowed: "discord:999",
+			allowed: "testchat:999",
 			want:    false,
 		},
 		// Empty allowed string

@@ -367,13 +367,10 @@ PicoClaw는 `model_list` 설정을 통해 30개 이상의 LLM 프로바이더를
 | 채널 | 설정 | 프로토콜 | 문서 |
 |---------|------|----------|------|
 | **Telegram** | 쉬움(봇 토큰) | Long polling | [가이드](../channels/telegram/README.md) |
-| **Discord** | 쉬움(봇 토큰 + intents) | WebSocket | [가이드](../channels/discord/README.md) |
-| **WhatsApp** | 쉬움(QR 스캔 또는 브리지 URL) | Native / Bridge | [가이드](../guides/chat-apps.md#whatsapp) |
 | **Weixin** | 쉬움(네이티브 QR 스캔) | iLink API | [가이드](../guides/chat-apps.md#weixin) |
 | **QQ** | 쉬움(AppID + AppSecret) | WebSocket | [가이드](../channels/qq/README.md) |
 | **DingTalk** | 중간(클라이언트 자격 증명) | Stream | [가이드](../channels/dingtalk/README.md) |
 | **Feishu / Lark** | 중간(App ID + Secret) | WebSocket/SDK | [가이드](../channels/feishu/README.md) |
-| **LINE** | 중간(인증 정보 + webhook) | Webhook | [가이드](../channels/line/README.md) |
 | **WeCom** | 쉬움(QR 로그인 또는 수동 설정) | WebSocket | [가이드](../channels/wecom/README.md) |
 | **OneBot** | 중간(WebSocket URL) | OneBot v11 | [가이드](../channels/onebot/README.md) |
 

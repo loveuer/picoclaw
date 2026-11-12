@@ -150,7 +150,7 @@ dammi le ultime news
 - Comandos slash genéricos são executados através de um único caminho em `pkg/agent/loop.go` via `commands.Executor`.
 - Os adaptadores de canal não consomem mais comandos genéricos localmente; eles encaminham o texto de entrada para o caminho bus/agent. O Telegram ainda registra automaticamente na inicialização comandos suportados como `/start`, `/help`, `/show`, `/list`, `/use` e `/btw`.
 - Comando slash desconhecido (por exemplo `/foo`) passa para o processamento normal do LLM.
-- Comando registrado mas não suportado no canal atual (por exemplo `/show` no WhatsApp) retorna um erro explícito ao usuário e interrompe o processamento.
+- Comando registrado mas não suportado no canal atual  retorna um erro explícito ao usuário e interrompe o processamento.
 
 ### 🔒 Sandbox de Segurança
 
@@ -209,7 +209,7 @@ Mesmo com `restrict_to_workspace: false`, a ferramenta `exec` bloqueia estes com
 
 | Config Key | Type | Default | Description |
 |------------|------|---------|-------------|
-| `tools.exec.allow_remote` | bool | `false` | Allow exec tool from remote channels (Telegram/Discord etc.) |
+| `tools.exec.allow_remote` | bool | `false` | Allow exec tool from remote channels (Telegram/Feishu etc.) |
 | `tools.exec.enable_deny_patterns` | bool | `true` | Enable dangerous command interception |
 | `tools.exec.custom_deny_patterns` | string[] | `[]` | Custom regex patterns to block |
 | `tools.exec.custom_allow_patterns` | string[] | `[]` | Custom regex patterns to allow |

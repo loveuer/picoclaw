@@ -73,7 +73,7 @@ func (t *MessageTool) Parameters() map[string]any {
 		},
 		"channel": map[string]any{
 			"type":        "string",
-			"description": "Optional: target channel (telegram, whatsapp, etc.)",
+			"description": "Optional: target channel (telegram, feishu, etc.)",
 		},
 		"chat_id": map[string]any{
 			"type":        "string",

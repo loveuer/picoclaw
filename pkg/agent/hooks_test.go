@@ -1136,7 +1136,7 @@ func TestAgentLoop_HookRespond_MediaError(t *testing.T) {
 	}
 
 	al.channelManager = newStartedTestChannelManager(t,
-		al.bus.(*bus.MessageBus), al.mediaStore, "discord", &errorMediaChannel{
+		al.bus.(*bus.MessageBus), al.mediaStore, "testchat", &errorMediaChannel{
 			sendErr: errors.New("channel unavailable"),
 		})
 
@@ -1150,7 +1150,7 @@ func TestAgentLoop_HookRespond_MediaError(t *testing.T) {
 
 	_, err := al.runAgentLoop(context.Background(), agent, processOptions{
 		SessionKey:      "session-media-err",
-		Channel:         "discord",
+		Channel:         "testchat",
 		ChatID:          "chat1",
 		UserMessage:     "send media",
 		DefaultResponse: defaultResponse,

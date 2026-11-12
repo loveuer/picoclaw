@@ -1267,12 +1267,12 @@ func TestAgentLoop_AgentForSession_UsesStoredScopeMetadata(t *testing.T) {
 		t.Fatal("support session store does not support metadata")
 	}
 
-	alias := "agent:support:discord:channel:c001"
+	alias := "agent:support:testchat:channel:c001"
 	key := session.BuildOpaqueSessionKey(alias)
 	scope := &session.SessionScope{
 		Version:    session.ScopeVersionV1,
 		AgentID:    "support",
-		Channel:    "discord",
+		Channel:    "testchat",
 		Account:    "default",
 		Dimensions: []string{"chat"},
 		Values: map[string]string{

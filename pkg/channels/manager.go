@@ -67,8 +67,6 @@ type placeholderEntry struct {
 // channelRateConfig maps channel name to per-second rate limit.
 var channelRateConfig = map[string]float64{
 	"telegram": 20,
-	"discord":  1,
-	"line":     10,
 	"qq":       5,
 }
 
@@ -1033,13 +1031,6 @@ func (m *Manager) getChannelConfigAndEnabled(channelName string) (*config.Channe
 		return bc, false
 	}
 
-	// Use Type to determine the config struct for validation.
-	// The map key (channelName) is the config key, which may differ from the type.
-	channelType := bc.Type
-	if channelType == "" {
-		channelType = channelName
-	}
-
 	// Settings have already been decoded by InitChannelList, so we just need to
 	// type-assert and check the relevant fields.
 	decoded, err := bc.GetDecoded()
@@ -1048,19 +1039,12 @@ func (m *Manager) getChannelConfigAndEnabled(channelName string) (*config.Channe
 	}
 	//nolint:revive
 	switch settings := decoded.(type) {
-	case *config.WhatsAppSettings:
-		if channelType == config.ChannelWhatsApp {
-			return bc, settings.BridgeURL != ""
-		}
-		return bc, channelType == config.ChannelWhatsAppNative && settings.UseNative
 	case *config.WeComSettings:
 		return bc, settings.BotID != "" && settings.Secret.String() != ""
 	case *config.DingTalkSettings:
 		return bc, settings.ClientID != ""
 	case *config.WeixinSettings:
 		return bc, settings.Token.String() != ""
-	case *config.LINESettings:
-		return bc, settings.ChannelAccessToken.String() != ""
 	case *config.OneBotSettings:
 		return bc, settings.WSUrl != ""
 	case *config.QQSettings:
@@ -1069,8 +1053,6 @@ func (m *Manager) getChannelConfigAndEnabled(channelName string) (*config.Channe
 		return bc, settings.Token.String() != ""
 	case *config.FeishuSettings:
 		return bc, settings.AppSecret.String() != ""
-	case *config.DiscordSettings:
-		return bc, settings.Token.String() != ""
 	case *config.MQTTSettings:
 		return bc, settings.Broker != "" && settings.AgentID != ""
 	}

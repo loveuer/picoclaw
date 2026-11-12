@@ -6,19 +6,15 @@
 
 PicoClaw は複数のチャットプラットフォームをサポートしており、Agent をどこにでも接続できます。
 
-> **注意**: すべての Webhook ベースのチャネル（LINE、WeCom など）は、共有 Gateway HTTP サーバー（`gateway.host`:`gateway.port`、デフォルト `127.0.0.1:18790`）上で提供されます。チャネルごとにポートを設定する必要はありません。注意：飛書（Feishu）は WebSocket/SDK モードを使用し、共有 HTTP Webhook サーバーは使用しません。
 
 ### チャネル一覧
 
 | チャネル             | セットアップ難易度 | 特徴                                      | ドキュメント                                                                                                    |
 | -------------------- | ------------------ | ----------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
 | **Telegram**         | ⭐ 簡単            | 推奨、音声テキスト変換対応、ロングポーリング（公開 IP 不要） | [ドキュメント](../channels/telegram/README.ja.md)                                                             |
-| **Discord**          | ⭐ 簡単            | Socket Mode、グループ/DM 対応、Bot エコシステム充実 | [ドキュメント](../channels/discord/README.ja.md)                                                              |
-| **WhatsApp**         | ⭐ 簡単            | ネイティブ (QR スキャン) または Bridge URL | [ドキュメント](#whatsapp)                                                             |
 | **微信 (Weixin)**    | ⭐ 簡単            | ネイティブ QR スキャン（Tencent iLink API）| [ドキュメント](#weixin)                                                               |
 | **QQ**               | ⭐⭐ 中程度        | 公式ボット API、中国コミュニティ向け       | [ドキュメント](../channels/qq/README.ja.md)                                                                   |
 | **DingTalk**         | ⭐⭐ 中程度        | Stream モード（公開 IP 不要）、企業向け    | [ドキュメント](../channels/dingtalk/README.ja.md)                                                             |
-| **LINE**             | ⭐⭐⭐ やや難      | HTTPS Webhook が必要                       | [ドキュメント](../channels/line/README.ja.md)                                                                 |
 | **WeCom (企業微信)** | ⭐⭐⭐ やや難      | グループ Bot (Webhook)、カスタムアプリ (API)、AI Bot 対応 | [ガイド](../channels/wecom/README.ja.md) |
 | **Feishu (飛書)**    | ⭐⭐⭐ やや難      | エンタープライズコラボレーション、機能豊富 | [ドキュメント](../channels/feishu/README.ja.md)                                                               |
 | **OneBot**           | ⭐⭐ 中程度        | NapCat/Go-CQHTTP 互換、コミュニティエコシステム充実 | [ドキュメント](../channels/onebot/README.ja.md)                                                               |
@@ -65,111 +61,6 @@ PicoClaw は統一されたコマンド定義を使用します。起動時に T
 Telegram 側はコマンドメニュー登録機能を保持し、汎用コマンドの実行は Agent Loop 内の commands executor で統一的に処理されます。
 
 ネットワークや API の一時的なエラーで登録に失敗しても、チャネルの起動はブロックされません。システムがバックグラウンドで自動リトライします。
-
-</details>
-
-<a id="discord"></a>
-<details>
-<summary><b>Discord</b></summary>
-
-**1. Bot を作成**
-
-* <https://discord.com/developers/applications> にアクセス
-* アプリケーションを作成 → Bot → Bot を追加
-* Bot Token をコピー
-
-**2. Intents を有効化**
-
-* Bot 設定で **MESSAGE CONTENT INTENT** を有効化
-* （オプション）メンバーデータに基づくホワイトリストが必要な場合は **SERVER MEMBERS INTENT** を有効化
-
-**3. User ID を取得**
-
-* Discord 設定 → 詳細設定 → **開発者モード** を有効化
-* アバターを右クリック → **ユーザー ID をコピー**
-
-**4. 設定**
-
-```json
-{
-  "channel_list": {
-    "discord": {
-      "enabled": true,
-      "type": "discord",
-      "token": "YOUR_BOT_TOKEN",
-      "allow_from": ["YOUR_USER_ID"]
-    }
-  }
-}
-```
-
-**5. Bot を招待**
-
-* OAuth2 → URL Generator
-* Scopes: `bot`
-* Bot Permissions: `Send Messages`, `Read Message History`
-* 生成された招待リンクを開き、Bot をサーバーに追加
-
-**オプション：グループトリガーモード**
-
-デフォルトでは Bot はサーバーチャネル内のすべてのメッセージに応答します。@メンション時のみ応答するには：
-
-```json
-{
-  "channel_list": {
-    "discord": {
-      "group_trigger": { "mention_only": true }
-    }
-  }
-}
-```
-
-キーワードプレフィックスでトリガーすることもできます（例: `!bot`）：
-
-```json
-{
-  "channel_list": {
-    "discord": {
-      "group_trigger": { "prefixes": ["!bot"] }
-    }
-  }
-}
-```
-
-**6. 実行**
-
-```bash
-picoclaw gateway
-```
-
-</details>
-
-<a id="whatsapp"></a>
-<details>
-<summary><b>WhatsApp</b>（ネイティブ whatsmeow）</summary>
-
-PicoClaw は 2 つの WhatsApp 接続方式をサポートしています：
-
-- **ネイティブ（推奨）：** プロセス内で [whatsmeow](https://github.com/tulir/whatsmeow) を使用。独立した Bridge は不要です。`"use_native": true` に設定し、`bridge_url` を空にします。初回実行時に WhatsApp で QR コードをスキャン（リンクデバイス）。セッションはワークスペース配下（例: `workspace/whatsapp/`）に保存されます。ネイティブチャネルは**オプション**ビルドで、`-tags whatsapp_native` でコンパイルします（例: `make build-whatsapp-native` または `go build -tags whatsapp_native ./cmd/...`）。
-- **Bridge：** 外部 WebSocket Bridge に接続。`bridge_url`（例: `ws://localhost:3001`）を設定し、`use_native` を false のままにします。
-
-**設定（ネイティブ）**
-
-```json
-{
-  "channel_list": {
-    "whatsapp": {
-      "enabled": true,
-      "type": "whatsapp",
-      "use_native": true,
-      "session_store_path": "",
-      "allow_from": []
-    }
-  }
-}
-```
-
-`session_store_path` が空の場合、セッションは `<workspace>/whatsapp/` に保存されます。`picoclaw gateway` を実行し、初回実行時にターミナルに表示される QR コードをスキャンしてください（WhatsApp → リンクデバイス）。
 
 </details>
 
@@ -289,56 +180,6 @@ picoclaw gateway
 
 </details>
 
-<a id="line"></a>
-<details>
-<summary><b>LINE</b></summary>
-
-**1. LINE 公式アカウントを作成**
-
-- [LINE Developers Console](https://developers.line.biz/) にアクセス
-- Provider を作成 → Messaging API チャネルを作成
-- **Channel Secret** と **Channel Access Token** をコピー
-
-**2. 設定**
-
-```json
-{
-  "channel_list": {
-    "line": {
-      "enabled": true,
-      "type": "line",
-      "channel_secret": "YOUR_CHANNEL_SECRET",
-      "channel_access_token": "YOUR_CHANNEL_ACCESS_TOKEN",
-      "webhook_path": "/webhook/line",
-      "allow_from": []
-    }
-  }
-}
-```
-
-> LINE Webhook は共有 Gateway サーバー（`gateway.host`:`gateway.port`、デフォルト `127.0.0.1:18790`）上で提供されます。
-
-**3. Webhook URL を設定**
-
-LINE は HTTPS Webhook が必要です。リバースプロキシまたはトンネルを使用してください：
-
-```bash
-# 例：ngrok を使用（Gateway デフォルトポートは 18790）
-ngrok http 18790
-```
-
-LINE Developers Console で Webhook URL を `https://your-domain/webhook/line` に設定し、**Use webhook** を有効にしてください。
-
-**4. 実行**
-
-```bash
-picoclaw gateway
-```
-
-> グループチャットでは、Bot は @メンション時のみ応答します。返信は元のメッセージを引用します。
-
-</details>
-
 <a id="feishu"></a>
 <details>
 <summary><b>Feishu (飛書)</b></summary>
@@ -419,7 +260,6 @@ PicoClaw は 3 種類の WeCom 統合をサポートしています：
 }
 ```
 
-> WeCom Webhook は共有 Gateway サーバー（`gateway.host`:`gateway.port`、デフォルト `127.0.0.1:18790`）上で提供されます。
 
 **クイックセットアップ — カスタムアプリ：**
 

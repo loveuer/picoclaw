@@ -88,11 +88,11 @@ type ResolvedRoute struct {
           }
         },
         {
-          "name": "discord-mentions",
+          "name": "feishu-mentions",
           "agent": "support",
           "when": {
-            "channel": "discord",
-            "space": "guild:t001",
+            "channel": "feishu",
+            "chat": "oc_group001",
             "mentioned": true
           }
         }

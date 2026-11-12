@@ -57,7 +57,7 @@ func TestPublishInbound_NormalizesContext(t *testing.T) {
 
 	msg := InboundMessage{
 		Context: InboundContext{
-			Channel:          "discord",
+			Channel:          "testchat",
 			Account:          "workspace-a",
 			ChatID:           "C456/1712",
 			ChatType:         "group",
@@ -77,8 +77,8 @@ func TestPublishInbound_NormalizesContext(t *testing.T) {
 	}
 
 	got := <-mb.InboundChan()
-	if got.Context.Channel != "discord" {
-		t.Fatalf("expected context channel discord, got %q", got.Context.Channel)
+	if got.Context.Channel != "testchat" {
+		t.Fatalf("expected context channel testchat, got %q", got.Context.Channel)
 	}
 	if got.Context.Account != "workspace-a" {
 		t.Fatalf("expected context account workspace-a, got %q", got.Context.Account)
@@ -394,7 +394,7 @@ func TestPublishOutboundMedia_MirrorsContextToLegacyFields(t *testing.T) {
 
 	msg := OutboundMediaMessage{
 		Context: InboundContext{
-			Channel: "discord",
+			Channel: "testchat",
 			ChatID:  "C001",
 		},
 		AgentID:    "support",
@@ -402,7 +402,7 @@ func TestPublishOutboundMedia_MirrorsContextToLegacyFields(t *testing.T) {
 		Scope: &OutboundScope{
 			Version:    1,
 			AgentID:    "support",
-			Channel:    "discord",
+			Channel:    "testchat",
 			Dimensions: []string{"chat"},
 			Values: map[string]string{
 				"chat": "channel:c001",
@@ -416,8 +416,8 @@ func TestPublishOutboundMedia_MirrorsContextToLegacyFields(t *testing.T) {
 	}
 
 	got := <-mb.OutboundMediaChan()
-	if got.Channel != "discord" {
-		t.Fatalf("expected legacy channel discord, got %q", got.Channel)
+	if got.Channel != "testchat" {
+		t.Fatalf("expected legacy channel testchat, got %q", got.Channel)
 	}
 	if got.ChatID != "C001" {
 		t.Fatalf("expected legacy chat ID C001, got %q", got.ChatID)
@@ -428,7 +428,7 @@ func TestPublishOutboundMedia_MirrorsContextToLegacyFields(t *testing.T) {
 	if got.Scope == nil || got.Scope.Values["chat"] != "channel:c001" {
 		t.Fatalf("unexpected outbound media scope: %+v", got.Scope)
 	}
-	if got.Context.Channel != "discord" || got.Context.ChatID != "C001" {
+	if got.Context.Channel != "testchat" || got.Context.ChatID != "C001" {
 		t.Fatalf("unexpected outbound media context: %+v", got.Context)
 	}
 }
@@ -441,7 +441,7 @@ func TestPublishAudioChunkSubscribe(t *testing.T) {
 		SessionID: "voice-1",
 		SpeakerID: "speaker-1",
 		ChatID:    "chat-1",
-		Channel:   "discord",
+		Channel:   "testchat",
 		Sequence:  7,
 		Format:    "opus",
 		Data:      []byte{0x01, 0x02},
@@ -485,7 +485,7 @@ func TestPublishAudioChunk_BackpressureDropPublishesRuntimeEvent(t *testing.T) {
 			SessionID: "voice-1",
 			SpeakerID: "speaker-1",
 			ChatID:    "chat-1",
-			Channel:   "discord",
+			Channel:   "testchat",
 			Sequence:  uint64(i),
 			Format:    "opus",
 			Data:      []byte{0x01},
@@ -498,7 +498,7 @@ func TestPublishAudioChunk_BackpressureDropPublishesRuntimeEvent(t *testing.T) {
 		SessionID: "voice-1",
 		SpeakerID: "speaker-1",
 		ChatID:    "chat-1",
-		Channel:   "discord",
+		Channel:   "testchat",
 		Sequence:  999,
 		Format:    "opus",
 		Data:      []byte{0x01},
@@ -513,7 +513,7 @@ func TestPublishAudioChunk_BackpressureDropPublishesRuntimeEvent(t *testing.T) {
 		evt.Severity != runtimeevents.SeverityWarn {
 		t.Fatalf("drop event = %+v", evt)
 	}
-	if evt.Scope.Channel != "discord" || evt.Scope.ChatID != "chat-1" {
+	if evt.Scope.Channel != "testchat" || evt.Scope.ChatID != "chat-1" {
 		t.Fatalf("drop event scope = %+v", evt.Scope)
 	}
 	if evt.Attrs["stream"] != "audio_chunk" ||
@@ -851,7 +851,7 @@ func TestMessageBusHealthCheckIncludesQueueDepthAndDrops(t *testing.T) {
 
 	for i := range cap(mb.audioChunks) {
 		if err := mb.PublishAudioChunk(context.Background(), AudioChunk{
-			Channel:  "discord",
+			Channel:  "testchat",
 			ChatID:   "voice-room",
 			Sequence: uint64(i),
 			Data:     []byte("fill"),
@@ -860,7 +860,7 @@ func TestMessageBusHealthCheckIncludesQueueDepthAndDrops(t *testing.T) {
 		}
 	}
 	_ = mb.PublishAudioChunk(context.Background(), AudioChunk{
-		Channel:  "discord",
+		Channel:  "testchat",
 		ChatID:   "voice-room",
 		Sequence: 999,
 		Data:     []byte("overflow"),

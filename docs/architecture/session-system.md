@@ -77,7 +77,7 @@ For compatibility, the allocator also emits legacy aliases such as:
 
 ```text
 agent:main:direct:user123
-agent:main:discord:channel:c001
+agent:main:feishu:channel:c001
 agent:main:pico:direct:pico:session-123
 ```
 

@@ -17,18 +17,14 @@ import (
 
 // Channel type constants — single source of truth for all channel type names.
 const (
-	ChannelTelegram       = "telegram"
-	ChannelDiscord        = "discord"
-	ChannelFeishu         = "feishu"
-	ChannelWeixin         = "weixin"
-	ChannelWeCom          = "wecom"
-	ChannelDingTalk       = "dingtalk"
-	ChannelLINE           = "line"
-	ChannelOneBot         = "onebot"
-	ChannelQQ             = "qq"
-	ChannelWhatsApp       = "whatsapp"
-	ChannelWhatsAppNative = "whatsapp_native"
-	ChannelMQTT           = "mqtt"
+	ChannelTelegram = "telegram"
+	ChannelFeishu   = "feishu"
+	ChannelWeixin   = "weixin"
+	ChannelWeCom    = "wecom"
+	ChannelDingTalk = "dingtalk"
+	ChannelOneBot   = "onebot"
+	ChannelQQ       = "qq"
+	ChannelMQTT     = "mqtt"
 )
 
 // RawNode stores raw configuration data as JSON bytes, supporting both JSON and YAML.
@@ -598,18 +594,14 @@ func filterSecureFields(r RawNode, secureFields map[string]struct{}) RawNode {
 var channelSettingsMu sync.RWMutex
 
 var channelSettingsFactory = map[string]any{
-	ChannelTelegram:       (TelegramSettings{}),
-	ChannelDiscord:        (DiscordSettings{}),
-	ChannelFeishu:         (FeishuSettings{}),
-	ChannelWeixin:         (WeixinSettings{}),
-	ChannelWeCom:          (WeComSettings{}),
-	ChannelDingTalk:       (DingTalkSettings{}),
-	ChannelLINE:           (LINESettings{}),
-	ChannelOneBot:         (OneBotSettings{}),
-	ChannelQQ:             (QQSettings{}),
-	ChannelWhatsApp:       (WhatsAppSettings{}),
-	ChannelWhatsAppNative: (WhatsAppSettings{}),
-	ChannelMQTT:           (MQTTSettings{}),
+	ChannelTelegram: (TelegramSettings{}),
+	ChannelFeishu:   (FeishuSettings{}),
+	ChannelWeixin:   (WeixinSettings{}),
+	ChannelWeCom:    (WeComSettings{}),
+	ChannelDingTalk: (DingTalkSettings{}),
+	ChannelOneBot:   (OneBotSettings{}),
+	ChannelQQ:       (QQSettings{}),
+	ChannelMQTT:     (MQTTSettings{}),
 }
 
 // RegisterChannelSettings registers a settings struct prototype for a custom

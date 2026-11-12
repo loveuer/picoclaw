@@ -50,7 +50,7 @@ func TestNormalizeProcessOptions_PopulatesDispatchFromLegacyFields(t *testing.T)
 
 func TestNormalizeProcessOptions_UsesDispatchAsSourceOfTruth(t *testing.T) {
 	inbound := &bus.InboundContext{
-		Channel:          "discord",
+		Channel:          "testchat",
 		ChatID:           "C123",
 		ChatType:         "channel",
 		SenderID:         "U123",
@@ -59,7 +59,7 @@ func TestNormalizeProcessOptions_UsesDispatchAsSourceOfTruth(t *testing.T) {
 	}
 	route := &routing.ResolvedRoute{
 		AgentID:   "support",
-		Channel:   "discord",
+		Channel:   "testchat",
 		AccountID: "workspace-a",
 		MatchedBy: "dispatch.rule:test",
 		SessionPolicy: routing.SessionPolicy{
@@ -69,7 +69,7 @@ func TestNormalizeProcessOptions_UsesDispatchAsSourceOfTruth(t *testing.T) {
 	scope := &session.SessionScope{
 		Version:    session.ScopeVersionV1,
 		AgentID:    "support",
-		Channel:    "discord",
+		Channel:    "testchat",
 		Account:    "workspace-a",
 		Dimensions: []string{"chat"},
 		Values: map[string]string{
@@ -80,7 +80,7 @@ func TestNormalizeProcessOptions_UsesDispatchAsSourceOfTruth(t *testing.T) {
 	opts := normalizeProcessOptions(processOptions{
 		Dispatch: DispatchRequest{
 			SessionKey:     "sk_v1_example",
-			SessionAliases: []string{"agent:support:discord:channel:c123"},
+			SessionAliases: []string{"agent:support:testchat:channel:c123"},
 			InboundContext: inbound,
 			RouteResult:    route,
 			SessionScope:   scope,
@@ -92,8 +92,8 @@ func TestNormalizeProcessOptions_UsesDispatchAsSourceOfTruth(t *testing.T) {
 	if opts.SessionKey != "sk_v1_example" {
 		t.Fatalf("SessionKey = %q, want sk_v1_example", opts.SessionKey)
 	}
-	if opts.Channel != "discord" || opts.ChatID != "C123" {
-		t.Fatalf("legacy mirrors = (%q,%q), want (discord,C123)", opts.Channel, opts.ChatID)
+	if opts.Channel != "testchat" || opts.ChatID != "C123" {
+		t.Fatalf("legacy mirrors = (%q,%q), want (testchat,C123)", opts.Channel, opts.ChatID)
 	}
 	if opts.SenderID != "U123" || opts.MessageID != "m-1" {
 		t.Fatalf("legacy sender/message = (%q,%q)", opts.SenderID, opts.MessageID)

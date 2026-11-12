@@ -2,7 +2,7 @@ package bus
 
 // SenderInfo provides structured sender identity information.
 type SenderInfo struct {
-	Platform    string `json:"platform,omitempty"`     // "telegram", "discord", ...
+	Platform    string `json:"platform,omitempty"`     // "telegram", ...
 	PlatformID  string `json:"platform_id,omitempty"`  // raw platform ID, e.g. "123456"
 	CanonicalID string `json:"canonical_id,omitempty"` // "platform:id" format
 	Username    string `json:"username,omitempty"`     // username (e.g. @alice)
@@ -109,7 +109,7 @@ type AudioChunk struct {
 	SessionID  string `json:"session_id"`
 	SpeakerID  string `json:"speaker_id"` // User ID or SSRC
 	ChatID     string `json:"chat_id"`    // Where to respond
-	Channel    string `json:"channel"`    // Source channel type (e.g. "discord")
+	Channel    string `json:"channel"`    // Source channel type
 	Sequence   uint64 `json:"sequence"`
 	Timestamp  uint32 `json:"timestamp"`
 	SampleRate int    `json:"sample_rate"`

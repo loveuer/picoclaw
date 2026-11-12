@@ -364,13 +364,10 @@ Parla con il tuo PicoClaw attraverso 17+ piattaforme di messaggistica:
 | Channel | Configurazione | Protocollo | Docs |
 |---------|----------------|------------|------|
 | **Telegram** | Facile (bot token) | Long polling | [Guida](../channels/telegram/README.md) |
-| **Discord** | Facile (bot token + intents) | WebSocket | [Guida](../channels/discord/README.md) |
-| **WhatsApp** | Facile (QR scan o bridge URL) | Nativo / Bridge | [Guida](../guides/chat-apps.md#whatsapp) |
 | **Weixin** | Facile (scan QR nativo) | iLink API | [Guida](../guides/chat-apps.md#weixin) |
 | **QQ** | Facile (AppID + AppSecret) | WebSocket | [Guida](../channels/qq/README.md) |
 | **DingTalk** | Medio (credenziali client) | Stream | [Guida](../channels/dingtalk/README.md) |
 | **Feishu / Lark** | Medio (App ID + Secret) | WebSocket/SDK | [Guida](../channels/feishu/README.md) |
-| **LINE** | Medio (credenziali + webhook) | Webhook | [Guida](../channels/line/README.md) |
 | **WeCom** | Facile (login QR o manuale) | WebSocket | [Guida](../channels/wecom/README.md) |
 | **OneBot** | Medio (WebSocket URL) | OneBot v11 | [Guida](../channels/onebot/README.md) |
 

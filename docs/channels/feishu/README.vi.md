@@ -50,4 +50,4 @@ Feishu (tên quốc tế: Lark) là nền tảng cộng tác doanh nghiệp củ
 
 ## Giới hạn nền tảng
 
-> ⚠️ **Kênh Feishu không hỗ trợ thiết bị 32 bit.** SDK Feishu chỉ cung cấp bản build 64 bit. Các kiến trúc 32 bit (armv6, armv7, mipsle, v.v.) không thể sử dụng kênh Feishu. Để nhắn tin trên thiết bị 32 bit, hãy dùng Telegram, Discord hoặc OneBot.
+> ⚠️ **Kênh Feishu không hỗ trợ thiết bị 32 bit.** SDK Feishu chỉ cung cấp bản build 64 bit. Các kiến trúc 32 bit (armv6, armv7, mipsle, v.v.) không thể sử dụng kênh Feishu. Để nhắn tin trên thiết bị 32 bit, hãy dùng Telegram hoặc OneBot.

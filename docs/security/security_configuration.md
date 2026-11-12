@@ -53,17 +53,12 @@ channels:
     app_secret: "your-feishu-app-secret"
     encrypt_key: "your-feishu-encrypt-key"
     verification_token: "your-feishu-verification-token"
-  discord:
-    token: "your-discord-bot-token"
   weixin:
     token: "your-weixin-token"
   qq:
     app_secret: "your-qq-app-secret"
   dingtalk:
     client_secret: "your-dingtalk-client-secret"
-  line:
-    channel_secret: "your-line-channel-secret"
-    channel_access_token: "your-line-channel-access-token"
   onebot:
     access_token: "your-onebot-access-token"
   wecom:
@@ -215,8 +210,6 @@ channels:
     app_secret: "value"
     encrypt_key: "value"
     verification_token: "value"
-  discord:
-    token: "value"
 ```
 
 **Mapping:**

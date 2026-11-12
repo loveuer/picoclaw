@@ -49,7 +49,7 @@ func TestAllocateRouteSession_GroupPeer(t *testing.T) {
 	allocation := AllocateRouteSession(AllocationInput{
 		AgentID: "main",
 		Context: bus.InboundContext{
-			Channel:  "discord",
+			Channel:  "testchat",
 			Account:  "workspace-a",
 			ChatID:   "C001",
 			ChatType: "channel",
@@ -63,8 +63,8 @@ func TestAllocateRouteSession_GroupPeer(t *testing.T) {
 	if allocation.SessionKey == "" || !IsOpaqueSessionKey(allocation.SessionKey) {
 		t.Fatalf("SessionKey = %q, want opaque session key", allocation.SessionKey)
 	}
-	if !containsAlias(allocation.SessionAliases, "agent:main:discord:channel:c001") {
-		t.Fatalf("SessionAliases = %v, want to contain agent:main:discord:channel:c001", allocation.SessionAliases)
+	if !containsAlias(allocation.SessionAliases, "agent:main:testchat:channel:c001") {
+		t.Fatalf("SessionAliases = %v, want to contain agent:main:testchat:channel:c001", allocation.SessionAliases)
 	}
 	if allocation.MainSessionKey == "" || !IsOpaqueSessionKey(allocation.MainSessionKey) {
 		t.Fatalf("MainSessionKey = %q, want opaque session key", allocation.MainSessionKey)

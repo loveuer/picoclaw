@@ -77,7 +77,7 @@ sk_v1_<sha256>
 
 ```text
 agent:main:direct:user123
-agent:main:discord:channel:c001
+agent:main:feishu:channel:c001
 agent:main:pico:direct:pico:session-123
 ```
 

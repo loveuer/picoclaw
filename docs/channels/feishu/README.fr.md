@@ -50,4 +50,4 @@ Feishu (nom international : Lark) est une plateforme de collaboration d'entrepri
 
 ## Limitations de plateforme
 
-> ⚠️ **Le canal Feishu ne prend pas en charge les appareils 32 bits.** Le SDK Feishu ne fournit que des builds 64 bits. Les architectures 32 bits (armv6, armv7, mipsle, etc.) ne peuvent pas utiliser le canal Feishu. Pour la messagerie sur des appareils 32 bits, utilisez Telegram, Discord ou OneBot.
+> ⚠️ **Le canal Feishu ne prend pas en charge les appareils 32 bits.** Le SDK Feishu ne fournit que des builds 64 bits. Les architectures 32 bits (armv6, armv7, mipsle, etc.) ne peuvent pas utiliser le canal Feishu. Pour la messagerie sur des appareils 32 bits, utilisez Telegram ou OneBot.

@@ -202,7 +202,7 @@ func TestRateLimiter_Concurrency(t *testing.T) {
 	wg.Wait()
 
 	got := passed.Load()
-	// Allow small timing discord: between rpm-2 and rpm+2.
+	// Allow small timing testchat: between rpm-2 and rpm+2.
 	if got < int64(rpm-2) || got > int64(rpm+2) {
 		t.Fatalf("expected ~%d immediate passes, got %d", rpm, got)
 	}

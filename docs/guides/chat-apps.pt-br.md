@@ -4,19 +4,15 @@
 
 ## 💬 Aplicativos de Chat
 
-Converse com seu picoclaw através do Telegram, Discord, WhatsApp, QQ, DingTalk, LINE, WeCom, Feishu, OneBot, MQTT
+Converse com seu picoclaw através do Telegram, QQ, DingTalk, WeCom, Feishu, OneBot, MQTT
 
-> **Nota**: Todos os canais baseados em webhook (LINE, WeCom, etc.) são servidos em um único servidor HTTP Gateway compartilhado (`gateway.host`:`gateway.port`, padrão `127.0.0.1:18790`). Não há portas por canal para configurar. Nota: Feishu usa o modo WebSocket/SDK e não utiliza o servidor HTTP webhook compartilhado.
 
 | Canal                | Dificuldade        | Descrição                                             | Documentação                                                                                                     |
 | -------------------- | ------------------ | ----------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
 | **Telegram**         | ⭐ Fácil           | Recomendado, voz para texto, long polling (sem IP público) | [Documentação](../channels/telegram/README.pt-br.md)                                                       |
-| **Discord**          | ⭐ Fácil           | Socket Mode, suporte a grupos/DM, ecossistema bot rico | [Documentação](../channels/discord/README.pt-br.md)                                                            |
-| **WhatsApp**         | ⭐ Fácil           | Nativo (scan QR) ou Bridge URL                        | [Documentação](#whatsapp)                                                                                        |
 | **Weixin**           | ⭐ Fácil           | Scan QR nativo (API Tencent iLink)                    | [Documentação](#weixin)                                                                                          |
 | **QQ**               | ⭐⭐ Médio         | API bot oficial, comunidade chinesa                   | [Documentação](../channels/qq/README.pt-br.md)                                                                  |
 | **DingTalk**         | ⭐⭐ Médio         | Modo Stream (sem IP público), empresarial             | [Documentação](../channels/dingtalk/README.pt-br.md)                                                            |
-| **LINE**             | ⭐⭐⭐ Avançado    | HTTPS Webhook obrigatório                             | [Documentação](../channels/line/README.pt-br.md)                                                                |
 | **WeCom (企业微信)** | ⭐⭐⭐ Avançado    | Bot de grupo (Webhook), app personalizado (API), AI Bot | [Guia](../channels/wecom/README.pt-br.md) |
 | **Feishu (飞书)**    | ⭐⭐⭐ Avançado    | Colaboração empresarial, rico em recursos             | [Documentação](../channels/feishu/README.pt-br.md)                                                              |
 | **OneBot**           | ⭐⭐ Médio         | Compatível com NapCat/Go-CQHTTP, ecossistema comunitário | [Documentação](../channels/onebot/README.pt-br.md)                                                           |
@@ -69,110 +65,6 @@ Voce tambem pode gerenciar skills instaladas diretamente pelo Telegram:
 - `/use <skill>` e depois enviar a solicitacao real na proxima mensagem
 - `/use clear`
 - `/btw <question>` para fazer uma pergunta lateral imediata sem alterar o historico ativo da sessao; `/btw` e tratado como uma consulta direta sem ferramentas e nao entra no fluxo normal de execucao de ferramentas
-
-</details>
-
-<a id="discord"></a>
-<details>
-<summary><b>Discord</b></summary>
-
-**1. Criar um bot**
-
-* Acesse <https://discord.com/developers/applications>
-* Crie um aplicativo → Bot → Add Bot
-* Copie o token do bot
-
-**2. Habilitar intents**
-
-* Nas configurações do Bot, habilite **MESSAGE CONTENT INTENT**
-* (Opcional) Habilite **SERVER MEMBERS INTENT** se planeja usar listas de permissão baseadas em dados de membros
-
-**3. Obter seu User ID**
-* Configurações do Discord → Avançado → habilite **Developer Mode**
-* Clique com o botão direito no seu avatar → **Copy User ID**
-
-**4. Configurar**
-
-```json
-{
-  "channel_list": {
-    "discord": {
-      "enabled": true,
-      "type": "discord",
-      "token": "YOUR_BOT_TOKEN",
-      "allow_from": ["YOUR_USER_ID"]
-    }
-  }
-}
-```
-
-**5. Convidar o bot**
-
-* OAuth2 → URL Generator
-* Scopes: `bot`
-* Bot Permissions: `Send Messages`, `Read Message History`
-* Abra a URL de convite gerada e adicione o bot ao seu servidor
-
-**Opcional: Modo de ativação em grupo**
-
-Por padrão, o bot responde a todas as mensagens em um canal do servidor. Para restringir respostas apenas a @menções, adicione:
-
-```json
-{
-  "channel_list": {
-    "discord": {
-      "group_trigger": { "mention_only": true }
-    }
-  }
-}
-```
-
-Você também pode ativar por prefixos de palavras-chave (ex.: `!bot`):
-
-```json
-{
-  "channel_list": {
-    "discord": {
-      "group_trigger": { "prefixes": ["!bot"] }
-    }
-  }
-}
-```
-
-**6. Executar**
-
-```bash
-picoclaw gateway
-```
-
-</details>
-
-<a id="whatsapp"></a>
-<details>
-<summary><b>WhatsApp</b> (nativo via whatsmeow)</summary>
-
-O PicoClaw pode se conectar ao WhatsApp de duas formas:
-
-- **Nativo (recomendado):** In-process usando [whatsmeow](https://github.com/tulir/whatsmeow). Sem bridge separado. Defina `"use_native": true` e deixe `bridge_url` vazio. Na primeira execução, escaneie o QR code com o WhatsApp (Dispositivos Vinculados). A sessão é armazenada no seu workspace (ex.: `workspace/whatsapp/`). O canal nativo é **opcional** para manter o binário padrão pequeno; compile com `-tags whatsapp_native` (ex.: `make build-whatsapp-native` ou `go build -tags whatsapp_native ./cmd/...`).
-- **Bridge:** Conecte-se a um bridge WebSocket externo. Defina `bridge_url` (ex.: `ws://localhost:3001`) e mantenha `use_native` como false.
-
-**Configurar (nativo)**
-
-```json
-{
-  "channel_list": {
-    "whatsapp": {
-      "enabled": true,
-      "type": "whatsapp",
-      "use_native": true,
-      "session_store_path": "",
-      "allow_from": []
-    }
-  }
-}
-```
-
-Se `session_store_path` estiver vazio, a sessão é armazenada em `<workspace>/whatsapp/`. Execute `picoclaw gateway`; na primeira execução, escaneie o QR code impresso no terminal com WhatsApp → Dispositivos Vinculados.
 
 </details>
 
@@ -292,56 +184,6 @@ picoclaw gateway
 
 </details>
 
-<a id="line"></a>
-<details>
-<summary><b>LINE</b></summary>
-
-**1. Criar uma Conta Oficial LINE**
-
-- Acesse o [LINE Developers Console](https://developers.line.biz/)
-- Crie um provider → Crie um canal Messaging API
-- Copie o **Channel Secret** e o **Channel Access Token**
-
-**2. Configurar**
-
-```json
-{
-  "channel_list": {
-    "line": {
-      "enabled": true,
-      "type": "line",
-      "channel_secret": "YOUR_CHANNEL_SECRET",
-      "channel_access_token": "YOUR_CHANNEL_ACCESS_TOKEN",
-      "webhook_path": "/webhook/line",
-      "allow_from": []
-    }
-  }
-}
-```
-
-> O webhook do LINE é servido no servidor Gateway compartilhado (`gateway.host`:`gateway.port`, padrão `127.0.0.1:18790`).
-
-**3. Configurar URL do Webhook**
-
-O LINE requer HTTPS para webhooks. Use um proxy reverso ou túnel:
-
-```bash
-# Exemplo com ngrok (porta padrão do gateway é 18790)
-ngrok http 18790
-```
-
-Em seguida, defina a URL do Webhook no LINE Developers Console como `https://your-domain/webhook/line` e habilite **Use webhook**.
-
-**4. Executar**
-
-```bash
-picoclaw gateway
-```
-
-> Em chats de grupo, o bot responde apenas quando @mencionado. As respostas citam a mensagem original.
-
-</details>
-
 <a id="wecom"></a>
 <details>
 <summary><b>WeCom (企业微信)</b></summary>
@@ -379,7 +221,6 @@ Veja o [Guia de Configuração do WeCom](../channels/wecom/README.pt-br.md) para
 }
 ```
 
-> O webhook do WeCom é servido no servidor Gateway compartilhado (`gateway.host`:`gateway.port`, padrão `127.0.0.1:18790`).
 
 **Configuração Rápida - WeCom App:**
 

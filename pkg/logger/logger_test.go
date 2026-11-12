@@ -66,7 +66,7 @@ func TestLoggerWithComponent(t *testing.T) {
 		fields    map[string]any
 	}{
 		{"Simple message", "test", "Hello, world!", nil},
-		{"Message with component", "discord", "Discord message", nil},
+		{"Message with component", "testchat", "TestChat message", nil},
 		{"Message with fields", "telegram", "Telegram message", map[string]any{
 			"user_id": "12345",
 			"count":   42,

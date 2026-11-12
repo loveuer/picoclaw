@@ -13,13 +13,10 @@ var migrateableDirs = []string{
 }
 
 var supportedChannels = map[string]bool{
-	"whatsapp": true,
 	"telegram": true,
 	"feishu":   true,
-	"discord":  true,
 	"qq":       true,
 	"dingtalk": true,
-	"line":     true,
 	"onebot":   true,
 	"wecom":    true,
 }

@@ -16,7 +16,7 @@ PicoClaw uses a schema versioning system for `config.json` to ensure smooth upgr
 - **Changes**:
   - Added `enabled` field to `ModelConfig` — allows disabling individual model entries without removing them
   - During V1→V2 migration, `enabled` is auto-inferred: models with API keys or the reserved `local-model` name are enabled; others default to disabled
-  - Migrated legacy channel fields: Discord `mention_only` → `group_trigger.mention_only`, OneBot `group_trigger_prefix` → `group_trigger.prefixes`
+  - Migrated legacy channel fields: Channel `mention_only` → `group_trigger.mention_only`, OneBot `group_trigger_prefix` → `group_trigger.prefixes`
   - V0 configs now migrate directly to CurrentVersion (V2) instead of going through V1
   - `makeBackup()` now uses date-only suffix (e.g., `config.json.20260330.bak`) and also backs up `.security.yml`
 

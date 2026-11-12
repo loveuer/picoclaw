@@ -4,7 +4,7 @@
 
 ## 💬 聊天应用集成 (Chat Apps)
 
-PicoClaw 支持多种聊天平台，使您的 Agent 能够连接到任何地方，包括 Telegram、Discord、WhatsApp、微信、QQ、钉钉、LINE、企业微信、飞书、OneBot、MQTT 等。
+PicoClaw 支持多种聊天平台，使您的 Agent 能够连接到任何地方，包括 Telegram、微信、QQ、钉钉、企业微信、飞书、OneBot、MQTT 等。
 
 > **注意**: 依赖 HTTP 回调的渠道共用同一个 Gateway HTTP 服务器（`gateway.host`:`gateway.port`，默认 `127.0.0.1:18790`），无需为每个渠道单独配置端口。飞书、钉钉、企业微信这类 Socket/Stream 模式渠道不依赖共享 webhook 服务器来接收入站消息。
 
@@ -13,12 +13,9 @@ PicoClaw 支持多种聊天平台，使您的 Agent 能够连接到任何地方�
 | 渠道                 | 设置难度    | 特性说明                                  | 文档链接                                                                                                        |
 | -------------------- | ----------- | ----------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
 | **Telegram**         | ⭐ 简单     | 推荐，支持语音转文字，长轮询无需公网      | [查看文档](../channels/telegram/README.zh.md)                                                                 |
-| **Discord**          | ⭐ 简单     | Socket Mode，支持群组/私信，Bot 生态成熟  | [查看文档](../channels/discord/README.zh.md)                                                                  |
-| **WhatsApp**         | ⭐ 简单     | 原生 (QR 扫码) 或 Bridge URL              | [查看文档](#whatsapp)                                                                 |
 | **微信 (Weixin)**    | ⭐ 简单     | 原生扫码（腾讯 iLink API）                | [查看文档](#weixin)                                                                   |
 | **QQ**               | ⭐⭐ 中等   | 官方机器人 API，适合国内社群              | [查看文档](../channels/qq/README.zh.md)                                                                       |
 | **钉钉 (DingTalk)**  | ⭐⭐ 中等   | Stream 模式无需公网，企业办公首选         | [查看文档](../channels/dingtalk/README.zh.md)                                                                 |
-| **LINE**             | ⭐⭐⭐ 较难 | 需要 HTTPS Webhook                        | [查看文档](../channels/line/README.zh.md)                                                                     |
 | **企业微信 (WeCom)** | ⭐⭐⭐ 较难 | 官方 AI Bot WebSocket 接入，支持流式回复和媒体消息 | [查看文档](../channels/wecom/README.zh.md) |
 | **飞书 (Feishu)**    | ⭐⭐⭐ 较难 | 企业级协作，功能丰富                      | [查看文档](../channels/feishu/README.zh.md)                                                                   |
 | **OneBot**           | ⭐⭐ 中等   | 兼容 NapCat/Go-CQHTTP，社区生态丰富       | [查看文档](../channels/onebot/README.zh.md)                                                                   |
@@ -73,111 +70,6 @@ Telegram 侧保留的是命令菜单注册能力；通用命令的实际执行�
 - `/use <skill>`，然后在下一条消息里发送真正的请求
 - `/use clear`
 - `/btw <question>`，用于发起一个不改动当前会话历史的即时旁支提问；`/btw` 会按一次无工具的直接问答处理，不会进入常规的工具执行流程
-
-</details>
-
-<a id="discord"></a>
-<details>
-<summary><b>Discord</b></summary>
-
-**1. 创建 Bot**
-
-* 前往 <https://discord.com/developers/applications>
-* 创建应用 → Bot → 添加 Bot
-* 复制 Bot Token
-
-**2. 启用 Intents**
-
-* 在 Bot 设置中启用 **MESSAGE CONTENT INTENT**
-* （可选）启用 **SERVER MEMBERS INTENT**（如需基于成员数据的白名单）
-
-**3. 获取 User ID**
-
-* Discord 设置 → 高级 → 启用 **开发者模式**
-* 右键点击头像 → **复制用户 ID**
-
-**4. 配置**
-
-```json
-{
-  "channel_list": {
-    "discord": {
-      "enabled": true,
-      "type": "discord",
-      "token": "YOUR_BOT_TOKEN",
-      "allow_from": ["YOUR_USER_ID"]
-    }
-  }
-}
-```
-
-**5. 邀请 Bot**
-
-* OAuth2 → URL Generator
-* Scopes: `bot`
-* Bot Permissions: `Send Messages`, `Read Message History`
-* 打开生成的邀请链接，将 Bot 添加到服务器
-
-**可选：群组触发模式**
-
-默认情况下 Bot 会回复服务器频道中的所有消息。如需仅在 @提及时回复：
-
-```json
-{
-  "channel_list": {
-    "discord": {
-      "group_trigger": { "mention_only": true }
-    }
-  }
-}
-```
-
-也可通过关键词前缀触发（如 `!bot`）：
-
-```json
-{
-  "channel_list": {
-    "discord": {
-      "group_trigger": { "prefixes": ["!bot"] }
-    }
-  }
-}
-```
-
-**6. 运行**
-
-```bash
-picoclaw gateway
-```
-
-</details>
-
-<a id="whatsapp"></a>
-<details>
-<summary><b>WhatsApp</b>（原生 whatsmeow）</summary>
-
-PicoClaw 支持两种 WhatsApp 连接方式：
-
-- **原生（推荐）：** 进程内使用 [whatsmeow](https://github.com/tulir/whatsmeow)，无需独立 Bridge。设置 `"use_native": true` 并留空 `bridge_url`。首次运行时用 WhatsApp 扫描 QR 码（关联设备）。会话存储在工作区下（如 `workspace/whatsapp/`）。原生渠道为**可选**构建，使用 `-tags whatsapp_native` 编译（如 `make build-whatsapp-native` 或 `go build -tags whatsapp_native ./cmd/...`）。
-- **Bridge：** 连接外部 WebSocket Bridge。设置 `bridge_url`（如 `ws://localhost:3001`），保持 `use_native` 为 false。
-
-**配置（原生）**
-
-```json
-{
-  "channel_list": {
-    "whatsapp": {
-      "enabled": true,
-      "type": "whatsapp",
-      "use_native": true,
-      "session_store_path": "",
-      "allow_from": []
-    }
-  }
-}
-```
-
-如果 `session_store_path` 为空，会话存储在 `<workspace>/whatsapp/`。运行 `picoclaw gateway`；首次运行时在终端扫描 QR 码（WhatsApp → 关联设备）。
 
 </details>
 
@@ -294,56 +186,6 @@ QQ 开放平台提供了一键创建 OpenClaw 兼容机器人的页面：
 ```bash
 picoclaw gateway
 ```
-
-</details>
-
-<a id="line"></a>
-<details>
-<summary><b>LINE</b></summary>
-
-**1. 创建 LINE Official Account**
-
-- 前往 [LINE Developers Console](https://developers.line.biz/)
-- 创建 Provider → 创建 Messaging API Channel
-- 复制 **Channel Secret** 和 **Channel Access Token**
-
-**2. 配置**
-
-```json
-{
-  "channel_list": {
-    "line": {
-      "enabled": true,
-      "type": "line",
-      "channel_secret": "YOUR_CHANNEL_SECRET",
-      "channel_access_token": "YOUR_CHANNEL_ACCESS_TOKEN",
-      "webhook_path": "/webhook/line",
-      "allow_from": []
-    }
-  }
-}
-```
-
-> LINE Webhook 挂载在共享 Gateway 服务器上（`gateway.host`:`gateway.port`，默认 `127.0.0.1:18790`）。
-
-**3. 设置 Webhook URL**
-
-LINE 要求 HTTPS Webhook。使用反向代理或隧道：
-
-```bash
-# 示例：使用 ngrok（Gateway 默认端口 18790）
-ngrok http 18790
-```
-
-然后在 LINE Developers Console 中将 Webhook URL 设置为 `https://your-domain/webhook/line` 并启用 **Use webhook**。
-
-**4. 运行**
-
-```bash
-picoclaw gateway
-```
-
-> 在群聊中，Bot 仅在被 @提及时回复。回复会引用原始消息。
 
 </details>
 
