@@ -49,7 +49,7 @@ docs/superpowers/
 .vscode/
 .idea/
 
-# Added by goreleaser init:
+# Release archives
 dist/
 
 # Windows Application Icon/Resource

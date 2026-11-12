@@ -3,107 +3,104 @@ name: Release
 on:
   workflow_dispatch:
     inputs:
-      tag:
-        description: "Existing tag to release (e.g. v0.2.0)"
+      channel:
+        description: Release channel (manual publication only)
         required: true
+        type: choice
+        options:
+          - stable
+          - nightly
+        default: stable
+      tag:
+        description: Existing tag for a stable release (leave empty for nightly)
+        required: false
         type: string
-      prerelease:
-        description: "Mark as pre-release"
-        required: false
-        type: boolean
-        default: false
-      draft:
-        description: "Create as draft"
-        required: false
-        type: boolean
-        default: false
-      upload_tos:
-        description: "Upload to Volcengine TOS"
-        required: false
-        type: boolean
-        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ inputs.channel }}
+  cancel-in-progress: false
 
 jobs:
   release:
-    name: GoReleaser Release
+    name: Publish Linux amd64 release
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      packages: write
     steps:
-      - name: Verify tag exists
-        shell: bash
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          if ! gh api "repos/${{ github.repository }}/git/ref/tags/${{ inputs.tag }}" --silent 2>/dev/null; then
-            echo "::error::Tag '${{ inputs.tag }}' does not exist. Create it first using the 'Create Tag' workflow."
-            exit 1
-          fi
-
-      - name: Checkout tag
-        uses: actions/checkout@v7
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-          ref: ${{ inputs.tag }}
-
-      - name: Setup Go from go.mod
-        id: setup-go
-        uses: actions/setup-go@v6
+          persist-credentials: false
+      - name: Select source and version
+        id: source
+        env:
+          RELEASE_CHANNEL: ${{ inputs.channel }}
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          case "$RELEASE_CHANNEL" in
+            stable)
+              if [[ -z "$RELEASE_TAG" || "$RELEASE_TAG" == nightly ]]; then
+                echo '::error::Stable publication requires an existing tag other than nightly.'
+                exit 1
+              fi
+              git check-ref-format "refs/tags/$RELEASE_TAG"
+              target=$(git rev-parse --verify "refs/tags/$RELEASE_TAG^{commit}")
+              git checkout --detach "$target"
+              version="$RELEASE_TAG"
+              ;;
+            nightly)
+              if [[ -n "$RELEASE_TAG" ]]; then
+                echo '::error::Nightly publishes the selected workflow ref; leave tag empty.'
+                exit 1
+              fi
+              target=$(git rev-parse HEAD)
+              version="nightly-$(date -u +%Y%m%d)-$(git rev-parse --short=8 HEAD)"
+              ;;
+            *) echo '::error::Unknown release channel.'; exit 1 ;;
+          esac
+          # Versions enter linker flags and step outputs; accept only plain version characters.
+          if [[ ! "$version" =~ ^[a-zA-Z0-9][a-zA-Z0-9._+-]*$ ]]; then
+            echo '::error::Unsupported version format.'
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "target=$target" >> "$GITHUB_OUTPUT"
+      - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
-
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v4
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Login to Docker Hub
-        uses: docker/login-action@v4
-        with:
-          registry: docker.io
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v7
-        with:
-          distribution: goreleaser
-          version: ~> v2
-          args: release --clean
+      - name: Test source
+        run: |
+          go generate ./...
+          make lint-docs
+          go test -tags stdjson ./...
+      - name: Package binary and SHA256 manifest
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
-          DOCKERHUB_IMAGE_NAME: ${{ vars.DOCKERHUB_REPOSITORY }}
-          GOVERSION: ${{ steps.setup-go.outputs.go-version }}
-          MACOS_SIGN_P12: ${{ secrets.MACOS_SIGN_P12 }}
-          MACOS_SIGN_PASSWORD: ${{ secrets.MACOS_SIGN_PASSWORD }}
-          MACOS_NOTARY_ISSUER_ID: ${{ secrets.MACOS_NOTARY_ISSUER_ID }}
-          MACOS_NOTARY_KEY_ID: ${{ secrets.MACOS_NOTARY_KEY_ID }}
-          MACOS_NOTARY_KEY: ${{ secrets.MACOS_NOTARY_KEY }}
-
-      - name: Apply release flags
-        shell: bash
+          RELEASE_VERSION: ${{ steps.source.outputs.version }}
+        run: bash scripts/package-release.sh "$RELEASE_VERSION"
+      - name: Publish GitHub release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_CHANNEL: ${{ inputs.channel }}
+          RELEASE_TAG: ${{ inputs.tag }}
+          RELEASE_VERSION: ${{ steps.source.outputs.version }}
+          RELEASE_TARGET: ${{ steps.source.outputs.target }}
         run: |
-          gh release edit "${{ inputs.tag }}" \
-            --draft=${{ inputs.draft }} \
-            --prerelease=${{ inputs.prerelease }}
-
-  upload-tos:
-    name: Upload to TOS
-    needs: release
-    if: ${{ inputs.upload_tos }}
-    uses: ./.github/workflows/upload-tos.yml
-    with:
-      tag: ${{ inputs.tag }}
-    secrets: inherit
+          set -euo pipefail
+          assets=(dist/picoclaw_Linux_x86_64.tar.gz dist/checksums.txt)
+          if [[ "$RELEASE_CHANNEL" == stable ]]; then
+            gh release create "$RELEASE_TAG" --verify-tag --title "$RELEASE_TAG" \
+              --generate-notes --latest=true "${assets[@]}"
+          else
+            # Replace nightly only after the new source has passed tests and packaging.
+            if gh release view nightly --json tagName >/dev/null 2>&1; then
+              gh release delete nightly --cleanup-tag --yes
+            fi
+            gh release create nightly --target "$RELEASE_TARGET" \
+              --title "Nightly $RELEASE_VERSION" --notes "Build $RELEASE_VERSION ($RELEASE_TARGET)." \
+              --prerelease --latest=false "${assets[@]}"
+          fi

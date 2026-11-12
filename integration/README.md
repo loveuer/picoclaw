@@ -28,7 +28,7 @@ Some integration-tagged tests are intentionally opt-in and not part of the Docke
 
 ## What CI Runs
 
-The integration jobs in [`.github/workflows/pr.yml`](../.github/workflows/pr.yml) and [`.github/workflows/build.yml`](../.github/workflows/build.yml) both execute:
+The integration job in [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) runs on main pushes, pull requests, and manual dispatches, and executes:
 
 ```bash
 bash ./scripts/run-integration-tests.sh
