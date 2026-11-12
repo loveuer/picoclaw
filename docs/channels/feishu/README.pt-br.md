@@ -30,7 +30,7 @@ Feishu (nome internacional: Lark) é uma plataforma de colaboração empresarial
 | encrypt_key           | string | Não         | Chave de criptografia para callbacks de eventos                            |
 | verification_token    | string | Não         | Token usado para verificação de eventos Webhook                            |
 | allow_from            | array  | Não         | Lista de IDs de usuários permitidos; vazio significa todos os usuários     |
-| random_reaction_emoji | array  | Não         | Lista de emojis de reação aleatórios; vazio usa o "Pin" padrão             |
+| random_reaction_emoji | array  | Não         | Lista de emojis de reação aleatórios; vazio usa o "Typing" padrão             |
 
 ## Configuração inicial
 

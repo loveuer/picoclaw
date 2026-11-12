@@ -30,7 +30,7 @@ Feishu (international name: Lark) is an enterprise collaboration platform by Byt
 | encrypt_key           | string | No       | Encryption key for event callbacks                                 |
 | verification_token    | string | No       | Token used for Webhook event verification                          |
 | allow_from            | array  | No       | Allowlist of user IDs; empty means all users are allowed           |
-| random_reaction_emoji | array  | No       | List of random reaction emojis; empty uses the default "Pin"       |
+| random_reaction_emoji | array  | No       | List of random reaction emojis; empty uses the default "Typing"       |
 
 ## Setup
 

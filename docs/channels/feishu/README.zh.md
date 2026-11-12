@@ -31,7 +31,7 @@
 | encrypt_key           | string | 否   | 事件回调加密密钥                                                                                 |
 | verification_token    | string | 否   | 用于Webhook事件验证的Token                                                                       |
 | allow_from            | array  | 否   | 用户ID白名单，空表示所有用户                                                                     |
-| random_reaction_emoji | array  | 否   | 随机添加的表情列表，空则使用默认 "Pin"                                                           |
+| random_reaction_emoji | array  | 否   | 随机添加的表情列表，空则使用默认 "Typing"（敲键盘）                                                           |
 | is_lark               | bool   | 否   | 是否使用 Lark 国际版域名（`open.larksuite.com`），默认为 `false`（使用飞书域名 `open.feishu.cn`） |
 
 ## 设置流程

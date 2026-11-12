@@ -422,8 +422,8 @@ func (c *FeishuChannel) FinalizeToolFeedbackMessage(ctx context.Context, msg bus
 // ReactToMessage implements channels.ReactionCapable.
 // Adds a reaction (randomly chosen from config) and returns an undo function to remove it.
 func (c *FeishuChannel) ReactToMessage(ctx context.Context, chatID, messageID string) (func(), error) {
-	// Get emoji list from config (Feishu emoji_type keys, e.g. Pin, THUMBSUP).
-	// Ignore empty entries so a list like ["", "Pin"] does not randomly pick "" (API 231001).
+	// Get emoji list from config (Feishu emoji_type keys, e.g. Typing, THUMBSUP).
+	// Ignore empty entries so a list like ["", "Typing"] does not randomly pick "" (API 231001).
 	var candidates []string
 	for _, e := range c.config.RandomReactionEmoji {
 		e = strings.TrimSpace(e)
@@ -431,7 +431,7 @@ func (c *FeishuChannel) ReactToMessage(ctx context.Context, chatID, messageID st
 			candidates = append(candidates, e)
 		}
 	}
-	chosenEmoji := "Pin"
+	chosenEmoji := "Typing" // 敲键盘
 	if len(candidates) > 0 {
 		chosenEmoji = candidates[rand.Intn(len(candidates))]
 	}

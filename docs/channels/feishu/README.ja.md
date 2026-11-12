@@ -30,7 +30,7 @@
 | encrypt_key           | string | いいえ | イベントコールバックの暗号化キー                                  |
 | verification_token    | string | いいえ | Webhook イベント検証に使用するトークン                            |
 | allow_from            | array  | いいえ | 許可するユーザーIDのリスト。空の場合はすべてのユーザーを許可     |
-| random_reaction_emoji | array  | いいえ | ランダムに追加する絵文字のリスト。空の場合はデフォルトの "Pin" を使用 |
+| random_reaction_emoji | array  | いいえ | ランダムに追加する絵文字のリスト。空の場合はデフォルトの "Typing" を使用 |
 
 ## セットアップ手順
 
