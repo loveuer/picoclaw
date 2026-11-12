@@ -29,7 +29,6 @@ import (
 	_ "github.com/sipeed/picoclaw/pkg/channels/weixin"
 	"github.com/sipeed/picoclaw/pkg/config"
 	"github.com/sipeed/picoclaw/pkg/cron"
-	"github.com/sipeed/picoclaw/pkg/devices"
 	runtimeevents "github.com/sipeed/picoclaw/pkg/events"
 	"github.com/sipeed/picoclaw/pkg/health"
 	"github.com/sipeed/picoclaw/pkg/heartbeat"
@@ -38,7 +37,6 @@ import (
 	"github.com/sipeed/picoclaw/pkg/netbind"
 	"github.com/sipeed/picoclaw/pkg/pid"
 	"github.com/sipeed/picoclaw/pkg/providers"
-	"github.com/sipeed/picoclaw/pkg/state"
 	"github.com/sipeed/picoclaw/pkg/tools"
 )
 
@@ -57,7 +55,6 @@ type services struct {
 	HeartbeatService *heartbeat.HeartbeatService
 	MediaStore       media.MediaStore
 	ChannelManager   *channels.Manager
-	DeviceService    *devices.Service
 	HealthServer     *health.Server
 	VoiceAgentCancel context.CancelFunc
 	manualReloadChan chan struct{}
@@ -505,18 +502,6 @@ func setupAndStartServices(
 		healthAddr,
 	)
 
-	stateManager := state.NewManager(cfg.WorkspacePath())
-	runningServices.DeviceService = devices.NewService(devices.Config{
-		Enabled:    cfg.Devices.Enabled,
-		MonitorUSB: cfg.Devices.MonitorUSB,
-	}, stateManager)
-	runningServices.DeviceService.SetBus(msgBus)
-	if err = runningServices.DeviceService.Start(context.Background()); err != nil {
-		logger.ErrorCF("device", "Error starting device service", map[string]any{"error": err.Error()})
-	} else if cfg.Devices.Enabled {
-		fmt.Println("✓ Device event service started")
-	}
-
 	return runningServices, nil
 }
 
@@ -530,9 +515,6 @@ func stopAndCleanupServices(runningServices *services, shutdownTimeout time.Dura
 	}
 	if runningServices.VoiceAgentCancel != nil {
 		runningServices.VoiceAgentCancel()
-	}
-	if runningServices.DeviceService != nil {
-		runningServices.DeviceService.Stop()
 	}
 	if runningServices.HeartbeatService != nil {
 		runningServices.HeartbeatService.Stop()
@@ -703,18 +685,6 @@ func restartServices(
 		fmt.Printf("  ✓ Channels enabled: %s\n", enabledChannels)
 	} else {
 		fmt.Println("  ⚠ Warning: No channels enabled")
-	}
-
-	stateManager := state.NewManager(cfg.WorkspacePath())
-	runningServices.DeviceService = devices.NewService(devices.Config{
-		Enabled:    cfg.Devices.Enabled,
-		MonitorUSB: cfg.Devices.MonitorUSB,
-	}, stateManager)
-	runningServices.DeviceService.SetBus(msgBus)
-	if err := runningServices.DeviceService.Start(context.Background()); err != nil {
-		logger.WarnCF("device", "Failed to restart device service", map[string]any{"error": err.Error()})
-	} else if cfg.Devices.Enabled {
-		fmt.Println("  ✓ Device event service restarted")
 	}
 
 	transcriber := asr.DetectTranscriber(cfg)

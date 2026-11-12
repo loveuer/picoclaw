@@ -373,9 +373,6 @@
     "find_skills": {
       "enabled": true
     },
-    "i2c": {
-      "enabled": false
-    },
     "install_skill": {
       "enabled": true
     },
@@ -398,9 +395,6 @@
     "spawn": {
       "enabled": true
     },
-    "spi": {
-      "enabled": false
-    },
     "subagent": {
       "enabled": true
     },
@@ -414,10 +408,6 @@
   "heartbeat": {
     "enabled": true,
     "interval": 30
-  },
-  "devices": {
-    "enabled": false,
-    "monitor_usb": true
   },
   "voice": {
     "model_name": "",

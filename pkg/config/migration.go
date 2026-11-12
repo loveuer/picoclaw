@@ -39,7 +39,6 @@ type legacyDiagnosticConfig struct {
 	Hooks       HooksConfig            `json:"hooks,omitempty"`
 	Tools       ToolsConfig            `json:"tools,omitempty"`
 	Heartbeat   HeartbeatConfig        `json:"heartbeat,omitempty"`
-	Devices     DevicesConfig          `json:"devices,omitempty"`
 	Voice       VoiceConfig            `json:"voice,omitempty"`
 	Bindings    json.RawMessage        `json:"bindings,omitempty"`
 	Providers   json.RawMessage        `json:"providers,omitempty"`

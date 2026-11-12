@@ -1,37 +1,6 @@
-# 当前硬件支持现状与串口 Tool 方案
+# 串口 Tool 设计
 
-## 现状结论
-
-当前项目已有的硬件相关能力主要分为两条线：
-
-1. 设备事件监控
-   - `pkg/devices` 已实现设备事件服务。
-   - 当前只有 Linux USB 热插拔事件源 `pkg/devices/sources/usb_linux.go`。
-   - 能力定位是“发现和通知”，不是“总线读写控制”。
-
-2. 硬件控制 Tool
-   - `pkg/tools/hardware/i2c*.go`：I2C Tool，支持 `detect`、`scan`、`read`、`write`。
-   - `pkg/tools/hardware/spi*.go`：SPI Tool，支持 `list`、`transfer`、`read`。
-   - 这两类 Tool 当前都只在 Linux 主机上启用，直接依赖 `/dev/i2c-*` 与 `/dev/spidev*`。
-
-因此，项目在“硬件支持能力”上已经具备：
-
-- Linux USB 设备插拔感知
-- Linux I2C 总线控制
-- Linux SPI 总线控制
-
-但还缺少：
-
-- 串口/UART 控制
-- macOS / Windows 下可直接使用的硬件控制 Tool
-- 面向统一硬件抽象的跨总线能力模型
-
-## 本次新增
-
-本次新增内建 `serial` Tool，并接入现有 Tool 体系：
-
-- 配置项：`tools.serial.enabled`
-- Tool 注册：`pkg/agent/agent_init.go`
+当前 fork 保留 `serial` 串口工具，默认关闭，通过 `tools.serial.enabled` 启用。I²C、SPI、USB 热插拔监控和内置 hardware Skill 已移除。
 
 ## Serial Tool 设计
 

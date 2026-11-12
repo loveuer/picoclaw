@@ -2086,7 +2086,6 @@ func TestLoadConfig_TelegramPlaceholderTextAcceptsSingleString(t *testing.T) {
 		"gateway": {},
 		"tools": {},
 		"heartbeat": {},
-		"devices": {},
 		"voice": {}
 	}`
 	if err := os.WriteFile(cfgPath, []byte(data), 0o600); err != nil {

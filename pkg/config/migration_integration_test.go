@@ -50,9 +50,6 @@ func TestMigration_Integration_LegacyConfigWithoutWorkspace(t *testing.T) {
 		"heartbeat": {
 			"enabled": true,
 			"interval": 30
-		},
-		"devices": {
-			"enabled": false
 		}
 	}`
 
@@ -148,9 +145,6 @@ func TestMigration_Integration_LegacyConfigWithWorkspace(t *testing.T) {
 		},
 		"heartbeat": {
 			"enabled": false
-		},
-		"devices": {
-			"enabled": true
 		}
 	}`
 
@@ -180,9 +174,6 @@ func TestMigration_Integration_LegacyConfigWithWorkspace(t *testing.T) {
 	// Verify other settings
 	if cfg.Gateway.Port != 8080 {
 		t.Errorf("Gateway.Port = %d, want %d", cfg.Gateway.Port, 8080)
-	}
-	if !cfg.Devices.Enabled {
-		t.Error("Devices.Enabled should be true")
 	}
 }
 
@@ -231,9 +222,6 @@ func TestMigration_Integration_PreservesAllAgentsFields(t *testing.T) {
 		"heartbeat": {
 			"enabled": true,
 			"interval": 30
-		},
-		"devices": {
-			"enabled": false
 		}
 	}`
 
@@ -347,9 +335,6 @@ func TestMigration_Integration_ChannelsConfigMigrated(t *testing.T) {
 		"heartbeat": {
 			"enabled": true,
 			"interval": 30
-		},
-		"devices": {
-			"enabled": false
 		}
 	}`
 
@@ -411,9 +396,6 @@ func TestMigration_Integration_RoundTrip_SerializeAndLoad(t *testing.T) {
 		"heartbeat": {
 			"enabled": true,
 			"interval": 30
-		},
-		"devices": {
-			"enabled": false
 		}
 	}`
 
@@ -485,9 +467,6 @@ func TestMigration_Integration_EmptyAgentsDefaults(t *testing.T) {
 		"heartbeat": {
 			"enabled": true,
 			"interval": 30
-		},
-		"devices": {
-			"enabled": false
 		}
 	}`
 
@@ -544,9 +523,6 @@ func TestMigration_Integration_ModelNameField(t *testing.T) {
 		"heartbeat": {
 			"enabled": true,
 			"interval": 30
-		},
-		"devices": {
-			"enabled": false
 		}
 	}`
 
@@ -615,9 +591,6 @@ func TestMigration_PreservesExistingSecurityConfig(t *testing.T) {
 		"heartbeat": {
 			"enabled": true,
 			"interval": 30
-		},
-		"devices": {
-			"enabled": false
 		}
 	}`
 
