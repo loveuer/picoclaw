@@ -19,9 +19,10 @@ func TestLoadConfig_IgnoresRemovedHardwareSettings(t *testing.T) {
 				"version": version,
 				"devices": map[string]bool{"enabled": true, "monitor_usb": true},
 				"tools": map[string]any{
-					"i2c":    map[string]bool{"enabled": true},
-					"spi":    map[string]bool{"enabled": true},
-					"serial": map[string]bool{"enabled": true},
+					"i2c":       map[string]bool{"enabled": true},
+					"spi":       map[string]bool{"enabled": true},
+					"serial":    map[string]bool{"enabled": true},
+					"read_file": map[string]bool{"enabled": false},
 				},
 				"gateway": map[string]int{"port": 18799},
 			})
@@ -30,7 +31,7 @@ func TestLoadConfig_IgnoresRemovedHardwareSettings(t *testing.T) {
 
 			cfg, err := LoadConfig(path)
 			require.NoError(t, err)
-			require.True(t, cfg.Tools.Serial.Enabled)
+			require.False(t, cfg.Tools.ReadFile.Enabled)
 			require.Equal(t, 18799, cfg.Gateway.Port)
 			require.NoError(t, SaveConfig(path, cfg))
 			data, err = os.ReadFile(path)
@@ -42,7 +43,8 @@ func TestLoadConfig_IgnoresRemovedHardwareSettings(t *testing.T) {
 			require.True(t, ok)
 			require.NotContains(t, savedTools, "i2c")
 			require.NotContains(t, savedTools, "spi")
-			require.Contains(t, savedTools, "serial")
+			require.NotContains(t, savedTools, "serial")
+			require.Contains(t, savedTools, "read_file")
 		})
 	}
 }

@@ -149,10 +149,6 @@ func registerSharedTools(
 			}
 		}
 
-		if cfg.Tools.IsToolEnabled("serial") {
-			agent.Tools.Register(tools.NewSerialTool())
-		}
-
 		// Message tool
 		if cfg.Tools.IsToolEnabled("message") {
 			messageTool := tools.NewMessageTool()

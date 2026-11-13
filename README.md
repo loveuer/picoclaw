@@ -14,7 +14,7 @@
 
 已移除 WebUI、launcher、桌面托盘及相关前端构建；网页搜索和网页抓取工具仍然保留。
 
-已移除 I²C、SPI、USB 设备监控及内置 hardware Skill；`serial` 串口工具保留，默认关闭。
+已移除内置 I²C、SPI、串口工具、USB 设备监控及 hardware Skill。硬件需求通过按需安装的 Skill 和外部工具接入。
 
 ## 消息渠道
 
@@ -215,7 +215,7 @@ Gateway 会连接已启用的渠道。可用 `./build/picoclaw status` 查看状
 channel "maixcam" has unknown type "maixcam"
 ```
 
-旧配置中的 `devices`、`tools.i2c` 和 `tools.spi` 字段会被忽略，保存配置时不再输出。已有工作区的 `skills/hardware` 不会自动删除，如曾安装过，请手动移除该目录。
+旧配置中的 `devices`、`tools.i2c`、`tools.spi` 和 `tools.serial` 字段会被忽略，保存配置时不再输出。已有工作区的 `skills/hardware` 不会自动删除，如曾安装过，请手动移除该目录。
 
 不再使用上游的 WebUI、launcher 或相关构建命令。部署时请使用本 fork 构建的二进制，避免混用上游发行产物。
 

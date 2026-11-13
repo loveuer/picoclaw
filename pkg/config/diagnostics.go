@@ -359,7 +359,7 @@ func collectUnknownJSONFields(raw any, targetType reflect.Type, path string) []s
 				// Accept obsolete hardware settings so existing configs still load.
 				// They have no runtime fields and disappear on the next save.
 				switch fieldPath {
-				case "devices", "tools.i2c", "tools.spi":
+				case "devices", "tools.i2c", "tools.spi", "tools.serial":
 					continue
 				}
 				issues = append(issues, fieldPath)
