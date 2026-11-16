@@ -1,6 +1,6 @@
 # 路由使用指南
 
-> 返回 [README](../project/README.zh.md)
+> 返回 [README](../../README.md)
 
 PicoClaw 里用户能直接感知到的“路由”主要有两部分：
 

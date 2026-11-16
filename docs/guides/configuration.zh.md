@@ -1,6 +1,6 @@
 # ⚙️ 配置指南
 
-> 返回 [README](../project/README.zh.md)
+> 返回 [README](../../README.md)
 
 ## ⚙️ 配置详解
 

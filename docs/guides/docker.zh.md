@@ -1,6 +1,6 @@
 # 🐳 Docker 与快速开始
 
-> 返回 [README](../project/README.zh.md)
+> 返回 [README](../../README.md)
 
 ## 🐳 Docker Compose
 

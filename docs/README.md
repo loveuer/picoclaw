@@ -1,6 +1,8 @@
 # PicoClaw Documentation
 
-PicoClaw documentation is organized by document type first and language second.
+The [root README](../README.md) is the maintained entry point for this fork. Older upstream project README translations have been removed.
+
+Supporting documentation is organized by document type first and language second.
 
 This file describes the recommended documentation layout, how translated files should be named, and what `make lint-docs` currently checks locally.
 
@@ -29,8 +31,8 @@ For channel-specific setup, start with [Chat Apps Configuration](guides/chat-app
 
 ## Recommended Directories
 
-- `README.md`: English project entry document at the repository root.
-- `docs/project/`: translated project entry documents such as `README.zh.md` and `CONTRIBUTING.zh.md`.
+- `README.md`: maintained Chinese project entry document at the repository root.
+- `docs/project/`: supporting project documents such as `CONTRIBUTING.zh.md`. Project overview links should point to the root `README.md`.
 - `docs/guides/`: setup and usage guides.
 - `docs/reference/`: reference material and detailed configuration docs.
 - `docs/operations/`: debugging and troubleshooting docs.
@@ -55,8 +57,8 @@ For channel-specific setup, start with [Chat Apps Configuration](guides/chat-app
 
 ## Common Patterns To Avoid
 
-- Root-level translated entry docs such as `README.zh.md` or `CONTRIBUTING.fr.md`
-  - Use `docs/project/README.zh.md` or `docs/project/CONTRIBUTING.fr.md` instead.
+- Duplicate project READMEs and root-level contribution translations
+  - Link to the root `README.md` for the project overview; keep contribution translations under `docs/project/`, such as `CONTRIBUTING.fr.md`.
 - Language directories under `docs/` such as `docs/zh/`, `docs/ZH/`, `docs/ja/`, or `docs/fr/`
   - Use `docs/<type>/<name>.<locale>.md` instead.
 - Nested locale buckets such as `docs/guides/zh/configuration.md` or `docs/channels/telegram/zh/README.md`
@@ -69,10 +71,9 @@ For channel-specific setup, start with [Chat Apps Configuration](guides/chat-app
 ## Translation Placement
 
 - For docs under `docs/guides`, `docs/reference`, `docs/operations`, `docs/security`, `docs/architecture`, `docs/channels`, and `docs/migration`, keep translations beside the English source file.
-- For project entry translations, keep translated files in `docs/project/` and keep the English source in the repository root.
+- For contribution guide translations, keep translated files in `docs/project/` and the English source in the repository root.
 - In most cases, each translated file should have an English source document:
   - `docs/guides/configuration.zh.md` usually sits beside `docs/guides/configuration.md`
-  - `docs/project/README.zh.md` usually corresponds to `README.md`
 - Exception: `docs/design/` may contain locale-specific working notes without an English source document. The naming rules still apply there.
 
 ## Code-Adjacent Docs

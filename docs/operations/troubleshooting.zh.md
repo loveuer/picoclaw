@@ -1,6 +1,6 @@
 # 🐛 疑难解答
 
-> 返回 [README](../project/README.zh.md)
+> 返回 [README](../../README.md)
 
 ## "model ... not found in model_list" 或 OpenRouter "free is not a valid model ID"
 

@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/sipeed/picoclaw/pkg/auth"
 	"github.com/sipeed/picoclaw/pkg/config"
 )
 
@@ -65,10 +66,10 @@ func TestStatusCmd_RecognizesProviderFieldWithoutModelPrefix(t *testing.T) {
 				Enabled:   true,
 			},
 			{
-				ModelName: "qwen-plus",
-				Provider:  "qwen",
-				Model:     "qwen-plus",
-				APIBase:   "https://dashscope.aliyuncs.com/compatible-mode/v1",
+				ModelName: "claude-sonnet-4.6",
+				Provider:  "anthropic",
+				Model:     "claude-sonnet-4.6",
+				APIBase:   "https://api.anthropic.com/v1",
 				APIKeys:   config.SimpleSecureStrings("test-key"),
 				Enabled:   true,
 			},
@@ -78,12 +79,36 @@ func TestStatusCmd_RecognizesProviderFieldWithoutModelPrefix(t *testing.T) {
 		t.Fatalf("config.SaveConfig() error = %v", err)
 	}
 
+	if err := auth.SaveStore(&auth.AuthStore{Credentials: map[string]*auth.AuthCredential{
+		"openai":    {AuthMethod: "oauth"},
+		"anthropic": {AuthMethod: "token"},
+		"gemini":    {AuthMethod: "oauth"},
+	}}); err != nil {
+		t.Fatalf("auth.SaveStore() error = %v", err)
+	}
+
 	output := captureStdout(t, statusCmd)
 
 	if !strings.Contains(output, "OpenAI API: \u2713") {
 		t.Fatalf("status output missing OpenAI provider: %s", output)
 	}
-	if !strings.Contains(output, "Qwen API: \u2713") {
-		t.Fatalf("status output missing Qwen provider: %s", output)
+	if !strings.Contains(output, "Anthropic API: \u2713") {
+		t.Fatalf("status output missing Anthropic provider: %s", output)
+	}
+	for _, removed := range []string{
+		"OpenRouter API", "Gemini API", "Zhipu API", "Qwen API", "Groq API",
+		"Moonshot API", "DeepSeek API", "VolcEngine API", "Nvidia API", "vLLM / local", "Ollama",
+	} {
+		if strings.Contains(output, removed) {
+			t.Errorf("status output includes removed provider %q: %s", removed, output)
+		}
+	}
+	for _, expected := range []string{"openai (oauth): authenticated", "anthropic (token): authenticated"} {
+		if !strings.Contains(output, expected) {
+			t.Errorf("status output missing authentication state %q: %s", expected, output)
+		}
+	}
+	if strings.Contains(output, "gemini") {
+		t.Errorf("status output includes removed authentication provider: %s", output)
 	}
 }

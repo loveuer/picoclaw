@@ -1,4 +1,4 @@
-> 返回 [README](../project/README.zh.md)
+> 返回 [README](../../README.md)
 
 # 在 PicoClaw 中使用 Antigravity 提供商
 

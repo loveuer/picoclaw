@@ -1,6 +1,6 @@
 # 🔧 工具配置
 
-> 返回 [README](../project/README.zh.md)
+> 返回 [README](../../README.md)
 
 PicoClaw 的工具配置位于 `config.json` 的 `tools` 字段中。
 

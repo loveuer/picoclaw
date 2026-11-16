@@ -1,6 +1,6 @@
 # 💬 聊天应用配置
 
-> 返回 [README](../project/README.zh.md)
+> 返回 [README](../../README.md)
 
 ## 💬 聊天应用集成 (Chat Apps)
 
