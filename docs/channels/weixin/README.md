@@ -25,7 +25,9 @@ picoclaw gateway
 
 ## ⚙️ Configuration
 
-You can also manually configure the filter rules in `config.json` under the `channels.weixin` section.
+You can also manually configure the filter rules in `config.json` under the `channel_list.weixin` section.
+
+> Configuration: common fields such as `enabled`, `type`, and `allow_from` belong on the channel entry; channel-specific fields belong under `settings`. Credentials saved under `channel_list.<name>.settings` in `.security.yml` override the main JSON configuration.
 
 ```json
 {
@@ -33,12 +35,14 @@ You can also manually configure the filter rules in `config.json` under the `cha
     "weixin": {
       "enabled": true,
       "type": "weixin",
-      "token": "YOUR_WEIXIN_TOKEN",
       "allow_from": [
         "user_id_1",
         "user_id_2"
       ],
-      "proxy": ""
+      "settings": {
+        "token": "YOUR_WEIXIN_TOKEN",
+        "proxy": ""
+      }
     }
   }
 }

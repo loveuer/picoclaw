@@ -6,15 +6,19 @@ DingTalk is Alibaba's enterprise communication platform, widely used in Chinese 
 
 ## Configuration
 
+> Configuration: common fields such as `enabled`, `type`, and `allow_from` belong on the channel entry; channel-specific fields belong under `settings`. Credentials saved under `channel_list.<name>.settings` in `.security.yml` override the main JSON configuration.
+
 ```json
 {
   "channel_list": {
     "dingtalk": {
       "enabled": true,
       "type": "dingtalk",
-      "client_id": "YOUR_CLIENT_ID",
-      "client_secret": "YOUR_CLIENT_SECRET",
-      "allow_from": []
+      "allow_from": [],
+      "settings": {
+        "client_id": "YOUR_CLIENT_ID",
+        "client_secret": "YOUR_CLIENT_SECRET"
+      }
     }
   }
 }

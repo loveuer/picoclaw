@@ -10,6 +10,7 @@
 - **模型接入**：仅保留 OpenAI（Responses / Chat Completions）和 Anthropic Messages，支持兼容端点、多模型配置与切换。
 - **会话管理**：保存对话上下文，支持摘要压缩，以及通过 `/new` 清空上下文后重新提问。
 - **工具与扩展**：文件操作、命令执行、网页搜索与抓取、MCP、Skills 和定时任务。
+- **办公文件**：内置 `docx`、`xlsx`、`pptx` Skills，通过独立 Docker 环境处理 Word、Excel 和 PowerPoint。
 - **语音能力**：保留语音识别与合成，实际可用能力取决于模型、服务及渠道配置。
 
 已移除 WebUI、launcher、桌面托盘及相关前端构建；网页搜索和网页抓取工具仍然保留。
@@ -180,7 +181,9 @@ picoclaw update --url https://github.com/loveuer/picoclaw/releases/tag/v1.0.0 --
 ./build/picoclaw gateway
 ```
 
-Gateway 会连接已启用的渠道。可用 `./build/picoclaw status` 查看状态，或用 `./build/picoclaw --help` 查看其他命令。
+Gateway 会连接已启用的渠道。可用 `./build/picoclaw status` 查看版本、配置路径、默认模型和 OpenAI / Anthropic 的密钥及登录状态；该命令不检查模型连通性或服务运行状态。其他命令见 `./build/picoclaw --help`。
+
+当前配置使用 `channel_list`：`enabled`、`type`、`allow_from` 等公共字段放在渠道条目中，Token、App ID、代理地址等渠道专有字段放在 `settings` 中。请以 [配置示例](config/config.example.json) 的结构为准。
 
 ## 在 IM 中开始新对话
 
@@ -209,7 +212,7 @@ Gateway 会连接已启用的渠道。可用 `./build/picoclaw status` 查看状
 - `slack`、`slack_webhook`、`teams_webhook`、`matrix`、`deltachat`、`irc`、`vk`
 - `line`、`whatsapp`、`whatsapp_native`、`discord`
 
-升级时，需要从 `config.json` **和** `.security.yml` 的 `channels` 中删除这些渠道条目。仅设置 `enabled: false` 仍可能因未知渠道类型而导致启动失败，例如：
+升级时，需要从 `config.json` **和** `.security.yml` 的 `channel_list`（旧版名为 `channels`）中删除这些渠道条目。仅设置 `enabled: false` 仍可能因未知渠道类型而导致启动失败，例如：
 
 ```text
 channel "maixcam" has unknown type "maixcam"
@@ -221,13 +224,14 @@ channel "maixcam" has unknown type "maixcam"
 
 ## 更多说明
 
+- [Docker 本地构建与运行](docs/guides/docker.zh.md)
 - [配置指南](docs/guides/configuration.zh.md)
 - [会话管理](docs/guides/session-guide.zh.md)
 - [工具配置](docs/reference/tools_configuration.zh.md)
 - [MCP 命令](docs/reference/mcp-cli.md)
 - [定时任务](docs/reference/cron.md)
 
-部分专题文档沿用上游内容；如与本页的功能范围不一致，以当前源码和配置示例为准。
+Evolution 自学习和 Seahorse 上下文引擎仍保留，默认分别为关闭和使用 legacy 引擎；不属于本轮已移除的功能。专题文档的入口见 [文档目录](docs/README.md)。
 
 开发检查：
 

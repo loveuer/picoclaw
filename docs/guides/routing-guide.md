@@ -1,6 +1,6 @@
 # Routing Guide
 
-> Back to [README](../README.md)
+> Back to [README](../../README.md)
 
 In PicoClaw, routing has two user-facing parts:
 
@@ -75,8 +75,9 @@ This guide explains how to configure both for real deployments.
     },
     {
       "model_name": "flash-light",
-      "provider": "gemini",
-      "model": "gemini-2.0-flash-exp",
+      "provider": "openai",
+      "model": "your-light-model-id",
+      "api_base": "https://your-compatible-endpoint.example/v1",
       "api_keys": ["sk-light"]
     }
   ],

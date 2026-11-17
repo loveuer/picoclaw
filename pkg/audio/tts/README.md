@@ -105,7 +105,7 @@ voice name and works best with `response_format: "mp3"`.
   "model_list": [
     {
       "model_name": "mai-voice-2",
-      "provider": "openrouter",
+      "provider": "openai",
       "model": "microsoft/mai-voice-2",
       "api_base": "https://openrouter.ai/api/v1",
       "extra_body": {

@@ -1,6 +1,6 @@
 # 💬 Chat Apps Configuration
 
-> Back to [README](../README.md)
+> Back to [README](../../README.md)
 
 ## 💬 Chat Apps
 
@@ -31,15 +31,21 @@ Talk to your picoclaw through Telegram, QQ, DingTalk, WeCom, Feishu, OneBot, MQT
 
 **2. Configure**
 
+> Configuration: common fields such as `enabled`, `type`, and `allow_from` belong on the channel entry; channel-specific fields belong under `settings`. Credentials saved under `channel_list.<name>.settings` in `.security.yml` override the main JSON configuration.
+
 ```json
 {
   "channel_list": {
     "telegram": {
       "enabled": true,
       "type": "telegram",
-      "token": "YOUR_BOT_TOKEN",
-      "allow_from": ["YOUR_USER_ID"],
-      "use_markdown_v2": false
+      "allow_from": [
+        "YOUR_USER_ID"
+      ],
+      "settings": {
+        "token": "YOUR_BOT_TOKEN",
+        "use_markdown_v2": false
+      }
     }
   }
 }
@@ -98,8 +104,12 @@ Scan the printed QR code with your WeChat mobile app. On success, the token is s
     "weixin": {
       "enabled": true,
       "type": "weixin",
-      "token": "YOUR_TOKEN",
-      "allow_from": ["YOUR_USER_ID"]
+      "allow_from": [
+        "YOUR_USER_ID"
+      ],
+      "settings": {
+        "token": "YOUR_TOKEN"
+      }
     }
   }
 }
@@ -130,9 +140,11 @@ QQ Open Platform provides a one-click setup page for OpenClaw-compatible bots:
     "qq": {
       "enabled": true,
       "type": "qq",
-      "app_id": "YOUR_APP_ID",
-      "app_secret": "YOUR_APP_SECRET",
-      "allow_from": []
+      "allow_from": [],
+      "settings": {
+        "app_id": "YOUR_APP_ID",
+        "app_secret": "YOUR_APP_SECRET"
+      }
     }
   }
 }
@@ -173,9 +185,11 @@ If you prefer to create the bot manually:
     "dingtalk": {
       "enabled": true,
       "type": "dingtalk",
-      "client_id": "YOUR_CLIENT_ID",
-      "client_secret": "YOUR_CLIENT_SECRET",
-      "allow_from": []
+      "allow_from": [],
+      "settings": {
+        "client_id": "YOUR_CLIENT_ID",
+        "client_secret": "YOUR_CLIENT_SECRET"
+      }
     }
   }
 }
@@ -217,12 +231,14 @@ This command shows a QR code, waits for approval in WeCom, and writes `bot_id` +
     "wecom": {
       "enabled": true,
       "type": "wecom",
-      "bot_id": "YOUR_BOT_ID",
-      "secret": "YOUR_SECRET",
-      "websocket_url": "wss://openws.work.weixin.qq.com",
-      "send_thinking_message": true,
       "allow_from": [],
-      "reasoning_channel_id": ""
+      "reasoning_channel_id": "",
+      "settings": {
+        "bot_id": "YOUR_BOT_ID",
+        "secret": "YOUR_SECRET",
+        "websocket_url": "wss://openws.work.weixin.qq.com",
+        "send_thinking_message": true
+      }
     }
   }
 }
@@ -259,9 +275,11 @@ PicoClaw connects to Feishu via WebSocket/SDK mode — no public webhook URL or 
     "feishu": {
       "enabled": true,
       "type": "feishu",
-      "app_id": "cli_xxx",
-      "app_secret": "YOUR_APP_SECRET",
-      "allow_from": []
+      "allow_from": [],
+      "settings": {
+        "app_id": "cli_xxx",
+        "app_secret": "YOUR_APP_SECRET"
+      }
     }
   }
 }
@@ -299,9 +317,11 @@ Install and run a OneBot v11 compatible QQ bot framework. Enable its WebSocket s
     "onebot": {
       "enabled": true,
       "type": "onebot",
-      "ws_url": "ws://127.0.0.1:8080",
-      "access_token": "",
-      "allow_from": []
+      "allow_from": [],
+      "settings": {
+        "ws_url": "ws://127.0.0.1:8080",
+        "access_token": ""
+      }
     }
   }
 }

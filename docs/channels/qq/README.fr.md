@@ -12,9 +12,11 @@ PicoClaw prend en charge QQ via l'API Bot officielle de la plateforme ouverte QQ
     "qq": {
       "enabled": true,
       "type": "qq",
-      "app_id": "YOUR_APP_ID",
-      "app_secret": "YOUR_APP_SECRET",
-      "allow_from": []
+      "allow_from": [],
+      "settings": {
+        "app_id": "YOUR_APP_ID",
+        "app_secret": "YOUR_APP_SECRET"
+      }
     }
   }
 }

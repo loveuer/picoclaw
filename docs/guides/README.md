@@ -10,7 +10,7 @@ Task-oriented guides for setup, configuration, and common PicoClaw workflows.
 - [Chat Apps Configuration](chat-apps.md): supported chat platforms and channel-specific setup paths.
 - [Providers & Model Configuration](providers.md): `model_list`, providers, and model routing.
 - [Spawn & Async Tasks](spawn-tasks.md): background work, long-running tasks, and sub-agent orchestration.
-- [PicoClaw Hardware Compatibility List](hardware-compatibility.md): tested boards and platform notes.
-- [Using Antigravity Provider in PicoClaw](ANTIGRAVITY_USAGE.md): Google Cloud Code Assist setup and usage.
+- [Platforms and hardware boundaries](hardware-compatibility.md): build targets and optional hardware integrations.
+- [Office Skills](office-skills.zh.md): Docker runtime for Word, Excel and PowerPoint files.
 
 Translations usually live beside the English source when available.

@@ -1,5 +1,7 @@
 # ⚙️ Hướng Dẫn Cấu Hình
 
+> Fork configuration: `PICOCLAW_HOME` also changes the default config path; `PICOCLAW_CONFIG` overrides that path. For current model protocols and channel settings, use the [README](../../README.md) and [configuration example](../../config/config.example.json).
+
 > Quay lại [README](../../README.md)
 
 ## ⚙️ Cấu Hình
@@ -23,7 +25,7 @@ Bạn có thể ghi đè các đường dẫn mặc định bằng biến môi t
 PICOCLAW_CONFIG=/etc/picoclaw/production.json picoclaw gateway
 
 # Chạy picoclaw với tất cả dữ liệu lưu tại /opt/picoclaw
-# Cấu hình sẽ được tải từ mặc định ~/.picoclaw/config.json
+# Config: /opt/picoclaw/config.json (PICOCLAW_HOME=/opt/picoclaw)
 # Workspace sẽ được tạo tại /opt/picoclaw/workspace
 PICOCLAW_HOME=/opt/picoclaw picoclaw agent
 
@@ -353,119 +355,9 @@ Trả lời HEARTBEAT_OK        Người dùng nhận kết quả trực tiếp
 * `PICOCLAW_HEARTBEAT_ENABLED=false` để tắt
 * `PICOCLAW_HEARTBEAT_INTERVAL=60` để thay đổi khoảng thời gian
 
-### Providers
+### Model providers
 
-> [!NOTE]
-> Groq cung cấp chuyển đổi giọng nói thành văn bản miễn phí qua Whisper. Nếu được cấu hình, tin nhắn âm thanh từ bất kỳ kênh nào sẽ được tự động chuyển đổi ở cấp độ agent.
-
-| Provider     | Mục đích                                | Lấy API Key                                                  |
-| ------------ | --------------------------------------- | ------------------------------------------------------------ |
-| `gemini`     | LLM (Gemini trực tiếp)                  | [aistudio.google.com](https://aistudio.google.com)           |
-| `zhipu`      | LLM (Zhipu trực tiếp)                   | [bigmodel.cn](https://bigmodel.cn)                           |
-| `volcengine` | LLM (Volcengine trực tiếp)              | [volcengine.com](https://www.volcengine.com/activity/codingplan?utm_campaign=PicoClaw&utm_content=PicoClaw&utm_medium=devrel&utm_source=OWO&utm_term=PicoClaw) |
-| `openrouter` | LLM (khuyến nghị, truy cập tất cả mô hình) | [openrouter.ai](https://openrouter.ai)                   |
-| `anthropic`  | LLM (Claude trực tiếp)                  | [console.anthropic.com](https://console.anthropic.com)       |
-| `openai`     | LLM (GPT trực tiếp)                     | [platform.openai.com](https://platform.openai.com)           |
-| `deepseek`   | LLM (DeepSeek trực tiếp)                | [platform.deepseek.com](https://platform.deepseek.com)       |
-| `qwen`       | LLM (Qwen trực tiếp)                    | [dashscope.console.aliyun.com](https://dashscope.console.aliyun.com) |
-| `groq`       | LLM + **Chuyển đổi giọng nói** (Whisper)| [console.groq.com](https://console.groq.com)                 |
-| `cerebras`   | LLM (Cerebras trực tiếp)                | [cerebras.ai](https://cerebras.ai)                           |
-| `vivgrid`    | LLM (Vivgrid trực tiếp)                 | [vivgrid.com](https://vivgrid.com)                           |
-
-### Cấu Hình Mô Hình (model_list)
-
-> **Tính năng mới:** PicoClaw hiện sử dụng cách tiếp cận **lấy mô hình làm trung tâm**. Chỉ cần chỉ định định dạng `vendor/model` (ví dụ: `zhipu/glm-4.7`) để thêm provider mới — **không cần thay đổi code!**
-
-#### Tất Cả Vendor Được Hỗ Trợ
-
-| Vendor                  | Tiền tố `model` | API Base mặc định                                   | Giao thức | API Key                                                          |
-| ----------------------- | --------------- | --------------------------------------------------- | --------- | ---------------------------------------------------------------- |
-| **OpenAI**              | `openai/`       | `https://api.openai.com/v1`                         | OpenAI    | [Lấy](https://platform.openai.com)                               |
-| **Anthropic**           | `anthropic/`    | `https://api.anthropic.com/v1`                      | Anthropic | [Lấy](https://console.anthropic.com)                             |
-| **智谱 AI (GLM)**       | `zhipu/`        | `https://open.bigmodel.cn/api/paas/v4`              | OpenAI    | [Lấy](https://open.bigmodel.cn/usercenter/proj-mgmt/apikeys)     |
-| **DeepSeek**            | `deepseek/`     | `https://api.deepseek.com/v1`                       | OpenAI    | [Lấy](https://platform.deepseek.com)                             |
-| **Google Gemini**       | `gemini/`       | `https://generativelanguage.googleapis.com/v1beta`  | Gemini    | [Lấy](https://aistudio.google.com/api-keys)                      |
-| **Groq**                | `groq/`         | `https://api.groq.com/openai/v1`                    | OpenAI    | [Lấy](https://console.groq.com)                                  |
-| **通义千问 (Qwen)**     | `qwen/`         | `https://dashscope.aliyuncs.com/compatible-mode/v1` | OpenAI    | [Lấy](https://dashscope.console.aliyun.com)                      |
-| **Ollama**              | `ollama/`       | `http://localhost:11434/v1`                         | OpenAI    | Cục bộ (không cần key)                                           |
-| **OpenRouter**          | `openrouter/`   | `https://openrouter.ai/api/v1`                      | OpenAI    | [Lấy](https://openrouter.ai/keys)                                |
-| **VolcEngine (Doubao)** | `volcengine/`   | `https://ark.cn-beijing.volces.com/api/v3`          | OpenAI    | [Lấy](https://www.volcengine.com/activity/codingplan?utm_campaign=PicoClaw&utm_content=PicoClaw&utm_medium=devrel&utm_source=OWO&utm_term=PicoClaw) |
-| **Antigravity**         | `antigravity/`  | Google Cloud                                        | Custom    | Chỉ OAuth                                                        |
-
-#### Cân Bằng Tải
-
-Cấu hình nhiều endpoint cho cùng tên mô hình — PicoClaw sẽ tự động round-robin:
-
-```json
-{
-  "model_list": [
-    { "model_name": "gpt-5.4", "model": "openai/gpt-5.4", "api_base": "https://api1.example.com/v1", "api_keys": ["sk-key1"] },
-    { "model_name": "gpt-5.4", "model": "openai/gpt-5.4", "api_base": "https://api2.example.com/v1", "api_keys": ["sk-key2"] }
-  ]
-}
-```
-
-#### Di Chuyển Từ Cấu Hình `providers` Cũ
-
-Cấu hình `providers` cũ đã **bị deprecated** và đã được loại bỏ trong V2. Các cấu hình V0/V1 hiện có sẽ được tự động migrate. Xem [docs/migration/model-list-migration.md](../migration/model-list-migration.md).
-
-#### Cấu Hình Streaming
-
-Provider streaming dùng cơ chế double opt-in và bị tắt theo mặc định. Agent chỉ thử streaming khi channel hiện tại có `settings.streaming.enabled: true`, entry model đang dùng có `streaming.enabled: true`, và cả provider lẫn channel đều hỗ trợ streaming. Nếu thiếu bất kỳ điều kiện nào, PicoClaw dùng đường dẫn yêu cầu không streaming thông thường.
-
-Hãy để trống `streaming` khi bạn không muốn dùng streaming. Bỏ qua block `streaming` nghĩa là đã tắt; bạn không cần viết `"streaming": {"enabled": false}`.
-
-Ví dụ bật streaming:
-
-```json
-{
-  "model_list": [
-    {
-      "model_name": "gpt-5.4",
-      "provider": "openai",
-      "model": "gpt-5.4",
-      "api_keys": ["sk-your-openai-key"],
-      "streaming": {
-        "enabled": true
-      }
-    }
-  ],
-  "channel_list": {
-    "telegram": {
-      "enabled": true,
-      "type": "telegram",
-      "settings": {
-        "token": "YOUR_TELEGRAM_TOKEN",
-        "streaming": {
-          "enabled": true
-        }
-      }
-    }
-  }
-}
-```
-
-| Trường | Kiểu | Mặc định | Mô tả |
-| ------ | ---- | -------- | ----- |
-| `channel_list.<name>.settings.streaming.enabled` | bool | `false` | Cho phép channel này hiển thị output streaming từ provider |
-| `channel_list.<name>.settings.streaming.throttle_seconds` | int | Telegram: `3` | Khoảng cách tối thiểu giữa các cập nhật trung gian; nội dung cuối luôn được flush |
-| `channel_list.<name>.settings.streaming.min_growth_chars` | int | Telegram: `200` | Số ký tự tăng tối thiểu trước khi gửi cập nhật trung gian; nội dung cuối luôn được flush |
-| `model_list[].streaming.enabled` | bool | `false` | Cho phép entry model này thử yêu cầu provider streaming |
-
-Các biến môi trường Telegram cũ vẫn tương thích: `PICOCLAW_CHANNELS_TELEGRAM_STREAMING_ENABLED`, `PICOCLAW_CHANNELS_TELEGRAM_STREAMING_THROTTLE_SECONDS`, và `PICOCLAW_CHANNELS_TELEGRAM_STREAMING_MIN_GROWTH_CHARS`.
-
-Hành vi lỗi được giữ thận trọng: nếu streaming lỗi trước khi gửi bất kỳ chunk hiển thị nào, PicoClaw thử lại một lần qua đường dẫn `Chat()` thông thường. Nếu đã có chunk hiển thị cho người dùng, PicoClaw không gửi thêm một câu trả lời non-streaming thứ hai để tránh lặp output.
-
-### Kiến Trúc Provider
-
-PicoClaw định tuyến provider theo họ giao thức:
-
-- **Tương thích OpenAI**: OpenRouter, Groq, Zhipu, endpoint kiểu vLLM và hầu hết các provider khác.
-- **Gemini native**: Google Gemini qua các endpoint native `models/*:generateContent` và `models/*:streamGenerateContent`.
-- **Anthropic**: Hành vi API Claude gốc.
-- **Codex/OAuth**: Tuyến xác thực OAuth/token OpenAI.
-
-Điều này giữ runtime nhẹ trong khi khiến backend OpenAI-compatible mới chủ yếu chỉ là thao tác cấu hình (`api_base` + `api_keys`).
+This fork supports only OpenAI (Responses / Chat Completions) and Anthropic Messages. For compatible endpoints, API keys, streaming and login, see the maintained [provider guide](providers.md) or [中文说明](providers.zh.md).
 
 ### Tác Vụ Đã Lên Lịch / Nhắc Nhở
 

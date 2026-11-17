@@ -1,6 +1,6 @@
 # MCP Server CLI
 
-> Back to [README](../README.md)
+> Back to [README](../../README.md)
 
 PicoClaw includes an `mcp` CLI command group for managing MCP server entries in `config.json`.
 

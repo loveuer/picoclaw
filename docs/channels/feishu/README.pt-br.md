@@ -12,11 +12,13 @@ Feishu (nome internacional: Lark) é uma plataforma de colaboração empresarial
     "feishu": {
       "enabled": true,
       "type": "feishu",
-      "app_id": "cli_xxx",
-      "app_secret": "xxx",
-      "encrypt_key": "",
-      "verification_token": "",
-      "allow_from": []
+      "allow_from": [],
+      "settings": {
+        "app_id": "cli_xxx",
+        "app_secret": "xxx",
+        "encrypt_key": "",
+        "verification_token": ""
+      }
     }
   }
 }

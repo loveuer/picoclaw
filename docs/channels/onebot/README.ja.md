@@ -12,9 +12,11 @@ OneBot は QQ ボット向けのオープンプロトコル標準で、複数の
     "onebot": {
       "enabled": true,
       "type": "onebot",
-      "ws_url": "ws://localhost:8080",
-      "access_token": "",
-      "allow_from": []
+      "allow_from": [],
+      "settings": {
+        "ws_url": "ws://localhost:8080",
+        "access_token": ""
+      }
     }
   }
 }

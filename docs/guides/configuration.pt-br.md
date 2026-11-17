@@ -1,5 +1,7 @@
 # ⚙️ Guia de Configuração
 
+> Fork configuration: `PICOCLAW_HOME` also changes the default config path; `PICOCLAW_CONFIG` overrides that path. For current model protocols and channel settings, use the [README](../../README.md) and [configuration example](../../config/config.example.json).
+
 > Voltar ao [README](../../README.md)
 
 ## ⚙️ Configuração
@@ -23,7 +25,7 @@ Você pode substituir os caminhos padrão usando variáveis de ambiente. Isso é
 PICOCLAW_CONFIG=/etc/picoclaw/production.json picoclaw gateway
 
 # Executar picoclaw com todos os dados armazenados em /opt/picoclaw
-# A configuração será carregada do padrão ~/.picoclaw/config.json
+# Config: /opt/picoclaw/config.json (PICOCLAW_HOME=/opt/picoclaw)
 # O workspace será criado em /opt/picoclaw/workspace
 PICOCLAW_HOME=/opt/picoclaw picoclaw agent
 
@@ -353,119 +355,9 @@ Responde HEARTBEAT_OK      Usuário recebe resultado diretamente
 * `PICOCLAW_HEARTBEAT_ENABLED=false` para desativar
 * `PICOCLAW_HEARTBEAT_INTERVAL=60` para alterar o intervalo
 
-### Providers
+### Model providers
 
-> [!NOTE]
-> O Groq fornece transcrição de voz gratuita via Whisper. Se configurado, mensagens de áudio de qualquer canal serão automaticamente transcritas no nível do agente.
-
-| Provider     | Finalidade                              | Obter API Key                                                |
-| ------------ | --------------------------------------- | ------------------------------------------------------------ |
-| `gemini`     | LLM (Gemini direto)                     | [aistudio.google.com](https://aistudio.google.com)           |
-| `zhipu`      | LLM (Zhipu direto)                      | [bigmodel.cn](https://bigmodel.cn)                           |
-| `volcengine` | LLM (Volcengine direto)                 | [volcengine.com](https://www.volcengine.com/activity/codingplan?utm_campaign=PicoClaw&utm_content=PicoClaw&utm_medium=devrel&utm_source=OWO&utm_term=PicoClaw) |
-| `openrouter` | LLM (recomendado, acesso a todos modelos) | [openrouter.ai](https://openrouter.ai)                     |
-| `anthropic`  | LLM (Claude direto)                     | [console.anthropic.com](https://console.anthropic.com)       |
-| `openai`     | LLM (GPT direto)                        | [platform.openai.com](https://platform.openai.com)           |
-| `deepseek`   | LLM (DeepSeek direto)                   | [platform.deepseek.com](https://platform.deepseek.com)       |
-| `qwen`       | LLM (Qwen direto)                       | [dashscope.console.aliyun.com](https://dashscope.console.aliyun.com) |
-| `groq`       | LLM + **Transcrição de voz** (Whisper)  | [console.groq.com](https://console.groq.com)                 |
-| `cerebras`   | LLM (Cerebras direto)                   | [cerebras.ai](https://cerebras.ai)                           |
-| `vivgrid`    | LLM (Vivgrid direto)                    | [vivgrid.com](https://vivgrid.com)                           |
-
-### Configuração de Modelos (model_list)
-
-> **Novidade:** PicoClaw agora usa uma abordagem **centrada no modelo**. Basta especificar o formato `vendor/model` (ex.: `zhipu/glm-4.7`) para adicionar novos providers — **sem alterações de código!**
-
-#### Todos os Vendors Suportados
-
-| Vendor                  | Prefixo `model` | API Base padrão                                     | Protocolo | API Key                                                          |
-| ----------------------- | --------------- | --------------------------------------------------- | --------- | ---------------------------------------------------------------- |
-| **OpenAI**              | `openai/`       | `https://api.openai.com/v1`                         | OpenAI    | [Obter](https://platform.openai.com)                             |
-| **Anthropic**           | `anthropic/`    | `https://api.anthropic.com/v1`                      | Anthropic | [Obter](https://console.anthropic.com)                           |
-| **智谱 AI (GLM)**       | `zhipu/`        | `https://open.bigmodel.cn/api/paas/v4`              | OpenAI    | [Obter](https://open.bigmodel.cn/usercenter/proj-mgmt/apikeys)   |
-| **DeepSeek**            | `deepseek/`     | `https://api.deepseek.com/v1`                       | OpenAI    | [Obter](https://platform.deepseek.com)                           |
-| **Google Gemini**       | `gemini/`       | `https://generativelanguage.googleapis.com/v1beta`  | Gemini    | [Obter](https://aistudio.google.com/api-keys)                    |
-| **Groq**                | `groq/`         | `https://api.groq.com/openai/v1`                    | OpenAI    | [Obter](https://console.groq.com)                                |
-| **通义千问 (Qwen)**     | `qwen/`         | `https://dashscope.aliyuncs.com/compatible-mode/v1` | OpenAI    | [Obter](https://dashscope.console.aliyun.com)                    |
-| **Ollama**              | `ollama/`       | `http://localhost:11434/v1`                         | OpenAI    | Local (sem chave)                                                |
-| **OpenRouter**          | `openrouter/`   | `https://openrouter.ai/api/v1`                      | OpenAI    | [Obter](https://openrouter.ai/keys)                              |
-| **VolcEngine (Doubao)** | `volcengine/`   | `https://ark.cn-beijing.volces.com/api/v3`          | OpenAI    | [Obter](https://www.volcengine.com/activity/codingplan?utm_campaign=PicoClaw&utm_content=PicoClaw&utm_medium=devrel&utm_source=OWO&utm_term=PicoClaw) |
-| **Antigravity**         | `antigravity/`  | Google Cloud                                        | Custom    | Somente OAuth                                                    |
-
-#### Balanceamento de Carga
-
-Configure múltiplos endpoints para o mesmo nome de modelo — PicoClaw fará round-robin automaticamente:
-
-```json
-{
-  "model_list": [
-    { "model_name": "gpt-5.4", "model": "openai/gpt-5.4", "api_base": "https://api1.example.com/v1", "api_keys": ["sk-key1"] },
-    { "model_name": "gpt-5.4", "model": "openai/gpt-5.4", "api_base": "https://api2.example.com/v1", "api_keys": ["sk-key2"] }
-  ]
-}
-```
-
-#### Migração da Configuração Legada `providers`
-
-A configuração antiga `providers` está **depreciada** e foi removida no V2. Configs V0/V1 existentes são auto-migradas. Veja [docs/migration/model-list-migration.md](../migration/model-list-migration.md).
-
-#### Configuração de Streaming
-
-O streaming do provider usa double opt-in e fica desativado por padrão. O agent só tenta streaming quando o canal atual tem `settings.streaming.enabled: true`, a entrada de modelo ativa tem `streaming.enabled: true`, e tanto o provider quanto o canal suportam streaming. Se qualquer condição estiver ausente, o PicoClaw usa o caminho normal de requisição sem streaming.
-
-Deixe `streaming` ausente quando não quiser streaming. Um bloco `streaming` omitido significa desativado; você não precisa escrever `"streaming": {"enabled": false}`.
-
-Exemplo de ativação:
-
-```json
-{
-  "model_list": [
-    {
-      "model_name": "gpt-5.4",
-      "provider": "openai",
-      "model": "gpt-5.4",
-      "api_keys": ["sk-your-openai-key"],
-      "streaming": {
-        "enabled": true
-      }
-    }
-  ],
-  "channel_list": {
-    "telegram": {
-      "enabled": true,
-      "type": "telegram",
-      "settings": {
-        "token": "YOUR_TELEGRAM_TOKEN",
-        "streaming": {
-          "enabled": true
-        }
-      }
-    }
-  }
-}
-```
-
-| Campo | Tipo | Padrão | Descrição |
-| ----- | ---- | ------ | --------- |
-| `channel_list.<name>.settings.streaming.enabled` | bool | `false` | Permite que este canal exiba output streaming do provider |
-| `channel_list.<name>.settings.streaming.throttle_seconds` | int | Telegram: `3` | Intervalo mínimo entre atualizações intermediárias; o conteúdo final sempre é enviado |
-| `channel_list.<name>.settings.streaming.min_growth_chars` | int | Telegram: `200` | Crescimento mínimo de texto antes de enviar outra atualização intermediária; o conteúdo final sempre é enviado |
-| `model_list[].streaming.enabled` | bool | `false` | Permite que esta entrada de modelo tente requisições de provider streaming |
-
-As variáveis de ambiente legadas do Telegram continuam compatíveis: `PICOCLAW_CHANNELS_TELEGRAM_STREAMING_ENABLED`, `PICOCLAW_CHANNELS_TELEGRAM_STREAMING_THROTTLE_SECONDS` e `PICOCLAW_CHANNELS_TELEGRAM_STREAMING_MIN_GROWTH_CHARS`.
-
-O comportamento de falha é intencionalmente conservador: se o streaming falhar antes de qualquer chunk visível ser enviado, o PicoClaw tenta novamente uma vez pelo caminho normal `Chat()`. Se um chunk já foi mostrado ao usuário, o PicoClaw não envia uma segunda resposta sem streaming, evitando output duplicado.
-
-### Arquitetura de Providers
-
-PicoClaw roteia providers por família de protocolo:
-
-- **Compatível com OpenAI**: OpenRouter, Groq, Zhipu, endpoints vLLM e a maioria dos outros.
-- **Gemini nativo**: Google Gemini via endpoints nativos `models/*:generateContent` e `models/*:streamGenerateContent`.
-- **Anthropic**: Comportamento nativo da API Claude.
-- **Codex/OAuth**: Rota de autenticação OAuth/token OpenAI.
-
-Isso mantém o runtime leve enquanto torna novos backends compatíveis com OpenAI basicamente uma operação de configuração (`api_base` + `api_keys`).
+This fork supports only OpenAI (Responses / Chat Completions) and Anthropic Messages. For compatible endpoints, API keys, streaming and login, see the maintained [provider guide](providers.md) or [中文说明](providers.zh.md).
 
 ### Tarefas Agendadas / Lembretes
 

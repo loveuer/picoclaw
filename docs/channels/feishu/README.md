@@ -6,17 +6,21 @@ Feishu (international name: Lark) is an enterprise collaboration platform by Byt
 
 ## Configuration
 
+> Configuration: common fields such as `enabled`, `type`, and `allow_from` belong on the channel entry; channel-specific fields belong under `settings`. Credentials saved under `channel_list.<name>.settings` in `.security.yml` override the main JSON configuration.
+
 ```json
 {
   "channel_list": {
     "feishu": {
       "enabled": true,
       "type": "feishu",
-      "app_id": "cli_xxx",
-      "app_secret": "xxx",
-      "encrypt_key": "",
-      "verification_token": "",
-      "allow_from": []
+      "allow_from": [],
+      "settings": {
+        "app_id": "cli_xxx",
+        "app_secret": "xxx",
+        "encrypt_key": "",
+        "verification_token": ""
+      }
     }
   }
 }

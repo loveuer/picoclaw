@@ -6,6 +6,8 @@ PicoClaw 支持将任意 MQTT 客户端作为消息渠道。设备或服务向 B
 
 **1. 在 `~/.picoclaw/config.json` 中添加渠道：**
 
+> 配置结构：`enabled`、`type`、`allow_from` 等公共字段位于渠道条目，Token、App ID 等专有字段位于 `settings`。`.security.yml` 使用 `channel_list.<名称>.settings` 保存渠道密钥；其中的同名值会覆盖主配置。
+
 ```json
 {
   "channel_list": {

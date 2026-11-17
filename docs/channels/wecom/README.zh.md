@@ -32,7 +32,7 @@ picoclaw auth wecom
 1. 向企业微信请求二维码并在终端打印
 2. 同时打印一个**二维码链接**，终端二维码不清晰时可在浏览器中打开
 3. 轮询确认状态——扫码后还需要在**企业微信 App 内点击确认**
-4. 成功后将 `bot_id` 和 `secret` 写入 `channels.wecom` 并保存配置
+4. 成功后将 `bot_id` 和 `secret` 写入 `channel_list.wecom.settings` 并保存配置
 
 默认超时为 **5 分钟**，可通过 `--timeout` 延长：
 
@@ -46,18 +46,22 @@ picoclaw auth wecom --timeout 10m
 
 如果已有企业微信 AI Bot 的 `bot_id` 和 `secret`，可直接配置：
 
+> 配置结构：`enabled`、`type`、`allow_from` 等公共字段位于渠道条目，Token、App ID 等专有字段位于 `settings`。`.security.yml` 使用 `channel_list.<名称>.settings` 保存渠道密钥；其中的同名值会覆盖主配置。
+
 ```json
 {
   "channel_list": {
     "wecom": {
       "enabled": true,
       "type": "wecom",
-      "bot_id": "YOUR_BOT_ID",
-      "secret": "YOUR_SECRET",
-      "websocket_url": "wss://openws.work.weixin.qq.com",
-      "send_thinking_message": true,
       "allow_from": [],
-      "reasoning_channel_id": ""
+      "reasoning_channel_id": "",
+      "settings": {
+        "bot_id": "YOUR_BOT_ID",
+        "secret": "YOUR_SECRET",
+        "websocket_url": "wss://openws.work.weixin.qq.com",
+        "send_thinking_message": true
+      }
     }
   }
 }
@@ -138,4 +142,4 @@ picoclaw auth wecom --timeout 10m
 ### 收不到回复
 
 - 检查 `allow_from` 是否屏蔽了发送者。
-- 确认 `channels.wecom.bot_id` 和 `channels.wecom.secret` 已填写且非空。
+- 确认 `channel_list.wecom.settings.bot_id` 和 `channel_list.wecom.settings.secret` 已填写且非空。

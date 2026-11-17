@@ -25,7 +25,9 @@ picoclaw gateway
 
 ## ⚙️ 配置说明
 
-您也可以在 `config.json` 的 `channels.weixin` 段目下进行手动维护。
+您也可以在 `config.json` 的 `channel_list.weixin` 段目下进行手动维护。
+
+> 配置结构：`enabled`、`type`、`allow_from` 等公共字段位于渠道条目，Token、App ID 等专有字段位于 `settings`。`.security.yml` 使用 `channel_list.<名称>.settings` 保存渠道密钥；其中的同名值会覆盖主配置。
 
 ```json
 {
@@ -33,12 +35,14 @@ picoclaw gateway
     "weixin": {
       "enabled": true,
       "type": "weixin",
-      "token": "YOUR_WEIXIN_TOKEN",
       "allow_from": [
         "user_id_1",
         "user_id_2"
       ],
-      "proxy": ""
+      "settings": {
+        "token": "YOUR_WEIXIN_TOKEN",
+        "proxy": ""
+      }
     }
   }
 }

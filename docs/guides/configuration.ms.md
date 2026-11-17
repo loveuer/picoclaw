@@ -1,5 +1,7 @@
 # ⚙️ Panduan Konfigurasi
 
+> Fork configuration: `PICOCLAW_HOME` also changes the default config path; `PICOCLAW_CONFIG` overrides that path. For current model protocols and channel settings, use the [README](../../README.md) and [configuration example](../../config/config.example.json).
+
 > Kembali ke [README](../../README.md)
 
 ## ⚙️ Konfigurasi
@@ -23,7 +25,7 @@ Anda boleh menggantikan laluan lalai menggunakan pemboleh ubah persekitaran. Ini
 PICOCLAW_CONFIG=/etc/picoclaw/production.json picoclaw gateway
 
 # Jalankan picoclaw dengan semua data disimpan di /opt/picoclaw
-# Config akan dimuatkan dari lalai ~/.picoclaw/config.json
+# Config: /opt/picoclaw/config.json (PICOCLAW_HOME=/opt/picoclaw)
 # Workspace akan dicipta di /opt/picoclaw/workspace
 PICOCLAW_HOME=/opt/picoclaw picoclaw agent
 

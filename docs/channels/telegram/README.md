@@ -2,9 +2,11 @@
 
 # Telegram
 
-The Telegram channel uses long polling via the Telegram Bot API for bot-based communication. It supports text messages, media attachments (photos, voice, audio, documents), voice transcription ([setup](../../guides/providers.md#voice-transcription)), and built-in command handling.
+The Telegram channel uses long polling via the Telegram Bot API for bot-based communication. It supports text messages, media attachments (photos, voice, audio, documents), voice transcription ([setup](../../../pkg/audio/asr/README.md)), and built-in command handling.
 
 ## Configuration
+
+> Configuration: common fields such as `enabled`, `type`, and `allow_from` belong on the channel entry; channel-specific fields belong under `settings`. Credentials saved under `channel_list.<name>.settings` in `.security.yml` override the main JSON configuration.
 
 ```json
 {
@@ -12,11 +14,15 @@ The Telegram channel uses long polling via the Telegram Bot API for bot-based co
     "telegram": {
       "enabled": true,
       "type": "telegram",
-      "token": "123456789:ABCdefGHIjklMNOpqrsTUVwxyz",
-      "allow_from": ["123456789"],
-      "proxy": "",
-      "use_markdown_v2": false,
-      "media_group_delay_ms": 500
+      "allow_from": [
+        "123456789"
+      ],
+      "settings": {
+        "token": "123456789:ABCdefGHIjklMNOpqrsTUVwxyz",
+        "proxy": "",
+        "use_markdown_v2": false,
+        "media_group_delay_ms": 500
+      }
     }
   }
 }
@@ -73,9 +79,13 @@ You can set `use_markdown_v2: true` to enable enhanced formatting options. This 
     "telegram": {
       "enabled": true,
       "type": "telegram",
-      "token": "YOUR_BOT_TOKEN",
-      "allow_from": ["YOUR_USER_ID"],
-      "use_markdown_v2": true
+      "allow_from": [
+        "YOUR_USER_ID"
+      ],
+      "settings": {
+        "token": "YOUR_BOT_TOKEN",
+        "use_markdown_v2": true
+      }
     }
   }
 }

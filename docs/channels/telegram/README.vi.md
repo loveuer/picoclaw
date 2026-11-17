@@ -12,10 +12,14 @@ Kênh Telegram sử dụng long polling qua Telegram Bot API để giao tiếp d
     "telegram": {
       "enabled": true,
       "type": "telegram",
-      "token": "123456789:ABCdefGHIjklMNOpqrsTUVwxyz",
-      "allow_from": ["123456789"],
-      "proxy": "",
-      "use_markdown_v2": false
+      "allow_from": [
+        "123456789"
+      ],
+      "settings": {
+        "token": "123456789:ABCdefGHIjklMNOpqrsTUVwxyz",
+        "proxy": "",
+        "use_markdown_v2": false
+      }
     }
   }
 }
@@ -47,9 +51,13 @@ Bạn có thể đặt `use_markdown_v2: true` để bật các tùy chọn đ�
     "telegram": {
       "enabled": true,
       "type": "telegram",
-      "token": "YOUR_BOT_TOKEN",
-      "allow_from": ["YOUR_USER_ID"],
-      "use_markdown_v2": true
+      "allow_from": [
+        "YOUR_USER_ID"
+      ],
+      "settings": {
+        "token": "YOUR_BOT_TOKEN",
+        "use_markdown_v2": true
+      }
     }
   }
 }

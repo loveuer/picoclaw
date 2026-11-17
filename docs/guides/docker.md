@@ -1,160 +1,38 @@
-# 🐳 Docker & Quick Start Guide
+# Docker builds for this fork
 
-> Back to [README](../README.md)
+> Back to [README](../../README.md)
 
-## 🐳 Docker Compose
-
-You can also run PicoClaw using Docker Compose without installing anything locally.
+This fork does not publish Docker images. Build from this repository. The Compose image name `docker.io/sipeed/picoclaw:latest` is a historical local tag; pulling it downloads the upstream image.
 
 ```bash
-# 1. Clone this repo
-git clone https://github.com/sipeed/picoclaw.git
+git clone https://github.com/loveuer/picoclaw.git
 cd picoclaw
-
-# 2. First run — auto-generates docker/data/config.json then exits
-#    (only triggers when both config.json and workspace/ are missing)
-docker compose -f docker/docker-compose.yml --profile gateway up
-# The container prints "First-run setup complete." and stops.
-
-# 3. Set your API keys
-vim docker/data/config.json   # Set provider API keys, bot tokens, etc.
-
-# 4. Start
-docker compose -f docker/docker-compose.yml --profile gateway up -d
+docker compose -f docker/docker-compose.yml --profile gateway build
+docker compose -f docker/docker-compose.yml run --rm \
+  --entrypoint picoclaw picoclaw-agent onboard
 ```
 
-> [!TIP]
-> **Docker Users**: By default, the Gateway listens on `127.0.0.1` which is not accessible from the host. If you need to access the health endpoints or expose ports, set `PICOCLAW_GATEWAY_HOST=0.0.0.0` in your environment or update `config.json`.
-
-> [!NOTE]
-> The `gateway` profile only serves the webhook handlers and health endpoints on the gateway port, so it does not expose generic REST chat endpoints such as `/chat` or `/a2a`.
+Edit `docker/data/config.json` and, where applicable, `docker/data/.security.yml`. Configure an OpenAI or Anthropic model and enable the required channels. Use `channel_list.<name>.settings` for channel-specific fields. See the [configuration example](../../config/config.example.json) and [provider guide](providers.md).
 
 ```bash
-# 5. Check logs
+docker compose -f docker/docker-compose.yml --profile gateway up -d --no-build --pull never
 docker compose -f docker/docker-compose.yml logs -f picoclaw-gateway
-
-# 6. Stop
 docker compose -f docker/docker-compose.yml --profile gateway down
+
+# CLI instead of Gateway
+docker compose -f docker/docker-compose.yml run --rm --pull never picoclaw-agent -m "Hello"
 ```
 
-### Agent Mode (One-shot)
+`docker/data/` is mounted at `/root/.picoclaw`; stopping the container preserves it. Gateway binds locally within the container by default, and Compose does not publish its port. Accessing `/health` or `/ready` from the host requires both `gateway.host: "0.0.0.0"` and a port mapping. There is no WebUI or generic REST chat endpoint.
+
+After updating the local source, rebuild and start the container again:
 
 ```bash
-# Ask a question
-docker compose -f docker/docker-compose.yml run --rm picoclaw-agent -m "What is 2+2?"
-
-# Interactive mode
-docker compose -f docker/docker-compose.yml run --rm picoclaw-agent
+git pull --ff-only
+docker compose -f docker/docker-compose.yml --profile gateway build
+docker compose -f docker/docker-compose.yml --profile gateway up -d --no-build --pull never
 ```
 
-### Update
+Do not use `docker compose pull` to update this fork. Existing workspace Skills are not overwritten by image updates. The ordinary Gateway image does not provide Docker daemon access for the Office Skills; use a host deployment with the [dedicated Office runtime](office-skills.zh.md) when needed.
 
-```bash
-docker compose -f docker/docker-compose.yml pull
-docker compose -f docker/docker-compose.yml --profile gateway up -d
-```
-
-### 🚀 Quick Start
-
-> [!TIP]
-> Set your API Key in `~/.picoclaw/config.json`. Get API Keys: [Volcengine (CodingPlan)](https://www.volcengine.com/activity/codingplan?utm_campaign=PicoClaw&utm_content=PicoClaw&utm_medium=devrel&utm_source=OWO&utm_term=PicoClaw) (LLM) · [OpenRouter](https://openrouter.ai/keys) (LLM) · [Zhipu](https://open.bigmodel.cn/usercenter/proj-mgmt/apikeys) (LLM). Web search is optional — get a free [Tavily API](https://tavily.com) (1000 free queries/month) or [Brave Search API](https://brave.com/search/api) (2000 free queries/month).
-
-**1. Initialize**
-
-```bash
-picoclaw onboard
-```
-
-**2. Configure** (`~/.picoclaw/config.json`)
-
-```json
-{
-  "agents": {
-    "defaults": {
-      "workspace": "~/.picoclaw/workspace",
-      "model_name": "gpt-5.4",
-      "max_tokens": 8192,
-      "temperature": 0.7,
-      "max_tool_iterations": 20
-    }
-  },
-  "model_list": [
-    {
-      "model_name": "ark-code-latest",
-      "provider": "volcengine",
-      "model": "ark-code-latest",
-      "api_keys": ["sk-your-api-key"],
-      "api_base":"https://ark.cn-beijing.volces.com/api/coding/v3"
-    },
-    {
-      "model_name": "gpt-5.4",
-      "provider": "openai",
-      "model": "gpt-5.4",
-      "api_keys": ["your-api-key"],
-      "request_timeout": 300
-    },
-    {
-      "model_name": "claude-sonnet-4.6",
-      "provider": "anthropic",
-      "model": "claude-sonnet-4.6",
-      "api_keys": ["your-anthropic-key"]
-    }
-  ],
-  "tools": {
-    "web": {
-      "enabled": true,
-      "fetch_limit_bytes": 10485760,
-      "format": "plaintext",
-      "brave": {
-        "enabled": false,
-        "api_key": "YOUR_BRAVE_API_KEY",
-        "max_results": 5
-      },
-      "tavily": {
-        "enabled": false,
-        "api_key": "YOUR_TAVILY_API_KEY",
-        "max_results": 5
-      },
-      "duckduckgo": {
-        "enabled": true,
-        "max_results": 5
-      },
-      "perplexity": {
-        "enabled": false,
-        "api_key": "YOUR_PERPLEXITY_API_KEY",
-        "max_results": 5
-      },
-      "searxng": {
-        "enabled": false,
-        "base_url": "http://your-searxng-instance:8888",
-        "max_results": 5
-      }
-    }
-  }
-}
-```
-
-> **New**: The `model_list` configuration format allows zero-code provider addition. See [Model Configuration](#model-configuration-model_list) for details.
-> `request_timeout` is optional and uses seconds. If omitted or set to `<= 0`, PicoClaw uses the default timeout (120s).
-
-**3. Get API Keys**
-
-* **LLM Provider**: [OpenRouter](https://openrouter.ai/keys) · [Zhipu](https://open.bigmodel.cn/usercenter/proj-mgmt/apikeys) · [Anthropic](https://console.anthropic.com) · [OpenAI](https://platform.openai.com) · [Gemini](https://aistudio.google.com/api-keys)
-* **Web Search** (optional):
-  * [Brave Search](https://brave.com/search/api) - Paid ($5/1000 queries, ~$5-6/month)
-  * [Perplexity](https://www.perplexity.ai) - AI-powered search with chat interface
-  * [SearXNG](https://github.com/searxng/searxng) - Self-hosted metasearch engine (free, no API key needed)
-  * [Tavily](https://tavily.com) - Optimized for AI Agents (1000 requests/month)
-  * DuckDuckGo - Built-in fallback (no API key required)
-
-> **Note**: See `config.example.json` for a complete configuration template.
-
-**4. Chat**
-
-```bash
-picoclaw agent -m "What is 2+2?"
-```
-
-That's it! You have a working AI assistant in 2 minutes.
-
----
+The full/heavy Docker variants remain local build options, outside the automated release workflow. See the [Chinese guide](docker.zh.md) for details.

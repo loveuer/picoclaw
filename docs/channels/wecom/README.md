@@ -46,18 +46,22 @@ picoclaw auth wecom --timeout 10m
 
 If you already have a `bot_id` and `secret` from the WeCom AI Bot platform, configure directly:
 
+> Configuration: common fields such as `enabled`, `type`, and `allow_from` belong on the channel entry; channel-specific fields belong under `settings`. Credentials saved under `channel_list.<name>.settings` in `.security.yml` override the main JSON configuration.
+
 ```json
 {
   "channel_list": {
     "wecom": {
       "enabled": true,
       "type": "wecom",
-      "bot_id": "YOUR_BOT_ID",
-      "secret": "YOUR_SECRET",
-      "websocket_url": "wss://openws.work.weixin.qq.com",
-      "send_thinking_message": true,
       "allow_from": [],
-      "reasoning_channel_id": ""
+      "reasoning_channel_id": "",
+      "settings": {
+        "bot_id": "YOUR_BOT_ID",
+        "secret": "YOUR_SECRET",
+        "websocket_url": "wss://openws.work.weixin.qq.com",
+        "send_thinking_message": true
+      }
     }
   }
 }
@@ -138,4 +142,4 @@ All fields can be overridden via environment variables with the prefix `PICOCLAW
 ### Replies do not arrive
 
 - Check whether `allow_from` is blocking the sender.
-- Check that `channels.wecom.bot_id` and `channels.wecom.secret` are set and non-empty.
+- Check that `channel_list.wecom.settings.bot_id` and `channel_list.wecom.settings.secret` are set and non-empty.

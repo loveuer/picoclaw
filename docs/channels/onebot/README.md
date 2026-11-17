@@ -6,15 +6,19 @@ OneBot is an open protocol standard for QQ bots, providing a unified interface f
 
 ## Configuration
 
+> Configuration: common fields such as `enabled`, `type`, and `allow_from` belong on the channel entry; channel-specific fields belong under `settings`. Credentials saved under `channel_list.<name>.settings` in `.security.yml` override the main JSON configuration.
+
 ```json
 {
   "channel_list": {
     "onebot": {
       "enabled": true,
       "type": "onebot",
-      "ws_url": "ws://localhost:8080",
-      "access_token": "",
-      "allow_from": []
+      "allow_from": [],
+      "settings": {
+        "ws_url": "ws://localhost:8080",
+        "access_token": ""
+      }
     }
   }
 }

@@ -1,52 +1,27 @@
-# 🐛 疑难解答
+# 疑难解答
 
-> 返回 [README](../../README.md)
+## 找不到模型或提供商不支持
 
-## "model ... not found in model_list" 或 OpenRouter "free is not a valid model ID"
+`agents.defaults.model_name` 必须对应 `model_list` 中已启用条目的 `model_name`。它是本地别名，不是远端模型 ID。
 
-**症状：** 你看到以下任一错误：
+聊天模型仅支持 `openai` 和 `anthropic`。第三方兼容服务应显式填写协议、`api_base` 和完整远端 `model`，不要继续使用 `openrouter`、`gemini`、`ollama` 等旧 provider 名称。显式指定协议后，带厂商命名空间的模型 ID 会原样发送；参见[模型配置](../guides/providers.zh.md)。
 
-- `Error creating provider: model "openrouter/free" not found in model_list`
-- OpenRouter 返回 400：`"free is not a valid model ID"`
+## 升级后渠道启动失败
 
-**原因：** PicoClaw 现在按两步解析 provider 和 model：
+从 `config.json` 和 `.security.yml` 中删除已移除的渠道条目，检查当前 `channel_list` 和旧版 `channels` 两种名称。仅设置 `enabled: false` 无法解决未知渠道类型。渠道密钥等专有字段应放在 `channel_list.<名称>.settings` 中。
 
-- 如果设置了 `provider`，则会把 `model` 原样发送给该 provider。
-- 如果未设置 `provider`，则会把 `model` 第一个 `/` 之前的字段当作 provider，并把第一个 `/` 之后的全部内容当作最终发送的模型 ID。
+旧的 `devices`、`tools.i2c`、`tools.spi`、`tools.serial` 会兼容忽略，保存后不再输出。详细清单见 [README 升级说明](../../README.md#从旧版或上游配置升级)。
 
-对于 OpenRouter 免费层路由，推荐显式设置 `provider`。
+## 配置修改没有生效
 
-- **错误：** `"model": "free"` → 不会选中 OpenRouter，`free` 也不是可直接路由的 OpenRouter 模型配置。
-- **正确：** `"provider": "openrouter", "model": "free"` → OpenRouter 收到 `free`。
-- **也兼容：** `"model": "openrouter/free"` → provider 解析为 `openrouter`，最终模型 ID 解析为 `free`。
+用 `picoclaw status` 检查实际配置路径，注意 `PICOCLAW_HOME`、`PICOCLAW_CONFIG` 及配置文件旁的 `.security.yml`。同名密钥可能被安全文件覆盖。没有启用对应热重载能力时，修改配置后重启 Gateway。
 
-**修复方法：** 在 `~/.picoclaw/config.json`（或你的配置路径）中：
+`status` 展示配置和凭据状态，不验证模型连通性或服务健康。运行状态请检查服务日志，以及 Gateway HTTP 地址上的 `/health`、`/ready`。
 
-1. **agents.defaults.model_name** 必须匹配 `model_list` 中的某个 `model_name`（例如 `"openrouter-free"`）。
-2. 该条目推荐显式设置 **provider** 为 `openrouter`，并在 **model** 中填写有效的 OpenRouter 模型 ID，例如：
-   - `"free"` – 自动免费层
-   - `"google/gemini-2.0-flash-exp:free"`
-   - `"meta-llama/llama-3.1-8b-instruct:free"`
+## 办公文件环境不可用
 
-示例片段：
+以 Gateway 用户执行 `office.sh setup` 和 `office.sh check`，见[办公环境说明](../guides/office-skills.zh.md)。更新二进制不会自动覆盖已有工作区 Skill。
 
-```json
-{
-  "agents": {
-    "defaults": {
-      "model_name": "openrouter-free"
-    }
-  },
-  "model_list": [
-    {
-      "model_name": "openrouter-free",
-      "provider": "openrouter",
-      "model": "free",
-      "api_keys": ["sk-or-v1-YOUR_OPENROUTER_KEY"],
-      "api_base": "https://openrouter.ai/api/v1"
-    }
-  ]
-}
-```
+## 定时任务 CLI
 
-在 [OpenRouter Keys](https://openrouter.ai/keys) 获取你的密钥。
+`picoclaw cron add` 支持 `--every`、`--cron` 周期任务。一次性提醒通过 cron 工具设置，当前没有 CLI `at_seconds` 参数。

@@ -1,159 +1,54 @@
-# 🐳 Docker 与快速开始
+# Docker 本地构建与运行
 
 > 返回 [README](../../README.md)
 
-## 🐳 Docker Compose
+本 fork 没有发布 Docker 镜像。必须从本仓库构建，避免拉取上游镜像后运行已移除的功能或不同的配置格式。Compose 中的 `docker.io/sipeed/picoclaw:latest` 是历史遗留的本地镜像标签，不代表本 fork 的发布源。
 
-您也可以使用 Docker Compose 运行 PicoClaw，无需在本地安装任何环境。
+## 初始化
+
+需要 Git、Docker 和 Compose 插件。从仓库根目录运行：
 
 ```bash
-# 1. 克隆仓库
-git clone https://github.com/sipeed/picoclaw.git
+git clone https://github.com/loveuer/picoclaw.git
 cd picoclaw
+docker compose -f docker/docker-compose.yml --profile gateway build
 
-# 2. 首次运行 — 自动生成 docker/data/config.json 后退出
-#    （仅在 config.json 和 workspace/ 都不存在时触发）
-docker compose -f docker/docker-compose.yml --profile gateway up
-# 容器打印 "First-run setup complete." 后自动停止
-
-# 3. 填写 API Key 等配置
-vim docker/data/config.json   # 设置 provider API key、Bot Token 等
-
-# 4. 正式启动
-docker compose -f docker/docker-compose.yml --profile gateway up -d
+# 初始化 docker/data/ 中的配置和工作区，不启动 Gateway
+# 已有配置时请按 onboard 的提示处理
+docker compose -f docker/docker-compose.yml run --rm \
+  --entrypoint picoclaw picoclaw-agent onboard
 ```
 
-> [!TIP]
-> **Docker 用户**: 默认情况下, Gateway 监听 `127.0.0.1`，该端口不会暴露到容器外。如果需要通过端口映射访问健康检查接口，请在环境变量中设置 `PICOCLAW_GATEWAY_HOST=0.0.0.0` 或修改 `config.json`。
+编辑 `docker/data/config.json`，按照[模型配置](providers.zh.md)设置 OpenAI 或 Anthropic 模型，并启用需要的渠道。密钥也可能保存在 `docker/data/.security.yml`，该文件中的同名值会覆盖主配置。
+
+当前格式是 `channel_list.<名称>.settings`，参见 [完整配置示例](../../config/config.example.json)。
+
+## 运行
 
 ```bash
-# 5. 查看日志
+# 只使用刚才在本地构建的镜像
+docker compose -f docker/docker-compose.yml --profile gateway up -d --no-build --pull never
+
 docker compose -f docker/docker-compose.yml logs -f picoclaw-gateway
-
-# 6. 停止
 docker compose -f docker/docker-compose.yml --profile gateway down
+
+# 单次提问或交互式 CLI
+docker compose -f docker/docker-compose.yml run --rm --pull never picoclaw-agent -m "2+2 等于几？"
+docker compose -f docker/docker-compose.yml run --rm --pull never picoclaw-agent
 ```
 
-### Agent 模式 (一次性运行)
+数据目录 `docker/data/` 挂载到容器内的 `/root/.picoclaw`，停止容器不会删除配置和工作区。Gateway 默认监听容器内的本地地址，Compose 未发布端口；如需从宿主机访问 `/health`、`/ready`，需同时设置 `gateway.host: "0.0.0.0"` 和所需的端口映射。没有 WebUI 或通用 REST 聊天接口。
+
+## 更新
+
+更新本地源码后重新构建并启动，保留 `docker/data/`：
 
 ```bash
-# 提问
-docker compose -f docker/docker-compose.yml run --rm picoclaw-agent -m "2+2 等于几？"
-
-# 交互模式
-docker compose -f docker/docker-compose.yml run --rm picoclaw-agent
+git pull --ff-only
+docker compose -f docker/docker-compose.yml --profile gateway build
+docker compose -f docker/docker-compose.yml --profile gateway up -d --no-build --pull never
 ```
 
-### 更新镜像
+不要用 `docker compose pull` 更新本 fork，它会拉取历史标签对应的上游镜像。已有工作区的内置 Skill 不会随镜像更新自动覆盖，参见[办公 Skills](office-skills.zh.md)。当前普通 Gateway 镜像没有为办公 Skill 配置 Docker daemon 访问；需要办公能力时，优先按主 README 在宿主机部署并单独准备办公环境。
 
-```bash
-docker compose -f docker/docker-compose.yml pull
-docker compose -f docker/docker-compose.yml --profile gateway up -d
-```
-
----
-
-## 🚀 快速开始
-
-> [!TIP]
-> 在 `~/.picoclaw/config.json` 中设置您的 API Key。获取 API Key: [火山引擎 (CodingPlan)](https://www.volcengine.com/activity/codingplan?utm_campaign=PicoClaw&utm_content=PicoClaw&utm_medium=devrel&utm_source=OWO&utm_term=PicoClaw) (LLM) · [OpenRouter](https://openrouter.ai/keys) (LLM) · [Zhipu (智谱)](https://open.bigmodel.cn/usercenter/proj-mgmt/apikeys) (LLM)。网络搜索是 **可选的** — 获取免费的 [Tavily API](https://tavily.com) (每月 1000 次免费查询) 或 [Brave Search API](https://brave.com/search/api) (每月 2000 次免费查询)。
-
-**1. 初始化 (Initialize)**
-
-```bash
-picoclaw onboard
-```
-
-**2. 配置 (Configure)** (`~/.picoclaw/config.json`)
-
-```json
-{
-  "agents": {
-    "defaults": {
-      "workspace": "~/.picoclaw/workspace",
-      "model_name": "gpt-5.4",
-      "max_tokens": 8192,
-      "temperature": 0.7,
-      "max_tool_iterations": 20
-    }
-  },
-  "model_list": [
-    {
-      "model_name": "ark-code-latest",
-      "provider": "volcengine",
-      "model": "ark-code-latest",
-      "api_keys": ["sk-your-api-key"],
-      "api_base":"https://ark.cn-beijing.volces.com/api/coding/v3"
-    },
-    {
-      "model_name": "gpt-5.4",
-      "provider": "openai",
-      "model": "gpt-5.4",
-      "api_keys": ["your-api-key"],
-      "request_timeout": 300
-    },
-    {
-      "model_name": "claude-sonnet-4.6",
-      "provider": "anthropic",
-      "model": "claude-sonnet-4.6",
-      "api_keys": ["your-anthropic-key"]
-    }
-  ],
-  "tools": {
-    "web": {
-      "enabled": true,
-      "fetch_limit_bytes": 10485760,
-      "format": "plaintext",
-      "brave": {
-        "enabled": false,
-        "api_key": "YOUR_BRAVE_API_KEY",
-        "max_results": 5
-      },
-      "tavily": {
-        "enabled": false,
-        "api_key": "YOUR_TAVILY_API_KEY",
-        "max_results": 5
-      },
-      "duckduckgo": {
-        "enabled": true,
-        "max_results": 5
-      },
-      "perplexity": {
-        "enabled": false,
-        "api_key": "YOUR_PERPLEXITY_API_KEY",
-        "max_results": 5
-      },
-      "searxng": {
-        "enabled": false,
-        "base_url": "http://your-searxng-instance:8888",
-        "max_results": 5
-      }
-    }
-  }
-}
-```
-
-> **新功能**: `model_list` 配置格式支持零代码添加 provider。详见[模型配置](providers.zh.md#模型配置-model_list)章节。
-> `request_timeout` 为可选项，单位为秒。若省略或设置为 `<= 0`，PicoClaw 使用默认超时（120 秒）。
-
-**3. 获取 API Key**
-
-* **LLM 提供商**: [OpenRouter](https://openrouter.ai/keys) · [Zhipu](https://open.bigmodel.cn/usercenter/proj-mgmt/apikeys) · [Anthropic](https://console.anthropic.com) · [OpenAI](https://platform.openai.com) · [Gemini](https://aistudio.google.com/api-keys)
-* **网络搜索** (可选):
-  * [Brave Search](https://brave.com/search/api) - 付费 ($5/1000 次查询，约 $5-6/月)
-  * [Perplexity](https://www.perplexity.ai) - AI 驱动的搜索与聊天界面
-  * [SearXNG](https://github.com/searxng/searxng) - 自建元搜索引擎（免费，无需 API Key）
-  * [Tavily](https://tavily.com) - 专为 AI Agent 优化 (1000 请求/月)
-  * DuckDuckGo - 内置回退（无需 API Key）
-
-> **注意**: 完整的配置模板请参考 `config.example.json`。
-
-**4. 对话 (Chat)**
-
-```bash
-picoclaw agent -m "2+2 等于几？"
-```
-
-就是这样！您在 2 分钟内就拥有了一个可工作的 AI 助手。
-
----
+本地仍保留 full/heavy 镜像构建变体，是否收敛这些变体是后续维护事项；它们不属于自动发布产物。

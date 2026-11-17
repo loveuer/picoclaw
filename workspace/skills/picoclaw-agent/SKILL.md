@@ -446,7 +446,7 @@ Example with OpenRouter MAI Voice 2:
   "model_list": [
     {
       "model_name": "mai-voice-2",
-      "provider": "openrouter",
+      "provider": "openai",
       "model": "microsoft/mai-voice-2",
       "api_base": "https://openrouter.ai/api/v1",
       "extra_body": {
@@ -748,24 +748,9 @@ Check that:
 - the target `model_list` entry is enabled
 - the `provider` and `model` fields use PicoClaw's model-centric rules
 
-### OpenRouter `free is not a valid model ID`
+### Compatible endpoint rejects the model ID
 
-Prefer explicit provider config:
-
-```json
-{
-  "provider": "openrouter",
-  "model": "free"
-}
-```
-
-Not:
-
-```json
-{
-  "model": "free"
-}
-```
+Select `provider: "openai"` or `"anthropic"` explicitly and provide the service's `api_base` and complete remote `model` ID. Vendor-specific provider presets have been removed. For OpenRouter, use `provider: "openai"`, `api_base: "https://openrouter.ai/api/v1"`, and an ID accepted by that service; vendor namespaces in the model ID are preserved.
 
 ### Skill not appearing
 

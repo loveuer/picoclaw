@@ -1,6 +1,6 @@
 # Session Guide
 
-> Back to [README](../README.md)
+> Back to [README](../../README.md)
 
 PicoClaw sessions decide which messages share the same conversation history.
 If your bot "remembers too much" or "forgets too much", the first thing to check is the session configuration.

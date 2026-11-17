@@ -75,8 +75,9 @@ PicoClaw 里用户能直接感知到的“路由”主要有两部分：
     },
     {
       "model_name": "flash-light",
-      "provider": "gemini",
-      "model": "gemini-2.0-flash-exp",
+      "provider": "openai",
+      "model": "your-light-model-id",
+      "api_base": "https://your-compatible-endpoint.example/v1",
       "api_keys": ["sk-light"]
     }
   ],

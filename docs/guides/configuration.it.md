@@ -1,5 +1,7 @@
 # ⚙️ Guida alla Configurazione
 
+> Fork configuration: `PICOCLAW_HOME` also changes the default config path; `PICOCLAW_CONFIG` overrides that path. For current model protocols and channel settings, use the [README](../../README.md) and [configuration example](../../config/config.example.json).
+
 > Torna al [README](../../README.md)
 
 ## ⚙️ Configurazione
@@ -23,7 +25,7 @@ Puoi sovrascrivere i percorsi predefiniti usando variabili d'ambiente. Questo è
 PICOCLAW_CONFIG=/etc/picoclaw/production.json picoclaw gateway
 
 # Esegui picoclaw con tutti i dati salvati in /opt/picoclaw
-# La configurazione verrà caricata dal percorso predefinito ~/.picoclaw/config.json
+# Config: /opt/picoclaw/config.json (PICOCLAW_HOME=/opt/picoclaw)
 # Il workspace verrà creato in /opt/picoclaw/workspace
 PICOCLAW_HOME=/opt/picoclaw picoclaw agent
 

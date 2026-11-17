@@ -1,6 +1,6 @@
 # ⚙️ Configuration Guide
 
-> Back to [README](../README.md)
+> Back to [README](../../README.md)
 
 ## ⚙️ Configuration
 
@@ -10,7 +10,7 @@ Config file: `~/.picoclaw/config.json`
 
 ### Environment Variables
 
-You can override default paths using environment variables. This is useful for portable installations, containerized deployments, or running picoclaw as a system service. These variables are independent and control different paths.
+You can override default paths using environment variables. This is useful for portable installations, containerized deployments, or running picoclaw as a system service. `PICOCLAW_HOME` also moves the default config path; `PICOCLAW_CONFIG` takes precedence for the config file.
 
 | Variable          | Description                                                                                                                             | Default Path              |
 |-------------------|-----------------------------------------------------------------------------------------------------------------------------------------|---------------------------|
@@ -25,7 +25,7 @@ You can override default paths using environment variables. This is useful for p
 PICOCLAW_CONFIG=/etc/picoclaw/production.json picoclaw gateway
 
 # Run picoclaw with all its data stored in /opt/picoclaw
-# Config will be loaded from the default ~/.picoclaw/config.json
+# Config: /opt/picoclaw/config.json (PICOCLAW_HOME=/opt/picoclaw)
 # Workspace will be created at /opt/picoclaw/workspace
 PICOCLAW_HOME=/opt/picoclaw picoclaw agent
 

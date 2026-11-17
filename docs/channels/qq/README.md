@@ -6,15 +6,19 @@ PicoClaw provides QQ support via the official Bot API from the QQ Open Platform.
 
 ## Configuration
 
+> Configuration: common fields such as `enabled`, `type`, and `allow_from` belong on the channel entry; channel-specific fields belong under `settings`. Credentials saved under `channel_list.<name>.settings` in `.security.yml` override the main JSON configuration.
+
 ```json
 {
   "channel_list": {
     "qq": {
       "enabled": true,
       "type": "qq",
-      "app_id": "YOUR_APP_ID",
-      "app_secret": "YOUR_APP_SECRET",
-      "allow_from": []
+      "allow_from": [],
+      "settings": {
+        "app_id": "YOUR_APP_ID",
+        "app_secret": "YOUR_APP_SECRET"
+      }
     }
   }
 }

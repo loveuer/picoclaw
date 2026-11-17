@@ -12,9 +12,11 @@ DingTalkはアリババの企業向けコミュニケーションプラットフ
     "dingtalk": {
       "enabled": true,
       "type": "dingtalk",
-      "client_id": "YOUR_CLIENT_ID",
-      "client_secret": "YOUR_CLIENT_SECRET",
-      "allow_from": []
+      "allow_from": [],
+      "settings": {
+        "client_id": "YOUR_CLIENT_ID",
+        "client_secret": "YOUR_CLIENT_SECRET"
+      }
     }
   }
 }

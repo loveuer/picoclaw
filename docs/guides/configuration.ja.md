@@ -1,5 +1,7 @@
 # ⚙️ 設定ガイド
 
+> Fork configuration: `PICOCLAW_HOME` also changes the default config path; `PICOCLAW_CONFIG` overrides that path. For current model protocols and channel settings, use the [README](../../README.md) and [configuration example](../../config/config.example.json).
+
 > [README](../../README.md) に戻る
 
 ## ⚙️ 設定詳細
@@ -23,7 +25,7 @@
 PICOCLAW_CONFIG=/etc/picoclaw/production.json picoclaw gateway
 
 # /opt/picoclaw にすべてのデータを保存して picoclaw を実行
-# 設定はデフォルトの ~/.picoclaw/config.json から読み込まれます
+# Config: /opt/picoclaw/config.json (PICOCLAW_HOME=/opt/picoclaw)
 # ワークスペースは /opt/picoclaw/workspace に作成されます
 PICOCLAW_HOME=/opt/picoclaw picoclaw agent
 
@@ -353,119 +355,9 @@ Agent が HEARTBEAT.md を読む
 HEARTBEAT_OK を返信        ユーザーが直接結果を受信
 ```
 
-### Providers
+### Model providers
 
-> [!NOTE]
-> Groq は Whisper による無料音声文字起こしを提供します。設定すると、任意のチャンネルの音声メッセージが Agent レベルで自動的に文字起こしされます。
-
-| Provider     | 用途                                    | API キー取得                                                 |
-| ------------ | --------------------------------------- | ------------------------------------------------------------ |
-| `gemini`     | LLM（Gemini 直接）                      | [aistudio.google.com](https://aistudio.google.com)           |
-| `zhipu`      | LLM（Zhipu 直接）                       | [bigmodel.cn](https://bigmodel.cn)                           |
-| `volcengine` | LLM（Volcengine 直接）                  | [volcengine.com](https://www.volcengine.com/activity/codingplan?utm_campaign=PicoClaw&utm_content=PicoClaw&utm_medium=devrel&utm_source=OWO&utm_term=PicoClaw) |
-| `openrouter` | LLM（推奨、全モデルにアクセス可能）     | [openrouter.ai](https://openrouter.ai)                       |
-| `anthropic`  | LLM（Claude 直接）                      | [console.anthropic.com](https://console.anthropic.com)       |
-| `openai`     | LLM（GPT 直接）                         | [platform.openai.com](https://platform.openai.com)           |
-| `deepseek`   | LLM（DeepSeek 直接）                    | [platform.deepseek.com](https://platform.deepseek.com)       |
-| `qwen`       | LLM（Qwen 直接）                        | [dashscope.console.aliyun.com](https://dashscope.console.aliyun.com) |
-| `groq`       | LLM + **音声文字起こし**（Whisper）     | [console.groq.com](https://console.groq.com)                 |
-| `cerebras`   | LLM（Cerebras 直接）                    | [cerebras.ai](https://cerebras.ai)                           |
-| `vivgrid`    | LLM（Vivgrid 直接）                     | [vivgrid.com](https://vivgrid.com)                           |
-
-### モデル設定 (model_list)
-
-> **新機能：** PicoClaw は**モデル中心**の設定アプローチを採用しました。`vendor/model` 形式（例：`zhipu/glm-4.7`）を指定するだけで新しい Provider を追加できます — **コード変更不要！**
-
-#### サポートされている全 Vendor
-
-| Vendor                  | `model` プレフィックス | デフォルト API Base                                 | プロトコル | API Key                                                          |
-| ----------------------- | ---------------------- | --------------------------------------------------- | ---------- | ---------------------------------------------------------------- |
-| **OpenAI**              | `openai/`              | `https://api.openai.com/v1`                         | OpenAI     | [取得](https://platform.openai.com)                              |
-| **Anthropic**           | `anthropic/`           | `https://api.anthropic.com/v1`                      | Anthropic  | [取得](https://console.anthropic.com)                            |
-| **智谱 AI (GLM)**       | `zhipu/`               | `https://open.bigmodel.cn/api/paas/v4`              | OpenAI     | [取得](https://open.bigmodel.cn/usercenter/proj-mgmt/apikeys)    |
-| **DeepSeek**            | `deepseek/`            | `https://api.deepseek.com/v1`                       | OpenAI     | [取得](https://platform.deepseek.com)                            |
-| **Google Gemini**       | `gemini/`              | `https://generativelanguage.googleapis.com/v1beta`  | Gemini     | [取得](https://aistudio.google.com/api-keys)                     |
-| **Groq**                | `groq/`                | `https://api.groq.com/openai/v1`                    | OpenAI     | [取得](https://console.groq.com)                                 |
-| **通義千問 (Qwen)**     | `qwen/`                | `https://dashscope.aliyuncs.com/compatible-mode/v1` | OpenAI     | [取得](https://dashscope.console.aliyun.com)                     |
-| **Ollama**              | `ollama/`              | `http://localhost:11434/v1`                         | OpenAI     | ローカル（キー不要）                                             |
-| **OpenRouter**          | `openrouter/`          | `https://openrouter.ai/api/v1`                      | OpenAI     | [取得](https://openrouter.ai/keys)                               |
-| **VolcEngine (Doubao)** | `volcengine/`          | `https://ark.cn-beijing.volces.com/api/v3`          | OpenAI     | [取得](https://www.volcengine.com/activity/codingplan?utm_campaign=PicoClaw&utm_content=PicoClaw&utm_medium=devrel&utm_source=OWO&utm_term=PicoClaw) |
-| **Antigravity**         | `antigravity/`         | Google Cloud                                        | Custom     | OAuth のみ                                                       |
-
-#### ロードバランシング
-
-同じモデル名に複数のエンドポイントを設定すると、PicoClaw が自動的にラウンドロビンします：
-
-```json
-{
-  "model_list": [
-    { "model_name": "gpt-5.4", "model": "openai/gpt-5.4", "api_base": "https://api1.example.com/v1", "api_keys": ["sk-key1"] },
-    { "model_name": "gpt-5.4", "model": "openai/gpt-5.4", "api_base": "https://api2.example.com/v1", "api_keys": ["sk-key2"] }
-  ]
-}
-```
-
-#### 旧 `providers` 設定からの移行
-
-旧 `providers` 設定は**非推奨**となり、V2 で削除されました。既存の V0/V1 設定は自動的に移行されます。[docs/migration/model-list-migration.md](../migration/model-list-migration.md) を参照してください。
-
-#### ストリーミング設定
-
-Provider ストリーミングは二重の opt-in 方式で、デフォルトでは無効です。現在の channel に `settings.streaming.enabled: true` があり、アクティブなモデルエントリに `streaming.enabled: true` があり、さらに provider と channel の両方がストリーミングをサポートしている場合にのみ、agent はストリーミングリクエストを試行します。いずれかの条件が欠ける場合、PicoClaw は通常の非ストリーミングリクエスト経路を使います。
-
-ストリーミングを使わない場合は `streaming` を省略してください。`streaming` ブロックの省略は無効を意味するため、`"streaming": {"enabled": false}` を書く必要はありません。
-
-有効化例：
-
-```json
-{
-  "model_list": [
-    {
-      "model_name": "gpt-5.4",
-      "provider": "openai",
-      "model": "gpt-5.4",
-      "api_keys": ["sk-your-openai-key"],
-      "streaming": {
-        "enabled": true
-      }
-    }
-  ],
-  "channel_list": {
-    "telegram": {
-      "enabled": true,
-      "type": "telegram",
-      "settings": {
-        "token": "YOUR_TELEGRAM_TOKEN",
-        "streaming": {
-          "enabled": true
-        }
-      }
-    }
-  }
-}
-```
-
-| フィールド | 型 | デフォルト | 説明 |
-| ---------- | -- | ---------- | ---- |
-| `channel_list.<name>.settings.streaming.enabled` | bool | `false` | この channel で provider のストリーミング出力を表示できるようにします |
-| `channel_list.<name>.settings.streaming.throttle_seconds` | int | Telegram: `3` | 中間更新の最小間隔。最終内容は常に flush されます |
-| `channel_list.<name>.settings.streaming.min_growth_chars` | int | Telegram: `200` | 次の中間更新を送るために必要な最小文字増加数。最終内容は常に flush されます |
-| `model_list[].streaming.enabled` | bool | `false` | このモデルエントリで provider ストリーミングリクエストを試行できるようにします |
-
-既存の Telegram 環境変数 `PICOCLAW_CHANNELS_TELEGRAM_STREAMING_ENABLED`、`PICOCLAW_CHANNELS_TELEGRAM_STREAMING_THROTTLE_SECONDS`、`PICOCLAW_CHANNELS_TELEGRAM_STREAMING_MIN_GROWTH_CHARS`.
-
-失敗時の動作は保守的です。可視 chunk が送信される前にストリーミングが失敗した場合、PicoClaw は通常の `Chat()` 経路で一度だけ再試行します。すでに chunk がユーザーに表示されている場合は、表示済み出力の重複を避けるため、二つ目の非ストリーミング回答は送信しません。
-
-### Provider アーキテクチャ
-
-PicoClaw はプロトコルファミリーで Provider をルーティングします：
-
-- **OpenAI 互換**：OpenRouter、Groq、Zhipu、vLLM スタイルのエンドポイントなど。
-- **Gemini ネイティブ**：Google Gemini のネイティブ `models/*:generateContent` / `models/*:streamGenerateContent` エンドポイント。
-- **Anthropic**：Claude ネイティブ API の動作。
-- **Codex/OAuth**：OpenAI OAuth/トークン認証ルート。
-
-これによりランタイムを軽量に保ちつつ、新しい OpenAI 互換バックエンドの追加をほぼ設定操作（`api_base` + `api_keys`）のみで実現します。
+This fork supports only OpenAI (Responses / Chat Completions) and Anthropic Messages. For compatible endpoints, API keys, streaming and login, see the maintained [provider guide](providers.md) or [中文说明](providers.zh.md).
 
 ### スケジュールタスク / リマインダー
 

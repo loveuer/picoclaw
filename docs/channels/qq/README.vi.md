@@ -12,9 +12,11 @@ PicoClaw hỗ trợ QQ thông qua API Bot chính thức của Nền tảng Mở 
     "qq": {
       "enabled": true,
       "type": "qq",
-      "app_id": "YOUR_APP_ID",
-      "app_secret": "YOUR_APP_SECRET",
-      "allow_from": []
+      "allow_from": [],
+      "settings": {
+        "app_id": "YOUR_APP_ID",
+        "app_secret": "YOUR_APP_SECRET"
+      }
     }
   }
 }

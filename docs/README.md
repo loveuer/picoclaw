@@ -19,6 +19,8 @@ If you are browsing docs rather than reorganizing them, start with these directo
 - [Architecture](architecture/README.md): implementation notes and internal design docs.
 - [Migration](migration/README.md): upgrade and migration notes.
 
+The maintained deployment and model guides are [Docker](guides/docker.md), [providers](guides/providers.md), and [troubleshooting](operations/troubleshooting.md). [Office Skills](guides/office-skills.zh.md) describe the separate document runtime. Design and migration documents may describe historical implementations; they are not installation instructions.
+
 For channel-specific setup, start with [Chat Apps Configuration](guides/chat-apps.md) and then drill into `docs/channels/<name>/README.md` as needed.
 
 ## Principles

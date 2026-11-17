@@ -35,14 +35,20 @@ PicoClaw 支持多种聊天平台，使您的 Agent 能够连接到任何地方�
 
 **2. 配置**
 
+> 配置结构：`enabled`、`type`、`allow_from` 等公共字段位于渠道条目，Token、App ID 等专有字段位于 `settings`。`.security.yml` 使用 `channel_list.<名称>.settings` 保存渠道密钥；其中的同名值会覆盖主配置。
+
 ```json
 {
   "channel_list": {
     "telegram": {
       "enabled": true,
       "type": "telegram",
-      "token": "YOUR_BOT_TOKEN",
-      "allow_from": ["YOUR_USER_ID"]
+      "allow_from": [
+        "YOUR_USER_ID"
+      ],
+      "settings": {
+        "token": "YOUR_BOT_TOKEN"
+      }
     }
   }
 }
@@ -96,8 +102,12 @@ picoclaw auth weixin
     "weixin": {
       "enabled": true,
       "type": "weixin",
-      "token": "YOUR_TOKEN",
-      "allow_from": ["YOUR_USER_ID"]
+      "allow_from": [
+        "YOUR_USER_ID"
+      ],
+      "settings": {
+        "token": "YOUR_TOKEN"
+      }
     }
   }
 }
@@ -128,9 +138,11 @@ QQ 开放平台提供了一键创建 OpenClaw 兼容机器人的页面：
     "qq": {
       "enabled": true,
       "type": "qq",
-      "app_id": "YOUR_APP_ID",
-      "app_secret": "YOUR_APP_SECRET",
-      "allow_from": []
+      "allow_from": [],
+      "settings": {
+        "app_id": "YOUR_APP_ID",
+        "app_secret": "YOUR_APP_SECRET"
+      }
     }
   }
 }
@@ -171,9 +183,11 @@ QQ 开放平台提供了一键创建 OpenClaw 兼容机器人的页面：
     "dingtalk": {
       "enabled": true,
       "type": "dingtalk",
-      "client_id": "YOUR_CLIENT_ID",
-      "client_secret": "YOUR_CLIENT_SECRET",
-      "allow_from": []
+      "allow_from": [],
+      "settings": {
+        "client_id": "YOUR_CLIENT_ID",
+        "client_secret": "YOUR_CLIENT_SECRET"
+      }
     }
   }
 }
@@ -210,9 +224,11 @@ PicoClaw 通过 WebSocket/SDK 模式连接飞书 — 无需公网 Webhook URL �
     "feishu": {
       "enabled": true,
       "type": "feishu",
-      "app_id": "cli_xxx",
-      "app_secret": "YOUR_APP_SECRET",
-      "allow_from": []
+      "allow_from": [],
+      "settings": {
+        "app_id": "cli_xxx",
+        "app_secret": "YOUR_APP_SECRET"
+      }
     }
   }
 }
@@ -249,7 +265,7 @@ PicoClaw 现在将企业微信统一为一个基于 WebSocket 的 AI Bot 渠道�
 picoclaw auth wecom
 ```
 
-该命令会显示二维码，等待你在企业微信里确认，然后把 `bot_id` 和 `secret` 写入 `channels.wecom`。
+该命令会显示二维码，等待你在企业微信里确认，然后把 `bot_id` 和 `secret` 写入 `channel_list.wecom.settings`。
 
 **2. 如需手动配置**
 
@@ -259,12 +275,14 @@ picoclaw auth wecom
     "wecom": {
       "enabled": true,
       "type": "wecom",
-      "bot_id": "YOUR_BOT_ID",
-      "secret": "YOUR_SECRET",
-      "websocket_url": "wss://openws.work.weixin.qq.com",
-      "send_thinking_message": true,
       "allow_from": [],
-      "reasoning_channel_id": ""
+      "reasoning_channel_id": "",
+      "settings": {
+        "bot_id": "YOUR_BOT_ID",
+        "secret": "YOUR_SECRET",
+        "websocket_url": "wss://openws.work.weixin.qq.com",
+        "send_thinking_message": true
+      }
     }
   }
 }
@@ -298,9 +316,11 @@ OneBot 是 QQ 机器人的开放协议。PicoClaw 通过 WebSocket 连接任何 
     "onebot": {
       "enabled": true,
       "type": "onebot",
-      "ws_url": "ws://127.0.0.1:8080",
-      "access_token": "",
-      "allow_from": []
+      "allow_from": [],
+      "settings": {
+        "ws_url": "ws://127.0.0.1:8080",
+        "access_token": ""
+      }
     }
   }
 }

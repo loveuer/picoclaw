@@ -6,6 +6,8 @@ PicoClaw supports any MQTT client as a chat channel. Devices or services publish
 
 **1. Add the channel to `~/.picoclaw/config.json`:**
 
+> Configuration: common fields such as `enabled`, `type`, and `allow_from` belong on the channel entry; channel-specific fields belong under `settings`. Credentials saved under `channel_list.<name>.settings` in `.security.yml` override the main JSON configuration.
+
 ```json
 {
   "channel_list": {

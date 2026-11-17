@@ -6,16 +6,20 @@ PicoClaw 通过 QQ 开放平台的官方机器人 API 提供对 QQ 的支持。
 
 ## 配置
 
+> 配置结构：`enabled`、`type`、`allow_from` 等公共字段位于渠道条目，Token、App ID 等专有字段位于 `settings`。`.security.yml` 使用 `channel_list.<名称>.settings` 保存渠道密钥；其中的同名值会覆盖主配置。
+
 ```json
 {
   "channel_list": {
     "qq": {
       "enabled": true,
       "type": "qq",
-      "app_id": "YOUR_APP_ID",
-      "app_secret": "YOUR_APP_SECRET",
       "allow_from": [],
-      "max_base64_file_size_mib": 0
+      "settings": {
+        "app_id": "YOUR_APP_ID",
+        "app_secret": "YOUR_APP_SECRET",
+        "max_base64_file_size_mib": 0
+      }
     }
   }
 }

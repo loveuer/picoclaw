@@ -6,15 +6,19 @@ OneBot 是一个面向 QQ 机器人的开放协议标准，为多种 QQ 机器�
 
 ## 配置
 
+> 配置结构：`enabled`、`type`、`allow_from` 等公共字段位于渠道条目，Token、App ID 等专有字段位于 `settings`。`.security.yml` 使用 `channel_list.<名称>.settings` 保存渠道密钥；其中的同名值会覆盖主配置。
+
 ```json
 {
   "channel_list": {
     "onebot": {
       "enabled": true,
       "type": "onebot",
-      "ws_url": "ws://localhost:8080",
-      "access_token": "",
-      "allow_from": []
+      "allow_from": [],
+      "settings": {
+        "ws_url": "ws://localhost:8080",
+        "access_token": ""
+      }
     }
   }
 }

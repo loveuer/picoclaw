@@ -52,12 +52,14 @@ Nếu bạn đã có `bot_id` và `secret` từ nền tảng WeCom AI Bot, hãy 
     "wecom": {
       "enabled": true,
       "type": "wecom",
-      "bot_id": "YOUR_BOT_ID",
-      "secret": "YOUR_SECRET",
-      "websocket_url": "wss://openws.work.weixin.qq.com",
-      "send_thinking_message": true,
       "allow_from": [],
-      "reasoning_channel_id": ""
+      "reasoning_channel_id": "",
+      "settings": {
+        "bot_id": "YOUR_BOT_ID",
+        "secret": "YOUR_SECRET",
+        "websocket_url": "wss://openws.work.weixin.qq.com",
+        "send_thinking_message": true
+      }
     }
   }
 }

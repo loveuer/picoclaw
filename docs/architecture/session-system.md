@@ -1,6 +1,6 @@
 # Session System
 
-> Back to [README](../README.md)
+> Back to [README](../../README.md)
 
 This document describes the runtime session system used by PicoClaw to:
 

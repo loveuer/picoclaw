@@ -8,7 +8,7 @@
 
 ### 环境变量
 
-你可以使用环境变量覆盖默认路径。这对于便携安装、容器化部署或将 picoclaw 作为系统服务运行非常有用。这些变量是独立的，控制不同的路径。
+你可以使用环境变量覆盖默认路径。这对于便携安装、容器化部署或将 picoclaw 作为系统服务运行非常有用。`PICOCLAW_HOME` 也会改变默认配置文件路径；显式指定的 `PICOCLAW_CONFIG` 优先。
 
 | 变量              | 描述                                                                                                                             | 默认路径                  |
 |-------------------|-----------------------------------------------------------------------------------------------------------------------------------------|---------------------------|
@@ -23,7 +23,7 @@
 PICOCLAW_CONFIG=/etc/picoclaw/production.json picoclaw gateway
 
 # 在 /opt/picoclaw 中存储所有数据运行 picoclaw
-# 配置将从默认的 ~/.picoclaw/config.json 加载
+# 配置将从 /opt/picoclaw/config.json 加载
 # 工作区将在 /opt/picoclaw/workspace 创建
 PICOCLAW_HOME=/opt/picoclaw picoclaw agent
 
