@@ -381,16 +381,8 @@ func (al *AgentLoop) buildCommandsRuntime(
 			if opts == nil {
 				return fmt.Errorf("process options not available")
 			}
-			// /clear can arrive before any turn has persisted session scope
-			// metadata (runAgentLoop records it per turn), so record it here to
-			// let the ContextManager resolve which agent owns the session.
-			ensureSessionMetadata(
-				agent.Sessions,
-				opts.Dispatch.SessionKey,
-				opts.Dispatch.SessionScope,
-				opts.Dispatch.SessionAliases,
-			)
-			return al.contextManager.Clear(ctx, opts.SessionKey)
+			al.pendingMemoryChoices.Delete(opts.Dispatch.SessionKey)
+			return al.contextManager.clearOwned(ctx, agent.turnStore, *opts)
 		}
 
 		rt.StartNewConversation = func(ctx context.Context, prompt string) (string, error) {
@@ -400,6 +392,21 @@ func (al *AgentLoop) buildCommandsRuntime(
 			if prompt == "" {
 				return "Chat history cleared!", nil
 			}
+			authored := ""
+			raw := strings.TrimSpace(opts.memoryAuthoredText)
+			if name, ok := commands.CommandName(raw); ok && name == "new" {
+				_, authored = firstArgument(raw)
+			}
+			if answer, handled, err := agent.handlePrivateMemory(
+				ctx,
+				opts.privateMemory,
+				prompt,
+				authored,
+				opts.memorySource,
+			); handled {
+				return answer, err
+			}
+			opts.memoryAuthoredText = authored
 			opts.Dispatch.UserMessage = prompt
 			opts.UserMessage = prompt
 			return al.runMessagePrompt(ctx, agent, *opts)

@@ -50,7 +50,7 @@ const (
 	PromptSourceWorkspace      PromptSourceID = "workspace.definition"
 	PromptSourceRuntime        PromptSourceID = "runtime.context"
 	PromptSourceSummary        PromptSourceID = "context.summary"
-	PromptSourceMemory         PromptSourceID = "memory:workspace"
+	PromptSourceMemory         PromptSourceID = "memory:private"
 	PromptSourceSkillCatalog   PromptSourceID = "skill:index"
 	PromptSourceActiveSkills   PromptSourceID = "skill:active"
 	PromptSourceAgentDiscovery PromptSourceID = "agent:discovery"
@@ -215,9 +215,9 @@ func builtinPromptSources() []PromptSourceDescriptor {
 		{
 			ID:              PromptSourceMemory,
 			Owner:           "memory",
-			Description:     "Workspace memory context",
+			Description:     "Per-request private preferences and record search guidance",
 			Allowed:         []PromptPlacement{{Layer: PromptLayerContext, Slot: PromptSlotMemory}},
-			StableByDefault: true,
+			StableByDefault: false,
 		},
 		{
 			ID:              PromptSourceRuntime,

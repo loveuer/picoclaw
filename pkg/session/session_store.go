@@ -3,9 +3,7 @@ package session
 import "github.com/sipeed/picoclaw/pkg/providers"
 
 // SessionStore defines the persistence operations used by the agent loop.
-// Both SessionManager (legacy JSON backend) and JSONLBackend satisfy this
-// interface, allowing the storage layer to be swapped without touching the
-// agent loop code.
+// The SQLite store handles durable sessions. Subturns can use an in-memory store.
 //
 // Write methods (Add*, Set*, Truncate*) are fire-and-forget: they do not
 // return errors. Implementations should log failures internally. This

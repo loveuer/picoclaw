@@ -375,10 +375,14 @@ func (c *WeixinChannel) handleInboundMessage(ctx context.Context, msg WeixinMess
 		c.persistContextTokens()
 	}
 
+	chatType := "direct"
+	if msg.GroupID != "" {
+		chatType = "group"
+	}
 	inboundCtx := bus.InboundContext{
 		Channel:   "weixin",
 		ChatID:    fromUserID,
-		ChatType:  "direct",
+		ChatType:  chatType,
 		SenderID:  fromUserID,
 		MessageID: messageID,
 		Raw:       metadata,
@@ -389,6 +393,14 @@ func (c *WeixinChannel) handleInboundMessage(ctx context.Context, msg WeixinMess
 		}
 	}
 
+	if chatType == "direct" {
+		authored := ""
+		if len(mediaRefs) == 0 && len(msg.ItemList) == 1 && msg.ItemList[0].Type == MessageItemTypeText &&
+			msg.ItemList[0].RefMsg == nil {
+			authored = content
+		}
+		ctx = channels.WithPrivateChat(ctx, authored)
+	}
 	c.HandleInboundContext(ctx, fromUserID, content, mediaRefs, inboundCtx, sender)
 }
 

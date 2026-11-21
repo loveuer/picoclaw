@@ -261,6 +261,14 @@ func (c *BaseChannel) IsAllowedSender(sender bus.SenderInfo) bool {
 	return false
 }
 
+type privateChatKey struct{}
+
+// WithPrivateChat marks a Feishu or Weixin direct message for shared memory.
+// BaseChannel publishes the marker only after its ordinary sender checks.
+func WithPrivateChat(ctx context.Context, text string) context.Context {
+	return context.WithValue(ctx, privateChatKey{}, bus.PrivateChat{Text: text})
+}
+
 func (c *BaseChannel) HandleMessageWithContext(
 	ctx context.Context,
 	deliveryChatID, content string,
@@ -310,6 +318,9 @@ func (c *BaseChannel) HandleMessageWithContext(
 		Content:    content,
 		Media:      media,
 		MediaScope: scope,
+	}
+	if private, ok := ctx.Value(privateChatKey{}).(bus.PrivateChat); ok && inboundCtx.ChatType == "direct" {
+		msg.PrivateChat = &private
 	}
 	msg = bus.NormalizeInboundMessage(msg)
 

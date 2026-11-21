@@ -1,5 +1,7 @@
 # ⚙️ Guide de Configuration
 
+> [SQLite memory](memory.md): the old workspace memory and session files are no longer used at runtime.
+
 > Fork configuration: `PICOCLAW_HOME` also changes the default config path; `PICOCLAW_CONFIG` overrides that path. For current model protocols and channel settings, use the [README](../../README.md) and [configuration example](../../config/config.example.json).
 
 > Retour au [README](../../README.md)
@@ -55,8 +57,6 @@ PicoClaw stocke les données dans votre workspace configuré (par défaut : `~/.
 
 ```
 ~/.picoclaw/workspace/
-├── sessions/          # Sessions de conversation et historique
-├── memory/           # Mémoire à long terme (MEMORY.md)
 ├── state/            # État persistant (dernier canal, etc.)
 ├── cron/             # Base de données des tâches planifiées
 ├── skills/           # Compétences personnalisées
@@ -66,7 +66,6 @@ PicoClaw stocke les données dans votre workspace configuré (par défaut : `~/.
 └── USER.md           # Préférences utilisateur
 ```
 
-> **Remarque :** Les modifications apportées à `AGENT.md`, `SOUL.md`, `USER.md` et `memory/MEMORY.md` sont détectées automatiquement au moment de l'exécution via le suivi de la date de modification (mtime). Il n'est **pas nécessaire de redémarrer le gateway** après avoir modifié ces fichiers — l'agent charge le nouveau contenu à la prochaine requête.
 
 ### Politique de contexte de requête
 

@@ -9,6 +9,7 @@ package agent
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync"
 
 	"github.com/sipeed/picoclaw/pkg/config"
@@ -163,6 +164,8 @@ func (al *AgentLoop) ensureMCPInitialized(ctx context.Context) error {
 					}
 
 					mcpTool := tools.NewMCPTool(mcpManager, serverName, tool)
+					mcpTool.SetRemoteTransport(serverCfg.Command == "" &&
+						(strings.HasPrefix(serverCfg.URL, "https://") || strings.HasPrefix(serverCfg.URL, "http://")))
 					toolName := mcpTool.Name()
 					mcpTool.SetWorkspace(agent.Workspace)
 					mcpTool.SetMaxInlineTextRunes(al.cfg.Tools.MCP.GetMaxInlineTextChars())

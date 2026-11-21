@@ -31,6 +31,7 @@ type legacyDiagnosticConfig struct {
 	Version     int                    `json:"version"`
 	Isolation   IsolationConfig        `json:"isolation,omitempty"`
 	Agents      legacyDiagnosticAgents `json:"agents,omitempty"`
+	Memory      MemoryConfig           `json:"memory,omitempty"`
 	Session     SessionConfig          `json:"session,omitempty"`
 	Channels    map[string]any         `json:"channels,omitempty"`
 	ChannelList ChannelsConfig         `json:"channel_list,omitempty"`

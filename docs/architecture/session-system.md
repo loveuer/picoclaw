@@ -17,16 +17,15 @@ The session system has four jobs:
 1. Decide which messages should share the same conversation context.
 2. Persist that context durably across turns and restarts.
 3. Expose a small `SessionStore` interface to the agent loop.
-4. Keep older session-key formats working during storage and routing migrations.
+4. Resolve session aliases used by routing and tools.
 
 ## Main Components
 
 | Layer | Files | Responsibility |
 | --- | --- | --- |
 | Session contract | `pkg/session/session_store.go` | Defines the `SessionStore` interface used by the agent loop. |
-| Legacy backend | `pkg/session/manager.go` | Stores one JSON file per session. Still used as a fallback. |
-| Session adapter | `pkg/session/jsonl_backend.go` | Adapts `pkg/memory.Store` to `SessionStore`, including alias and scope metadata support. |
-| Durable storage | `pkg/memory/jsonl.go` | Append-only JSONL storage plus `.meta.json` sidecar metadata. |
+| Session adapter | `pkg/session/sqlite_backend.go` | Implements `SessionStore` and handles aliases and scopes. |
+| Durable storage | `pkg/memory/sqlite.go` | Stores sessions, messages and aliases in SQLite. |
 | Scope and key building | `pkg/session/scope.go`, `pkg/session/key.go`, `pkg/session/allocator.go` | Builds structured scopes, opaque canonical keys, and legacy aliases from routing results. |
 | Runtime integration | `pkg/agent/instance.go`, `pkg/agent/agent.go`, `pkg/agent/agent_message.go` | Initializes the store, allocates session scope, and persists metadata before turns run. |
 
@@ -81,8 +80,8 @@ agent:main:feishu:channel:c001
 agent:main:pico:direct:pico:session-123
 ```
 
-These aliases matter because older sessions, tests, and some tools still refer to the legacy shape.
-The JSONL backend resolves aliases back to the canonical key before reads and writes.
+Some tools and tests use these aliases.
+The SQLite session store resolves aliases back to the canonical key before reads and writes.
 
 The agent loop also preserves explicit incoming session keys when the caller already supplied one of the recognized explicit formats:
 
@@ -115,7 +114,7 @@ More concretely:
    - `MainSessionKey`: agent-level main session key
    - `MainAliases`: legacy alias for the main session
 4. `runAgentLoop` persists scope metadata and aliases through `ensureSessionMetadata`.
-5. During later reads or writes, `JSONLBackend.ResolveSessionKey` maps aliases back onto the canonical key.
+5. During later reads or writes, `SQLiteSessionStore.ResolveSessionKey` maps aliases back onto the canonical key.
 
 The main session key is separate from routed chat sessions.
 It is mainly used for agent-level or system-style flows that need one stable per-agent conversation, for example `processSystemMessage`.
@@ -151,79 +150,11 @@ Those produce different session keys.
 `session.identity_links` lets multiple sender identifiers collapse into one canonical identity.
 Both dispatch matching and session allocation use that mapping so that the same person can keep one conversation even if their raw sender IDs differ across channels or accounts.
 
-## Storage Format
+## Storage and commits
 
-The default runtime backend is `pkg/memory.JSONLStore`, wrapped by `session.JSONLBackend`.
+SQLite is the runtime session store. Each `PICOCLAW_HOME` has one database. The `sessions` table stores summaries, scopes and revisions, `session_messages` stores messages, and `session_aliases` stores routing aliases.
 
-Each session uses two files:
-
-```text
-{sanitized_key}.jsonl
-{sanitized_key}.meta.json
-```
-
-The files store:
-
-- `.jsonl`: one `providers.Message` per line, append-only
-- `.meta.json`: summary, timestamps, line counts, logical truncation offset, scope, aliases
-
-`SessionMeta` currently includes:
-
-- `Key`
-- `Summary`
-- `Skip`
-- `Count`
-- `CreatedAt`
-- `UpdatedAt`
-- `Scope`
-- `Aliases`
-
-## Write And Crash Semantics
-
-The JSONL store is designed around append-first durability and stale-over-loss recovery:
-
-- `AddMessage` and `AddFullMessage` append one JSON line, `fsync`, then update metadata.
-- `TruncateHistory` is logical first: it only advances `meta.Skip`.
-- `Compact` physically rewrites the JSONL file to remove skipped lines.
-- `SetHistory` and `Compact` write metadata before rewriting JSONL so a crash may temporarily expose old data, but should not lose data.
-- Corrupt JSONL lines are skipped during reads instead of failing the entire session.
-
-`JSONLBackend.Save` maps onto `store.Compact(...)`.
-In other words, `Save` is no longer "flush dirty memory to disk"; it is now "reclaim dead lines after logical truncation".
-
-## Concurrency Model
-
-`pkg/memory.JSONLStore` uses a fixed 64-shard mutex array keyed by session hash.
-That gives per-session serialization without keeping an unbounded mutex map in memory.
-
-The legacy `SessionManager` uses a single in-memory map guarded by an RW mutex.
-
-Both backends satisfy the same `SessionStore` interface, which is why the agent loop does not need storage-specific code.
-
-## Compatibility And Migration
-
-`pkg/agent/instance.go:initSessionStore` prefers the JSONL backend.
-
-Startup sequence:
-
-1. Create `memory.NewJSONLStore(dir)`.
-2. Run `memory.MigrateFromJSON(...)` to import legacy `.json` sessions.
-3. Wrap the store with `session.NewJSONLBackend(store)`.
-4. If JSONL initialization or migration fails, fall back to `session.NewSessionManager(dir)`.
-
-This fallback is intentional: a partial migration would be worse than staying on the legacy store for one run.
-
-### Alias promotion
-
-When canonical metadata is first created, `EnsureSessionMetadata` may promote history from a non-empty legacy alias into the canonical session.
-That promotion only happens when the canonical session is still empty, so active canonical history is not overwritten.
-
-This is how the system preserves old histories such as:
-
-- legacy direct-message keys
-- older Pico direct-session keys
-
-while moving the runtime onto opaque canonical keys.
+Ordinary turns commit at the end. Long turns can commit after a complete tool batch, and committed messages survive process exit. Summary compaction and conversation clearing use session revisions so stale writes cannot restore cleared history.
 
 ## Other SessionStore Implementations
 
@@ -243,11 +174,11 @@ The session system is consumed by more than the agent loop:
 
 - `pkg/session/session_store.go`
 - `pkg/session/manager.go`
-- `pkg/session/jsonl_backend.go`
+- `pkg/session/sqlite_backend.go`
 - `pkg/session/scope.go`
 - `pkg/session/key.go`
 - `pkg/session/allocator.go`
-- `pkg/memory/jsonl.go`
+- `pkg/memory/sqlite.go`
 - `pkg/agent/instance.go`
 - `pkg/agent/agent.go`
 - `pkg/agent/agent_message.go`

@@ -152,8 +152,7 @@ toolLoop:
 			}
 			messages = append(messages, deniedMsg)
 			if !ts.opts.NoHistory {
-				ts.agent.Sessions.AddFullMessage(ts.sessionKey, deniedMsg)
-				ts.recordPersistedMessage(deniedMsg)
+				ts.addTurnMessage(deniedMsg)
 			}
 			return true
 		}
@@ -181,7 +180,7 @@ toolLoop:
 
 					argsJSON, _ := json.Marshal(toolArgs)
 					argsPreview := utils.Truncate(string(argsJSON), 200)
-					logger.InfoCF("agent", fmt.Sprintf("Tool call (hook respond): %s(%s)", toolName, argsPreview),
+					logger.InfoCF("agent", fmt.Sprintf("Tool call (hook respond): %s(%s)", toolName, privateToolPreview(ts, argsPreview)),
 						map[string]any{
 							"agent_id":  ts.agent.ID,
 							"tool":      toolName,
@@ -327,9 +326,7 @@ toolLoop:
 
 					messages = append(messages, toolResultMsg)
 					if !ts.opts.NoHistory {
-						ts.agent.Sessions.AddFullMessage(ts.sessionKey, toolResultMsg)
-						ts.recordPersistedMessage(toolResultMsg)
-						ts.ingestMessage(turnCtx, al, toolResultMsg)
+						ts.addTurnMessage(toolResultMsg)
 					}
 
 					if steerMsgs := al.dequeueSteeringMessagesForScope(ts.sessionKey); len(steerMsgs) > 0 {
@@ -373,8 +370,7 @@ toolLoop:
 								}
 								messages = append(messages, skippedMsg)
 								if !ts.opts.NoHistory {
-									ts.agent.Sessions.AddFullMessage(ts.sessionKey, skippedMsg)
-									ts.recordPersistedMessage(skippedMsg)
+									ts.addTurnMessage(skippedMsg)
 								}
 							}
 						}
@@ -387,10 +383,7 @@ toolLoop:
 							if ok && result != nil && result.ForLLM != "" {
 								content := al.cfg.FilterSensitiveData(result.ForLLM)
 								msg := subTurnResultPromptMessage(content)
-								messages = append(messages, msg)
-								if !ts.opts.NoHistory {
-									ts.agent.Sessions.AddFullMessage(ts.sessionKey, msg)
-								}
+								exec.pendingMessages = append(exec.pendingMessages, msg)
 							}
 						default:
 						}
@@ -422,8 +415,7 @@ toolLoop:
 				}
 				messages = append(messages, deniedMsg)
 				if !ts.opts.NoHistory {
-					ts.agent.Sessions.AddFullMessage(ts.sessionKey, deniedMsg)
-					ts.recordPersistedMessage(deniedMsg)
+					ts.addTurnMessage(deniedMsg)
 				}
 				continue
 			case HookActionAbortTurn:
@@ -461,8 +453,7 @@ toolLoop:
 				}
 				messages = append(messages, deniedMsg)
 				if !ts.opts.NoHistory {
-					ts.agent.Sessions.AddFullMessage(ts.sessionKey, deniedMsg)
-					ts.recordPersistedMessage(deniedMsg)
+					ts.addTurnMessage(deniedMsg)
 				}
 				continue
 			}
@@ -474,7 +465,7 @@ toolLoop:
 
 		argsJSON, _ := json.Marshal(toolArgs)
 		argsPreview := utils.Truncate(string(argsJSON), 200)
-		logger.InfoCF("agent", fmt.Sprintf("Tool call: %s(%s)", toolName, argsPreview),
+		logger.InfoCF("agent", fmt.Sprintf("Tool call: %s(%s)", toolName, privateToolPreview(ts, argsPreview)),
 			map[string]any{
 				"agent_id":  ts.agent.ID,
 				"tool":      toolName,
@@ -567,14 +558,28 @@ toolLoop:
 			ts.sessionKey,
 			ts.opts.Dispatch.SessionScope,
 		)
-		toolResult := ts.agent.Tools.ExecuteWithContext(
-			execCtx,
-			toolName,
-			toolArgs,
-			ts.channel,
-			ts.chatID,
-			asyncCallback,
-		)
+		if ts.opts.privateMemory {
+			execCtx = tools.WithPrivateToolLogs(execCtx)
+		}
+		if toolName == memorySearchName || toolName == memoryWriteName {
+			execCtx = context.WithValue(execCtx, privateMemoryKey{}, privateMemoryAccess{
+				allowed: ts.opts.privateMemory, authored: ts.opts.memoryAuthoredText, management: ts.opts.memoryManagement,
+			})
+		}
+		var toolResult *tools.ToolResult
+		if err := memoryToolPolicy(ts, toolName, toolArgs, messages[min(len(messages), exec.currentTurnStart):], p.MediaStore, exec.mediaArtifacts); err != nil {
+			toolResult = tools.ErrorResult(err.Error())
+		} else {
+			toolResult = ts.agent.Tools.ExecuteWithContext(
+				execCtx,
+				toolName,
+				toolArgs,
+				ts.channel,
+				ts.chatID,
+				asyncCallback,
+			)
+		}
+
 		toolDuration := time.Since(toolStart)
 
 		if ts.hardAbortRequested() {
@@ -582,7 +587,7 @@ toolLoop:
 			return ToolControlBreak
 		}
 
-		if al.hooks != nil {
+		if al.hooks != nil && !ts.opts.privateMemory && toolName != memorySearchName && toolName != memoryWriteName {
 			toolResp, decision := al.hooks.AfterTool(turnCtx, &ToolResultHookResponse{
 				Meta:      ts.eventMeta("runTurn", "turn.tool.after"),
 				Context:   cloneTurnContext(ts.turnCtx),
@@ -613,6 +618,21 @@ toolLoop:
 
 		if toolResult == nil {
 			toolResult = tools.ErrorResult("hook returned nil tool result")
+		}
+
+		if p.MediaStore != nil {
+			for _, ref := range toolResult.Media {
+				path, err := p.MediaStore.Resolve(ref)
+				if err != nil {
+					continue
+				}
+				if path = turnArtifactPath(path); path != "" {
+					if exec.mediaArtifacts == nil {
+						exec.mediaArtifacts = make(map[string]bool)
+					}
+					exec.mediaArtifacts[path] = true
+				}
+			}
 		}
 
 		if len(toolResult.Media) > 0 && toolResult.ResponseHandled {
@@ -715,9 +735,10 @@ toolLoop:
 		)
 		messages = append(messages, toolResultMsg)
 		if !ts.opts.NoHistory {
-			ts.agent.Sessions.AddFullMessage(ts.sessionKey, toolResultMsg)
-			ts.recordPersistedMessage(toolResultMsg)
-			ts.ingestMessage(turnCtx, al, toolResultMsg)
+			if toolName == memorySearchName || toolName == memoryWriteName {
+				toolResultMsg.Content = "[Private memory tool result omitted from history]"
+			}
+			ts.addTurnMessage(toolResultMsg)
 		}
 
 		if steerMsgs := al.dequeueSteeringMessagesForScope(ts.sessionKey); len(steerMsgs) > 0 {
@@ -761,8 +782,7 @@ toolLoop:
 					}
 					messages = append(messages, skippedMsg)
 					if !ts.opts.NoHistory {
-						ts.agent.Sessions.AddFullMessage(ts.sessionKey, skippedMsg)
-						ts.recordPersistedMessage(skippedMsg)
+						ts.addTurnMessage(skippedMsg)
 					}
 				}
 			}
@@ -775,10 +795,7 @@ toolLoop:
 				if ok && result != nil && result.ForLLM != "" {
 					content := al.cfg.FilterSensitiveData(result.ForLLM)
 					msg := subTurnResultPromptMessage(content)
-					messages = append(messages, msg)
-					if !ts.opts.NoHistory {
-						ts.agent.Sessions.AddFullMessage(ts.sessionKey, msg)
-					}
+					exec.pendingMessages = append(exec.pendingMessages, msg)
 				}
 			default:
 			}
@@ -813,33 +830,16 @@ toolLoop:
 		return ToolControlContinue
 	}
 
+	// A committed or failed explicit memory operation has a runtime receipt.
+	// The current tool batch is complete; no follow-up model call is needed.
+	if management := ts.opts.memoryManagement; management != nil && management.finished {
+		exec.allResponsesHandled = false
+		return ToolControlBreak
+	}
+
 	// No pending steering: finalize or break depending on allResponsesHandled
 	if exec.allResponsesHandled {
-		summaryMsg := providers.Message{
-			Role:        "assistant",
-			Content:     handledToolResponseSummary,
-			Attachments: append([]providers.Attachment(nil), handledAttachments...),
-		}
-		if !ts.opts.NoHistory {
-			ts.agent.Sessions.AddFullMessage(ts.sessionKey, summaryMsg)
-			ts.recordPersistedMessage(summaryMsg)
-			ts.ingestMessage(turnCtx, al, summaryMsg)
-			if err := ts.agent.Sessions.Save(ts.sessionKey); err != nil {
-				logger.WarnCF("agent", "Failed to save session after tool delivery",
-					map[string]any{
-						"agent_id": ts.agent.ID,
-						"error":    err.Error(),
-					})
-			}
-		}
-		if !ts.opts.NoHistory && ts.opts.EnableSummary {
-			al.contextManager.Compact(turnCtx, &CompactRequest{
-				SessionKey: ts.sessionKey,
-				Reason:     ContextCompressReasonSummarize,
-				Budget:     ts.agent.ContextWindow,
-			})
-		}
-		ts.setPhase(TurnPhaseCompleted)
+		exec.handledAttachments = handledAttachments
 		ts.setFinalContent("")
 		if al.channelManager != nil && ts.channel != "" {
 			al.channelManager.DismissToolFeedback(ctx, ts.channel, ts.chatID, ts.opts.InboundContext)

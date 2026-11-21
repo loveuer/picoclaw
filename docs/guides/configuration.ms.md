@@ -1,5 +1,7 @@
 # ⚙️ Panduan Konfigurasi
 
+> [SQLite memory](memory.md): the old workspace memory and session files are no longer used at runtime.
+
 > Fork configuration: `PICOCLAW_HOME` also changes the default config path; `PICOCLAW_CONFIG` overrides that path. For current model protocols and channel settings, use the [README](../../README.md) and [configuration example](../../config/config.example.json).
 
 > Kembali ke [README](../../README.md)
@@ -86,8 +88,6 @@ PicoClaw menyimpan data dalam workspace yang dikonfigurasikan (lalai: `~/.picocl
 
 ```
 ~/.picoclaw/workspace/
-├── sessions/          # Sesi perbualan dan sejarah
-├── memory/            # Memori jangka panjang (MEMORY.md)
 ├── state/             # Keadaan persisten (saluran terakhir, dll.)
 ├── cron/              # Pangkalan data job berjadual
 ├── skills/            # Skill tersuai

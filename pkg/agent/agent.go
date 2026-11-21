@@ -24,6 +24,7 @@ import (
 	runtimeevents "github.com/sipeed/picoclaw/pkg/events"
 	"github.com/sipeed/picoclaw/pkg/logger"
 	"github.com/sipeed/picoclaw/pkg/media"
+	"github.com/sipeed/picoclaw/pkg/memory"
 	"github.com/sipeed/picoclaw/pkg/providers"
 	"github.com/sipeed/picoclaw/pkg/routing"
 	"github.com/sipeed/picoclaw/pkg/session"
@@ -47,20 +48,21 @@ type AgentLoop struct {
 	hooks              *HookManager
 
 	// Runtime state
-	running        atomic.Bool
-	contextManager ContextManager
-	fallback       *providers.FallbackChain
-	channelManager interfaces.ChannelManager
-	mediaStore     media.MediaStore
-	transcriber    asr.Transcriber
-	cmdRegistry    *commands.Registry
-	mcp            mcpRuntime
-	evolution      *evolutionBridge
-	hookRuntime    hookRuntime
-	steering       *steeringQueue
-	pendingSkills  sync.Map
-	pendingStops   sync.Map
-	mu             sync.RWMutex
+	running              atomic.Bool
+	contextManager       *sqliteContextManager
+	fallback             *providers.FallbackChain
+	channelManager       interfaces.ChannelManager
+	mediaStore           media.MediaStore
+	transcriber          asr.Transcriber
+	cmdRegistry          *commands.Registry
+	mcp                  mcpRuntime
+	evolution            *evolutionBridge
+	hookRuntime          hookRuntime
+	steering             *steeringQueue
+	pendingSkills        sync.Map
+	pendingMemoryChoices sync.Map
+	pendingStops         sync.Map
+	mu                   sync.RWMutex
 
 	// workerSem limits concurrent turn processing workers.
 	workerSem chan struct{}
@@ -85,6 +87,13 @@ type AgentLoop struct {
 
 // processOptions configures how a message is processed
 type processOptions struct {
+	privateMemory           bool
+	memorySender            bus.SenderInfo
+	memoryAuthoredText      string
+	memorySource            string
+	memoryAutoCapture       bool
+	memoryOverlays          []PromptPart
+	memoryManagement        *memoryManagement
 	Dispatch                DispatchRequest // Normalized routed request boundary for this turn
 	SessionKey              string          // Session identifier for history/context
 	SessionAliases          []string        // Compatibility aliases for the session key
@@ -150,6 +159,17 @@ func (al *AgentLoop) Run(ctx context.Context) error {
 		return err
 	}
 
+	reviewCtx, stopReview := context.WithCancel(ctx)
+	reviewDone := make(chan struct{})
+	go func() {
+		defer close(reviewDone)
+		al.runMemoryReviews(reviewCtx)
+	}()
+	defer func() {
+		stopReview()
+		<-reviewDone
+	}()
+
 	idleTicker := time.NewTicker(100 * time.Millisecond)
 	defer idleTicker.Stop()
 
@@ -189,6 +209,13 @@ func (al *AgentLoop) Run(ctx context.Context) error {
 			}
 			if active, loaded := al.activeTurnStates.LoadOrStore(sessionKey, placeholder); loaded {
 				if al.tryRejectNewCommand(ctx, msg, sessionKey, active.(*turnState)) {
+					continue
+				}
+				if msg.PrivateChat != nil {
+					al.PublishResponseIfNeeded(ctx, msg.Channel, msg.ChatID, sessionKey, "当前私聊正在处理上一条消息，请稍后重试。")
+					continue
+				}
+				if live, ok := active.(*turnState); ok && live.opts.privateMemory {
 					continue
 				}
 				if al.tryHandleStopCommand(ctx, msg, sessionKey) {
@@ -388,6 +415,9 @@ func (al *AgentLoop) ReloadProviderAndConfig(
 		return fmt.Errorf("config cannot be nil")
 	}
 
+	if err := validateMemoryWorkspacePaths(cfg, memory.Path(config.GetHome())); err != nil {
+		return err
+	}
 	var registry *AgentRegistry
 	func() {
 		defer func() {
@@ -407,6 +437,13 @@ func (al *AgentLoop) ReloadProviderAndConfig(
 		return fmt.Errorf("registry creation failed")
 	}
 
+	for _, id := range registry.ListAgentIDs() {
+		a, _ := registry.GetAgent(id)
+		if a != nil && a.memoryErr != nil {
+			registry.Close()
+			return a.memoryErr
+		}
+	}
 	// Check context again before proceeding
 	if err := ctx.Err(); err != nil {
 		return fmt.Errorf("context canceled after registry creation: %w", err)
@@ -538,6 +575,25 @@ func (al *AgentLoop) runAgentLoop(
 	if err != nil {
 		return "", err
 	}
+	if !opts.NoHistory {
+		if err = authorizeMemorySession(ctx, agent, opts.Dispatch.SessionKey, opts.privateMemory); err != nil {
+			return "", err
+		}
+	}
+	if opts.privateMemory && agent.memoryDB != nil {
+		_, canSearch := agent.Tools.Get(memorySearchName)
+		opts.memoryOverlays, err = memoryPrompt(
+			ctx,
+			agent.memoryDB,
+			canSearch && turnProfileToolAllowed(opts.TurnProfile, memorySearchName),
+		)
+		if err != nil {
+			return "", err
+		}
+		if opts.memoryManagement != nil {
+			opts.memoryOverlays = append(opts.memoryOverlays, opts.memoryManagement.prompt())
+		}
+	}
 
 	// Record last channel for heartbeat notifications (skip internal channels and cli)
 	if opts.Dispatch.Channel() != "" &&
@@ -552,13 +608,6 @@ func (al *AgentLoop) runAgentLoop(
 			)
 		}
 	}
-
-	ensureSessionMetadata(
-		agent.Sessions,
-		opts.Dispatch.SessionKey,
-		opts.Dispatch.SessionScope,
-		opts.Dispatch.SessionAliases,
-	)
 
 	turnScope := al.newTurnEventScope(
 		agent.ID,
@@ -615,7 +664,7 @@ func (al *AgentLoop) runAgentLoop(
 	}
 
 	if result.finalContent != "" {
-		responsePreview := utils.Truncate(result.finalContent, 120)
+		responsePreview := privateToolPreview(ts, utils.Truncate(result.finalContent, 120))
 		logger.InfoCF("agent", fmt.Sprintf("Response: %s", responsePreview),
 			map[string]any{
 				"agent_id":     agent.ID,
@@ -636,8 +685,6 @@ func (al *AgentLoop) runAgentLoop(
 // The returned (candidates, model) pair is used for all LLM calls within one
 // turn — tool follow-up iterations use the same tier as the initial call so
 // that a multi-step tool chain doesn't switch models mid-way.
-
-// resolveContextManager selects the ContextManager implementation based on config.
 
 // GetStartupInfo returns information about loaded tools and skills for logging.
 

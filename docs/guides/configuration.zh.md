@@ -47,14 +47,16 @@ PICOCLAW_HOME=/srv/picoclaw PICOCLAW_CONFIG=/srv/picoclaw/main.json picoclaw gat
 
 也可通过环境变量覆盖：`PICOCLAW_LOG_LEVEL=info`
 
+### SQLite 三层记忆
+
+每个 `PICOCLAW_HOME` 使用一份 SQLite 记忆库，位于该目录的 `state/memory/memory.sqlite3`。终端和通过现有渠道访问规则的飞书、微信私聊共享长期偏好和永久记录；群聊无权访问。workspace 只存放文件和技能，近期聊天和摘要仍按会话隔离。`memory.disable_auto_capture` 可关闭后台整理。见 [记忆指南](memory.zh.md)。
+
 ### 工作区布局 (Workspace Layout)
 
 PicoClaw 将数据存储在您配置的工作区中（默认：`~/.picoclaw/workspace`）：
 
 ```
 ~/.picoclaw/workspace/
-├── sessions/          # 对话会话和历史
-├── memory/           # 长期记忆 (MEMORY.md)
 ├── state/            # 持久化状态 (最后一次频道等)
 ├── cron/             # 定时任务数据库
 ├── skills/           # 自定义技能
@@ -65,7 +67,7 @@ PicoClaw 将数据存储在您配置的工作区中（默认：`~/.picoclaw/work
 └── USER.md           # 用户偏好
 ```
 
-> **提示：** 对 `AGENT.md`、`SOUL.md`、`USER.md` 和 `memory/MEMORY.md` 的修改会通过文件修改时间（mtime）在运行时自动检测。**无需重启 gateway**，Agent 将在下一次请求时自动加载最新内容。
+> **提示：** 对 `AGENT.md`、`SOUL.md`、`USER.md` 的修改会通过文件修改时间（mtime）在运行时自动检测。**无需重启 gateway**，Agent 将在下一次请求时自动加载最新内容。
 
 ### Agent 自进化
 

@@ -117,23 +117,22 @@ func promptBuildRequestForProcessOptions(
 }
 
 func promptOverlaysForOptions(opts processOptions) []PromptPart {
+	parts := append([]PromptPart(nil), opts.memoryOverlays...)
 	systemPrompt := strings.TrimSpace(opts.SystemPromptOverride)
 	if systemPrompt == "" {
-		return nil
+		return parts
 	}
 
-	return []PromptPart{
-		{
-			ID:      "instruction.subturn_profile",
-			Layer:   PromptLayerInstruction,
-			Slot:    PromptSlotWorkspace,
-			Source:  PromptSource{ID: PromptSourceSubTurnProfile, Name: "subturn.profile"},
-			Title:   "SubTurn System Instructions",
-			Content: systemPrompt,
-			Stable:  false,
-			Cache:   PromptCacheNone,
-		},
-	}
+	return append(parts, PromptPart{
+		ID:      "instruction.subturn_profile",
+		Layer:   PromptLayerInstruction,
+		Slot:    PromptSlotWorkspace,
+		Source:  PromptSource{ID: PromptSourceSubTurnProfile, Name: "subturn.profile"},
+		Title:   "SubTurn System Instructions",
+		Content: systemPrompt,
+		Stable:  false,
+		Cache:   PromptCacheNone,
+	})
 }
 
 func promptContentBlock(part PromptPart, cache *providers.CacheControl) providers.ContentBlock {

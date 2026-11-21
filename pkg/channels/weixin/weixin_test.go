@@ -12,6 +12,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sipeed/picoclaw/pkg/bus"
 	basechannels "github.com/sipeed/picoclaw/pkg/channels"
 	"github.com/sipeed/picoclaw/pkg/config"
 )
@@ -376,5 +377,35 @@ func TestSendUploadedMedia_SendsCaptionAsSeparateTextBeforeMedia(t *testing.T) {
 	}
 	if requests[1].Msg.ItemList[0].ImageItem == nil || requests[1].Msg.ItemList[0].ImageItem.Media == nil {
 		t.Fatalf("second request image media = %+v, want media ref", requests[1].Msg.ItemList[0].ImageItem)
+	}
+}
+
+func TestWeixinPrivateMemoryDoesNotRequireAccountID(t *testing.T) {
+	messageBus := bus.NewMessageBus()
+	defer messageBus.Close()
+	c := &WeixinChannel{
+		BaseChannel: basechannels.NewBaseChannel("personal", nil, messageBus, []string{"weixin:alice"}),
+		config:      &config.WeixinSettings{},
+	}
+	msg := WeixinMessage{
+		FromUserID: "other", ClientID: "fixture",
+		ItemList: []MessageItem{{Type: MessageItemTypeText, TextItem: &TextItem{Text: "记一下原神进度"}}},
+	}
+	c.handleInboundMessage(t.Context(), msg)
+	select {
+	case <-messageBus.InboundChan():
+		t.Fatal("blocked sender entered the agent")
+	default:
+	}
+
+	msg.FromUserID = "alice"
+	c.handleInboundMessage(t.Context(), msg)
+	select {
+	case in := <-messageBus.InboundChan():
+		if in.PrivateChat == nil || in.PrivateChat.Text != "记一下原神进度" {
+			t.Fatal("allowed Weixin message did not grant shared memory access")
+		}
+	default:
+		t.Fatal("missing allowed Weixin message")
 	}
 }

@@ -9,9 +9,9 @@ import (
 
 	"github.com/sipeed/picoclaw/pkg/bus"
 	"github.com/sipeed/picoclaw/pkg/config"
+	"github.com/sipeed/picoclaw/pkg/memory"
 	"github.com/sipeed/picoclaw/pkg/providers"
 	"github.com/sipeed/picoclaw/pkg/routing"
-	"github.com/sipeed/picoclaw/pkg/session"
 )
 
 // =============================================================================
@@ -270,12 +270,12 @@ func makeTestProcessOpts(sessionKey string) processOptions {
 }
 
 type saveFailingSessionStore struct {
-	session.SessionStore
+	turnSessionStore
 	err error
 }
 
-func (s *saveFailingSessionStore) Save(_ string) error {
-	return s.err
+func (s *saveFailingSessionStore) AppendTurn(context.Context, memory.SessionWrite, []providers.Message) (memory.MessageSpan, error) {
+	return memory.MessageSpan{}, s.err
 }
 
 // =============================================================================
@@ -493,9 +493,9 @@ func TestRunTurn_FinalizeSaveErrorEmitsErrorTurnEnd(t *testing.T) {
 	defer cleanup()
 
 	saveErr := errors.New("session save failed")
-	agent.Sessions = &saveFailingSessionStore{
-		SessionStore: session.NewSessionManager(""),
-		err:          saveErr,
+	agent.turnStore = &saveFailingSessionStore{
+		turnSessionStore: agent.turnStore,
+		err:              saveErr,
 	}
 
 	sub := al.SubscribeEvents(8)

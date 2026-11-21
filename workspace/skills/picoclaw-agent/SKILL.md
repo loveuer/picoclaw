@@ -487,6 +487,8 @@ Operational notes:
 
 ## In-Session Slash Commands
 
+SQLite stores recent conversation context, verified private preferences and explicit dated records separately. `/new` and `/clear` clear recent conversation context only. Use `memory_search` when a verified private user asks about saved records and the conversation lacks evidence; cite the date and source. Never write memory Markdown files.
+
 PicoClaw's shared slash command registry lives under `pkg/commands`.
 
 Use these when helping users inside chat channels:
@@ -538,8 +540,6 @@ Default workspace layout:
 
 ```text
 ~/.picoclaw/workspace/
-├── sessions/
-├── memory/
 ├── state/
 ├── cron/
 ├── skills/

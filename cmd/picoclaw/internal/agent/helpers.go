@@ -28,6 +28,11 @@ func agentCmd(message, sessionKey, model string, debug bool) error {
 		return fmt.Errorf("error loading config: %w", err)
 	}
 
+	releaseMemory, err := agent.PrepareMemory(cfg)
+	if err != nil {
+		return err
+	}
+	defer releaseMemory()
 	logger.ConfigureFromEnv()
 
 	if debug {
@@ -76,7 +81,7 @@ func agentCmd(message, sessionKey, model string, debug bool) error {
 
 	if message != "" {
 		ctx := context.Background()
-		response, err := agentLoop.ProcessDirect(ctx, message, sessionKey)
+		response, err := agentLoop.ProcessLocalCLI(ctx, message, sessionKey)
 		if err != nil {
 			return fmt.Errorf("error processing message: %w", err)
 		}
@@ -130,7 +135,7 @@ func interactiveMode(agentLoop *agent.AgentLoop, sessionKey string) {
 		}
 
 		ctx := context.Background()
-		response, err := agentLoop.ProcessDirect(ctx, input, sessionKey)
+		response, err := agentLoop.ProcessLocalCLI(ctx, input, sessionKey)
 		if err != nil {
 			fmt.Printf("Error: %v\n", err)
 			continue
@@ -165,7 +170,7 @@ func simpleInteractiveMode(agentLoop *agent.AgentLoop, sessionKey string) {
 		}
 
 		ctx := context.Background()
-		response, err := agentLoop.ProcessDirect(ctx, input, sessionKey)
+		response, err := agentLoop.ProcessLocalCLI(ctx, input, sessionKey)
 		if err != nil {
 			fmt.Printf("Error: %v\n", err)
 			continue

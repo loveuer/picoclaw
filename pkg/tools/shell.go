@@ -272,6 +272,9 @@ func (t *ExecTool) Execute(ctx context.Context, args map[string]any) *ToolResult
 		return ErrorResult("action is required")
 	}
 
+	if ch := ToolChannel(ctx); ch != "" && !constants.IsInternalChannel(ch) && action != "run" {
+		return ErrorResult("IM shell cannot access background sessions")
+	}
 	switch action {
 	case "run":
 		return t.executeRun(ctx, args)
@@ -376,6 +379,9 @@ func (t *ExecTool) executeRun(ctx context.Context, args map[string]any) *ToolRes
 		}
 	}
 
+	if ch := ToolChannel(ctx); ch != "" && !constants.IsInternalChannel(ch) && (isBackground || isPty) {
+		return ErrorResult("IM shell only supports isolated foreground commands")
+	}
 	if isBackground {
 		return t.runBackground(ctx, command, cwd, isPty)
 	}
@@ -412,7 +418,11 @@ func (t *ExecTool) runSync(ctx context.Context, command, cwd string) *ToolResult
 
 	// Route shell execution through the shared isolation entry point so exec tool
 	// subprocesses receive the same isolation policy as other integrations.
-	if err := isolation.Start(cmd); err != nil {
+	start := isolation.Start
+	if ch := ToolChannel(ctx); ch != "" && !constants.IsInternalChannel(ch) {
+		start = func(cmd *exec.Cmd) error { return isolation.StartRemoteExec(cmd, t.workingDir) }
+	}
+	if err := start(cmd); err != nil {
 		return ErrorResult(fmt.Sprintf("failed to start command: %v", err))
 	}
 

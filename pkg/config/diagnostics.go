@@ -356,10 +356,11 @@ func collectUnknownJSONFields(raw any, targetType reflect.Type, path string) []s
 			fieldType, exists := fieldMap[key]
 			fieldPath := appendJSONPath(path, key)
 			if !exists {
-				// Accept obsolete hardware settings so existing configs still load.
+				// Accept obsolete hardware and context manager settings so existing configs still load.
 				// They have no runtime fields and disappear on the next save.
 				switch fieldPath {
-				case "devices", "tools.i2c", "tools.spi", "tools.serial":
+				case "devices", "tools.i2c", "tools.spi", "tools.serial",
+					"agents.defaults.context_manager", "agents.defaults.context_manager_config":
 					continue
 				}
 				issues = append(issues, fieldPath)

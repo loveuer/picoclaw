@@ -4,7 +4,6 @@ package agent
 
 import (
 	"context"
-	"reflect"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -12,7 +11,6 @@ import (
 
 	"github.com/sipeed/picoclaw/pkg/bus"
 	"github.com/sipeed/picoclaw/pkg/config"
-	"github.com/sipeed/picoclaw/pkg/logger"
 	"github.com/sipeed/picoclaw/pkg/providers"
 	"github.com/sipeed/picoclaw/pkg/session"
 	"github.com/sipeed/picoclaw/pkg/tools"
@@ -113,10 +111,12 @@ type ActiveTurnInfo struct {
 // =============================================================================
 
 type turnExecution struct {
+	handledAttachments []providers.Attachment
+	mediaArtifacts     map[string]bool
 	// Core message state (accumulates throughout the turn)
 	messages         []providers.Message // built from ContextBuilder, grows per-iteration
 	pendingMessages  []providers.Message // steering/SubTurn messages awaiting injection
-	history          []providers.Message // from ContextManager.Assemble
+	history          []providers.Message
 	summary          string
 	currentTurnStart int
 
@@ -226,9 +226,8 @@ type turnState struct {
 	providerCancel        context.CancelFunc
 	turnCancel            context.CancelFunc
 
-	restorePointHistory []providers.Message
-	restorePointSummary string
-	persistedMessages   []providers.Message
+	turnMemory       *turnMemory
+	historyCommitted atomic.Bool
 
 	// SubTurn support (from HEAD)
 	depth                int                    // SubTurn depth (0 for root turn)
@@ -280,15 +279,6 @@ func newTurnState(agent *AgentInstance, opts processOptions, scope turnEventScop
 		media:        append([]string(nil), opts.Dispatch.Media...),
 		phase:        TurnPhaseSetup,
 		startedAt:    time.Now(),
-	}
-
-	// Bind session store and capture initial history length for rollback logic
-	if agent != nil && agent.Sessions != nil {
-		ts.session = agent.Sessions
-		history := agent.Sessions.GetHistory(opts.Dispatch.SessionKey)
-		ts.initialHistoryLength = len(history)
-		ts.restorePointHistory = append([]providers.Message(nil), history...)
-		ts.restorePointSummary = agent.Sessions.GetSummary(opts.Dispatch.SessionKey)
 	}
 
 	return ts
@@ -651,144 +641,20 @@ func (ts *turnState) eventMeta(source, tracePath string) HookMeta {
 	}
 }
 
-func (ts *turnState) captureRestorePoint(history []providers.Message, summary string) {
-	ts.mu.Lock()
-	defer ts.mu.Unlock()
-	ts.restorePointHistory = append([]providers.Message(nil), history...)
-	ts.restorePointSummary = summary
-}
-
-func (ts *turnState) recordPersistedMessage(msg providers.Message) {
-	ts.mu.Lock()
-	defer ts.mu.Unlock()
-	ts.persistedMessages = append(ts.persistedMessages, msg)
-}
-
-func (ts *turnState) persistedMessagesSnapshot() []providers.Message {
-	ts.mu.RLock()
-	defer ts.mu.RUnlock()
-	return append([]providers.Message(nil), ts.persistedMessages...)
-}
-
-func (ts *turnState) refreshRestorePointFromSession(agent *AgentInstance) {
-	history := agent.Sessions.GetHistory(ts.sessionKey)
-	summary := agent.Sessions.GetSummary(ts.sessionKey)
-
-	persisted := ts.persistedMessagesSnapshot()
-
-	if matched := matchingTurnMessageTail(history, persisted); matched > 0 {
-		history = append([]providers.Message(nil), history[:len(history)-matched]...)
+func (ts *turnState) rollbackTurnMemory() error {
+	mem := ts.turnMemory
+	if mem == nil {
+		return nil
 	}
-
-	ts.captureRestorePoint(history, summary)
-}
-
-// ingestMessage calls the ContextManager's Ingest method for a persisted message.
-// Errors are logged but never block the turn.
-func (ts *turnState) ingestMessage(ctx context.Context, al *AgentLoop, msg providers.Message) {
-	if al.contextManager == nil {
-		return
+	mem.pending = nil
+	if len(mem.spans) == 0 {
+		return nil
 	}
-	if err := al.contextManager.Ingest(ctx, &IngestRequest{
-		SessionKey: ts.sessionKey,
-		Message:    msg,
-	}); err != nil {
-		logger.WarnCF("agent", "Context manager ingest failed", map[string]any{
-			"session_key": ts.sessionKey,
-			"error":       err.Error(),
-		})
+	if err := mem.store.RemoveTurnSpans(context.Background(), mem.write, mem.spans); err != nil {
+		return err
 	}
-}
-
-func (ts *turnState) restoreSession(agent *AgentInstance) error {
-	ts.mu.RLock()
-	history := append([]providers.Message(nil), ts.restorePointHistory...)
-	summary := ts.restorePointSummary
-	ts.mu.RUnlock()
-
-	agent.Sessions.SetHistory(ts.sessionKey, history)
-	agent.Sessions.SetSummary(ts.sessionKey, summary)
-	return agent.Sessions.Save(ts.sessionKey)
-}
-
-func matchingTurnMessageTail(history, persisted []providers.Message) int {
-	maxMatch := min(len(history), len(persisted))
-	for size := maxMatch; size > 0; size-- {
-		if messageSlicesEquivalent(history[len(history)-size:], persisted[len(persisted)-size:]) {
-			return size
-		}
-	}
-	return 0
-}
-
-func splitHistoryForActiveTurn(
-	history []providers.Message,
-	persisted []providers.Message,
-) ([]providers.Message, []providers.Message) {
-	matched := matchingTurnMessageTail(history, persisted)
-	if matched <= 0 {
-		return append([]providers.Message(nil), history...), nil
-	}
-
-	stable := append([]providers.Message(nil), history[:len(history)-matched]...)
-	protected := append([]providers.Message(nil), history[len(history)-matched:]...)
-	return stable, protected
-}
-
-func messageSlicesEquivalent(a, b []providers.Message) bool {
-	if len(a) != len(b) {
-		return false
-	}
-	for i := range a {
-		if !messagesEquivalent(a[i], b[i]) {
-			return false
-		}
-	}
-	return true
-}
-
-func messagesEquivalent(a, b providers.Message) bool {
-	return reflect.DeepEqual(normalizeMessageForComparison(a), normalizeMessageForComparison(b))
-}
-
-func normalizeMessageForComparison(msg providers.Message) providers.Message {
-	msg.PromptLayer = ""
-	msg.PromptSlot = ""
-	msg.PromptSource = ""
-
-	if len(msg.Media) == 0 {
-		msg.Media = nil
-	}
-	if len(msg.Attachments) == 0 {
-		msg.Attachments = nil
-	}
-	if len(msg.SystemParts) == 0 {
-		msg.SystemParts = nil
-	} else {
-		msg.SystemParts = append([]providers.ContentBlock(nil), msg.SystemParts...)
-		for i := range msg.SystemParts {
-			msg.SystemParts[i].PromptLayer = ""
-			msg.SystemParts[i].PromptSlot = ""
-			msg.SystemParts[i].PromptSource = ""
-		}
-	}
-	if len(msg.ToolCalls) == 0 {
-		msg.ToolCalls = nil
-	} else {
-		msg.ToolCalls = append([]providers.ToolCall(nil), msg.ToolCalls...)
-		for i := range msg.ToolCalls {
-			msg.ToolCalls[i].Name = ""
-			msg.ToolCalls[i].Arguments = nil
-			msg.ToolCalls[i].ThoughtSignature = ""
-			if msg.ToolCalls[i].Function != nil {
-				fn := *msg.ToolCalls[i].Function
-				fn.ThoughtSignature = ""
-				msg.ToolCalls[i].Function = &fn
-			}
-		}
-	}
-
-	return msg
+	mem.spans = nil
+	return nil
 }
 
 func (ts *turnState) interruptHintMessage() providers.Message {

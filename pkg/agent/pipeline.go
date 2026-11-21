@@ -15,7 +15,6 @@ import (
 type Pipeline struct {
 	Bus            interfaces.MessageBus
 	Cfg            *config.Config
-	ContextManager ContextManager
 	Hooks          *HookManager
 	Fallback       *providers.FallbackChain
 	ChannelManager interfaces.ChannelManager
@@ -29,7 +28,6 @@ func NewPipeline(al *AgentLoop) *Pipeline {
 	return &Pipeline{
 		Bus:            al.bus,
 		Cfg:            al.GetConfig(),
-		ContextManager: al.contextManager,
 		Hooks:          al.hooks,
 		Fallback:       al.fallback,
 		ChannelManager: al.channelManager,

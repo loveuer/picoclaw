@@ -8,7 +8,7 @@
 
 - **CLI 与 Gateway**：本地交互、单次提问，或通过消息渠道持续运行。
 - **模型接入**：仅保留 OpenAI（Responses / Chat Completions）和 Anthropic Messages，支持兼容端点、多模型配置与切换。
-- **会话管理**：保存对话上下文，支持摘要压缩，以及通过 `/new` 清空上下文后重新提问。
+- **SQLite 三层记忆**：按会话加载近期上下文，一个 `PICOCLAW_HOME` 共享偏好和永久记录；终端和通过渠道规则的飞书、微信私聊直接使用。
 - **工具与扩展**：文件操作、命令执行、网页搜索与抓取、MCP、Skills 和定时任务。
 - **办公文件**：内置 `docx`、`xlsx`、`pptx` Skills，通过独立 Docker 环境处理 Word、Excel 和 PowerPoint。
 - **语音能力**：保留语音识别与合成，实际可用能力取决于模型、服务及渠道配置。
@@ -218,7 +218,9 @@ bash ~/.picoclaw/workspace/tools/office/office.sh run -- \
 
 详细用法、验证命令和限制见[办公环境说明](docs/guides/office-skills.zh.md)。
 
-## 在 IM 中开始新对话
+## 记忆与新对话
+
+SQLite 是唯一的运行时记忆来源，默认位于 `~/.picoclaw/state/memory/memory.sqlite3`。本地终端和通过渠道访问规则的飞书、微信私聊可以说「以后用中文，回答简短一点」设置偏好，或说「帮我记一下，原神玩到第三章」保存记录。要更正或删除也可以直接说，Agent 会先查找目标。永久记录按需用 `memory_search` 查询；群聊不访问私人记忆。访问规则、配置和备份见 [SQLite 三层记忆](docs/guides/memory.zh.md)。
 
 发送以下命令可以丢弃当前会话的历史消息和摘要：
 
@@ -238,6 +240,8 @@ bash ~/.picoclaw/workspace/tools/office/office.sh run -- \
 如果当前会话还有运行中或待处理的任务，`/new` 会提示稍后重试，不会中断任务或重置上下文。
 
 ## 从旧版或上游配置升级
+
+首次启动会直接创建 SQLite 记忆库。永久记录可带独立的分类路径，例如「日常/游戏」；只有明确限定范围时才按分类过滤，普通检索会合并关键词、近义词和别名的命中。
 
 已移除的渠道类型如下：
 

@@ -4,30 +4,28 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/sipeed/picoclaw/pkg/bus"
 	"github.com/sipeed/picoclaw/pkg/memory"
 	"github.com/sipeed/picoclaw/pkg/providers"
-	"github.com/sipeed/picoclaw/pkg/routing"
 	"github.com/sipeed/picoclaw/pkg/session"
 )
 
 // Compile-time interface satisfaction checks.
 var (
 	_ session.SessionStore = (*session.SessionManager)(nil)
-	_ session.SessionStore = (*session.JSONLBackend)(nil)
+	_ session.SessionStore = (*session.SQLiteSessionStore)(nil)
 )
 
-func newBackend(t *testing.T) *session.JSONLBackend {
+func newBackend(t *testing.T) *session.SQLiteSessionStore {
 	t.Helper()
-	store, err := memory.NewJSONLStore(t.TempDir())
+	store, err := memory.Open(memory.Path(t.TempDir()))
 	if err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { store.Close() })
-	return session.NewJSONLBackend(store)
+	return session.NewSQLiteSessionStore(store)
 }
 
-func TestJSONLBackend_AddAndGetHistory(t *testing.T) {
+func TestSQLiteSessionStore_AddAndGetHistory(t *testing.T) {
 	b := newBackend(t)
 
 	b.AddMessage("s1", "user", "hello")
@@ -45,7 +43,7 @@ func TestJSONLBackend_AddAndGetHistory(t *testing.T) {
 	}
 }
 
-func TestJSONLBackend_AddFullMessage(t *testing.T) {
+func TestSQLiteSessionStore_AddFullMessage(t *testing.T) {
 	b := newBackend(t)
 
 	msg := providers.Message{
@@ -66,7 +64,7 @@ func TestJSONLBackend_AddFullMessage(t *testing.T) {
 	}
 }
 
-func TestJSONLBackend_AddFullMessage_PreservesModelName(t *testing.T) {
+func TestSQLiteSessionStore_AddFullMessage_PreservesModelName(t *testing.T) {
 	b := newBackend(t)
 
 	msg := providers.Message{
@@ -85,7 +83,7 @@ func TestJSONLBackend_AddFullMessage_PreservesModelName(t *testing.T) {
 	}
 }
 
-func TestJSONLBackend_Summary(t *testing.T) {
+func TestSQLiteSessionStore_Summary(t *testing.T) {
 	b := newBackend(t)
 
 	if got := b.GetSummary("s1"); got != "" {
@@ -98,7 +96,7 @@ func TestJSONLBackend_Summary(t *testing.T) {
 	}
 }
 
-func TestJSONLBackend_TruncateAndSave(t *testing.T) {
+func TestSQLiteSessionStore_TruncateAndSave(t *testing.T) {
 	b := newBackend(t)
 
 	for i := 0; i < 10; i++ {
@@ -114,19 +112,19 @@ func TestJSONLBackend_TruncateAndSave(t *testing.T) {
 		t.Errorf("got %q, want %q", history[0].Content, "msg 7")
 	}
 
-	// Save triggers compaction.
+	// Save reports any pending write errors.
 	if err := b.Save("s1"); err != nil {
 		t.Fatal(err)
 	}
 
-	// Messages still accessible after compaction.
+	// The retained messages stay accessible after Save.
 	history = b.GetHistory("s1")
 	if len(history) != 3 {
 		t.Fatalf("after save: got %d, want 3", len(history))
 	}
 }
 
-func TestJSONLBackend_SetHistory(t *testing.T) {
+func TestSQLiteSessionStore_SetHistory(t *testing.T) {
 	b := newBackend(t)
 	b.AddMessage("s1", "user", "old")
 
@@ -144,7 +142,7 @@ func TestJSONLBackend_SetHistory(t *testing.T) {
 	}
 }
 
-func TestJSONLBackend_EmptySession(t *testing.T) {
+func TestSQLiteSessionStore_EmptySession(t *testing.T) {
 	b := newBackend(t)
 
 	history := b.GetHistory("nonexistent")
@@ -156,7 +154,7 @@ func TestJSONLBackend_EmptySession(t *testing.T) {
 	}
 }
 
-func TestJSONLBackend_SessionIsolation(t *testing.T) {
+func TestSQLiteSessionStore_SessionIsolation(t *testing.T) {
 	b := newBackend(t)
 	b.AddMessage("s1", "user", "session1")
 	b.AddMessage("s2", "user", "session2")
@@ -172,7 +170,7 @@ func TestJSONLBackend_SessionIsolation(t *testing.T) {
 	}
 }
 
-func TestJSONLBackend_SummarizeFlow(t *testing.T) {
+func TestSQLiteSessionStore_SummarizeFlow(t *testing.T) {
 	// Simulates the real summarization flow in the agent loop:
 	// SetSummary → TruncateHistory → Save
 	b := newBackend(t)
@@ -199,7 +197,7 @@ func TestJSONLBackend_SummarizeFlow(t *testing.T) {
 	}
 }
 
-func TestJSONLBackend_ResolveAliasAndPersistMetadata(t *testing.T) {
+func TestSQLiteSessionStore_ResolveAliasAndPersistMetadata(t *testing.T) {
 	b := newBackend(t)
 
 	scope := &session.SessionScope{
@@ -233,91 +231,5 @@ func TestJSONLBackend_ResolveAliasAndPersistMetadata(t *testing.T) {
 	}
 	if resolvedScope.AgentID != scope.AgentID || resolvedScope.Values["chat"] != scope.Values["chat"] {
 		t.Fatalf("GetSessionScope() = %+v, want %+v", resolvedScope, scope)
-	}
-}
-
-func TestJSONLBackend_EnsureSessionMetadata_PromotesLegacyAliasHistory(t *testing.T) {
-	b := newBackend(t)
-
-	legacyKey := "agent:main:direct:legacy-user"
-	b.AddMessage(legacyKey, "user", "legacy history")
-	b.SetSummary(legacyKey, "legacy summary")
-
-	canonicalKey := session.BuildOpaqueSessionKey(legacyKey)
-	b.EnsureSessionMetadata(canonicalKey, &session.SessionScope{
-		Version: session.ScopeVersionV1,
-		AgentID: "main",
-	}, []string{legacyKey})
-
-	if got := b.ResolveSessionKey(legacyKey); got != canonicalKey {
-		t.Fatalf("ResolveSessionKey() = %q, want %q", got, canonicalKey)
-	}
-	history := b.GetHistory(canonicalKey)
-	if len(history) != 1 || history[0].Content != "legacy history" {
-		t.Fatalf("promoted history = %+v", history)
-	}
-	if summary := b.GetSummary(canonicalKey); summary != "legacy summary" {
-		t.Fatalf("promoted summary = %q, want %q", summary, "legacy summary")
-	}
-}
-
-func TestJSONLBackend_EnsureSessionMetadata_PromotesLegacyPicoDirectAliasHistory(t *testing.T) {
-	b := newBackend(t)
-
-	legacyKey := "agent:main:telegram:direct:telegram:session-123"
-	b.AddMessage(legacyKey, "user", "legacy pico history")
-
-	scope := &session.SessionScope{
-		Version:    session.ScopeVersionV1,
-		AgentID:    "main",
-		Channel:    "telegram",
-		Account:    "default",
-		Dimensions: []string{"sender"},
-		Values: map[string]string{
-			"sender": "pico-user",
-		},
-	}
-	allocation := session.AllocateRouteSession(session.AllocationInput{
-		AgentID: "main",
-		Context: bus.InboundContext{
-			Channel:  "telegram",
-			Account:  "default",
-			ChatID:   "telegram:session-123",
-			ChatType: "direct",
-			SenderID: "pico-user",
-		},
-		SessionPolicy: routing.SessionPolicy{
-			Dimensions: []string{"sender"},
-		},
-	})
-
-	b.EnsureSessionMetadata(allocation.SessionKey, scope, allocation.SessionAliases)
-
-	if got := b.ResolveSessionKey(legacyKey); got != allocation.SessionKey {
-		t.Fatalf("ResolveSessionKey() = %q, want %q", got, allocation.SessionKey)
-	}
-	history := b.GetHistory(allocation.SessionKey)
-	if len(history) != 1 || history[0].Content != "legacy pico history" {
-		t.Fatalf("promoted history = %+v", history)
-	}
-}
-
-func TestJSONLBackend_EnsureSessionMetadata_DoesNotOverwriteNonEmptyCanonicalHistory(t *testing.T) {
-	b := newBackend(t)
-
-	canonicalKey := session.BuildOpaqueSessionKey("agent:main:direct:current-user")
-	legacyKey := "agent:main:direct:legacy-user"
-
-	b.AddMessage(canonicalKey, "user", "current canonical history")
-	b.AddMessage(legacyKey, "user", "legacy history")
-
-	b.EnsureSessionMetadata(canonicalKey, &session.SessionScope{
-		Version: session.ScopeVersionV1,
-		AgentID: "main",
-	}, []string{legacyKey})
-
-	history := b.GetHistory(canonicalKey)
-	if len(history) != 1 || history[0].Content != "current canonical history" {
-		t.Fatalf("canonical history overwritten: %+v", history)
 	}
 }

@@ -49,14 +49,16 @@ When omitted, the default is `warn`. Supported values: `debug`, `info`, `warn`, 
 
 You can also override this with the environment variable `PICOCLAW_LOG_LEVEL`.
 
+### SQLite memory
+
+Each `PICOCLAW_HOME` uses one SQLite memory store at `state/memory/memory.sqlite3`. The CLI and Feishu or Weixin direct chats permitted by channel access rules share preferences and records. Workspaces, recent histories and summaries remain separate. Set `memory.disable_auto_capture` to turn off scheduled reviews. See the [memory guide](memory.md).
+
 ### Workspace Layout
 
 PicoClaw stores data in your configured workspace (default: `~/.picoclaw/workspace`):
 
 ```
 ~/.picoclaw/workspace/
-├── sessions/          # Conversation sessions and history
-├── memory/           # Long-term memory (MEMORY.md)
 ├── state/            # Persistent state (last channel, etc.)
 ├── cron/             # Scheduled jobs database
 ├── skills/           # Custom skills
@@ -67,7 +69,7 @@ PicoClaw stores data in your configured workspace (default: `~/.picoclaw/workspa
 └── USER.md           # User preferences
 ```
 
-> **Note:** Changes to `AGENT.md`, `SOUL.md`, `USER.md` and `memory/MEMORY.md` are automatically detected at runtime via file modification time (mtime) tracking. You do **not** need to restart the gateway after editing these files — the agent picks up the new content on the next request.
+> **Note:** Changes to `AGENT.md`, `SOUL.md`, `USER.md` are automatically detected at runtime via file modification time (mtime) tracking. You do **not** need to restart the gateway after editing these files — the agent picks up the new content on the next request.
 
 ### Agent Self-Evolution
 

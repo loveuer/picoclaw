@@ -35,13 +35,18 @@ type InboundContext struct {
 	Raw          map[string]string `json:"raw,omitempty"`
 }
 
+// PrivateChat is set only by adapters authorized to share instance memory.
+// Text is empty for quoted, forwarded or non-authored content.
+type PrivateChat struct{ Text string }
+
 type InboundMessage struct {
-	Context    InboundContext `json:"context"`
-	Sender     SenderInfo     `json:"sender"`
-	Content    string         `json:"content"`
-	Media      []string       `json:"media,omitempty"`
-	MediaScope string         `json:"media_scope,omitempty"` // media lifecycle scope
-	SessionKey string         `json:"session_key"`
+	PrivateChat *PrivateChat   `json:"-"`
+	Context     InboundContext `json:"context"`
+	Sender      SenderInfo     `json:"sender"`
+	Content     string         `json:"content"`
+	Media       []string       `json:"media,omitempty"`
+	MediaScope  string         `json:"media_scope,omitempty"` // media lifecycle scope
+	SessionKey  string         `json:"session_key"`
 
 	// Convenience mirrors derived from Context for runtime consumers.
 	Channel   string `json:"channel"`

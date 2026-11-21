@@ -319,3 +319,41 @@ func TestHandleInboundContext_PublishesNormalizedContext(t *testing.T) {
 		})
 	}
 }
+
+func TestPrivateChatMarkerRequiresAnAllowedDirectMessage(t *testing.T) {
+	messageBus := bus.NewMessageBus()
+	defer messageBus.Close()
+	ch := NewBaseChannel("work-feishu", nil, messageBus, []string{"feishu:alice"})
+	send := func(sender, kind string) error {
+		return ch.HandleMessageWithContext(
+			WithPrivateChat(t.Context(), "user text"),
+			"chat", "user text", nil,
+			bus.InboundContext{ChatID: "chat", ChatType: kind, SenderID: sender},
+			bus.SenderInfo{Platform: "feishu", PlatformID: sender, CanonicalID: "feishu:" + sender},
+		)
+	}
+	if err := send("other", "direct"); err != nil {
+		t.Fatal(err)
+	}
+	select {
+	case <-messageBus.InboundChan():
+		t.Fatal("blocked sender was published to the agent")
+	default:
+	}
+	for _, kind := range []string{"group", "direct"} {
+		if err := send("alice", kind); err != nil {
+			t.Fatal(err)
+		}
+		select {
+		case msg := <-messageBus.InboundChan():
+			if kind == "direct" && (msg.PrivateChat == nil || msg.PrivateChat.Text != "user text") {
+				t.Fatal("allowed direct chat lacked the authored text marker")
+			}
+			if kind == "group" && msg.PrivateChat != nil {
+				t.Fatal("a group chat received private memory access")
+			}
+		default:
+			t.Fatal("allowed message was not published")
+		}
+	}
+}

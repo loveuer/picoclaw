@@ -11,8 +11,7 @@ import (
 )
 
 // Finalize handles turn finalization, either:
-// - Early return when allResponsesHandled=true (ExecuteTools already finalized)
-// - Normal finalization for allResponsesHandled=false (sets finalContent, saves session, compact)
+// It commits the remaining session messages for both direct answers and tool deliveries.
 func (p *Pipeline) Finalize(
 	ctx context.Context,
 	turnCtx context.Context,
@@ -23,35 +22,39 @@ func (p *Pipeline) Finalize(
 ) (turnResult, error) {
 	al := p.al
 
-	// When allResponsesHandled=true, ExecuteTools already finalized
-	// (added handledToolResponseSummary, saved session, set phase to Completed).
-	// But still check for hard abort - if requested, abort the turn.
-	if exec.allResponsesHandled {
-		if ts.hardAbortRequested() {
-			return al.abortTurn(ts)
-		}
-		ts.setPhase(TurnPhaseCompleted)
-		return turnResult{
-			finalContent: finalContent,
-			modelName:    exec.llmModelName,
-			status:       turnStatus,
-			followUps:    append([]bus.InboundMessage(nil), ts.followUps...),
-		}, nil
+	if ts.hardAbortRequested() {
+		return al.abortTurn(ts)
 	}
-
+	management := ts.opts.memoryManagement
+	if management != nil {
+		if management.needsChoice() {
+			finalContent = management.choiceQuestion()
+		} else {
+			finalContent = management.receipt()
+		}
+	}
 	ts.setPhase(TurnPhaseFinalizing)
 	ts.setFinalContent(finalContent)
 	if !ts.opts.NoHistory {
 		finalMsg := providers.Message{
-			Role:             "assistant",
-			Content:          finalContent,
-			ModelName:        exec.llmModelName,
+			Role: "assistant", Content: finalContent, ModelName: exec.llmModelName,
 			ReasoningContent: responseReasoningContent(exec.response),
 		}
-		ts.agent.Sessions.AddFullMessage(ts.sessionKey, finalMsg)
-		ts.recordPersistedMessage(finalMsg)
-		ts.ingestMessage(turnCtx, al, finalMsg)
-		if err := ts.agent.Sessions.Save(ts.sessionKey); err != nil {
+		if exec.allResponsesHandled {
+			finalMsg = providers.Message{
+				Role:        "assistant",
+				Content:     handledToolResponseSummary,
+				Attachments: exec.handledAttachments,
+			}
+		}
+		ts.addTurnMessage(finalMsg)
+		if turnStatus == TurnEndStatusCompleted && ts.turnMemory != nil {
+			ts.turnMemory.write.Review = reviewNote(ts.opts)
+		}
+		if err := ts.commitTurnMemory(turnCtx, false); err != nil {
+			if ts.hardAbortRequested() {
+				return al.abortTurn(ts)
+			}
 			al.emitEvent(
 				runtimeevents.KindAgentError,
 				ts.eventMeta("runTurn", "turn.error"),
@@ -65,6 +68,11 @@ func (p *Pipeline) Finalize(
 		}
 	}
 
+	ts.historyCommitted.Store(true)
+	if management != nil && (management.needsChoice() || management.correction != nil) && ts.turnMemory != nil {
+		management.revision = ts.turnMemory.write.Revision
+		al.storeMemoryChoice(ts.sessionKey, management)
+	}
 	if !ts.opts.NoHistory && ts.opts.EnableSummary {
 		al.contextManager.Compact(
 			turnCtx,
@@ -74,6 +82,14 @@ func (p *Pipeline) Finalize(
 				Budget:     ts.agent.ContextWindow,
 			},
 		)
+	}
+
+	if exec.allResponsesHandled {
+		ts.setPhase(TurnPhaseCompleted)
+		return turnResult{
+			finalContent: finalContent, modelName: exec.llmModelName, status: turnStatus,
+			followUps: append([]bus.InboundMessage(nil), ts.followUps...),
+		}, nil
 	}
 
 	contextUsage := computeContextUsage(ts.agent, ts.sessionKey)

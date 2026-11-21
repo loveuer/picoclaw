@@ -38,6 +38,7 @@ type MCPTool struct {
 	workspace          string
 	maxInlineTextRunes int
 	runtimeEvents      runtimeevents.Bus
+	remoteTransport    bool
 }
 
 // MCPToolCallPayload describes MCP tool execution runtime events.
@@ -58,6 +59,10 @@ func NewMCPTool(manager MCPManager, serverName string, tool *mcp.Tool) *MCPTool 
 		maxInlineTextRunes: maxMCPInlineTextRunes,
 	}
 }
+
+// SetRemoteTransport marks operator-configured HTTP or SSE MCP tools.
+func (t *MCPTool) SetRemoteTransport(remote bool)  { t.remoteTransport = remote }
+func (t *MCPTool) MemorySafeRemoteTransport() bool { return t.remoteTransport }
 
 func (t *MCPTool) SetMediaStore(store media.MediaStore) {
 	t.mediaStore = store

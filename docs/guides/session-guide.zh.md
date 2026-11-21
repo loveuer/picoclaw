@@ -17,11 +17,7 @@ PicoClaw 的 Session 决定了哪些消息会共享同一段对话历史。
 - 同一个群里的不同用户是否共享上下文
 - 不同聊天、不同线程、不同空间是否保持隔离
 
-Session 数据保存在工作区目录下，通常是：
-
-```text
-~/.picoclaw/workspace/sessions/
-```
+近期会话存放在数据目录下的 `state/memory/memory.sqlite3`。群聊共享仅指会话上下文，不包含私人偏好或永久记录。见 [SQLite 三层记忆](memory.zh.md)。
 
 ## 快速开始
 

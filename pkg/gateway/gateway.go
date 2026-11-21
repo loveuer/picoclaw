@@ -142,6 +142,11 @@ func Run(debug bool, homePath, configPath string, allowEmptyStartup bool) (runEr
 		return fmt.Errorf("config pre-check failed: %w", err)
 	}
 
+	releaseMemory, err := agent.PrepareMemory(cfg)
+	if err != nil {
+		return err
+	}
+	defer releaseMemory()
 	// Debug mode permanently overrides the config log level to DEBUG.
 	if debug {
 		fmt.Println("🔍 Debug mode enabled")
@@ -187,6 +192,10 @@ func Run(debug bool, homePath, configPath string, allowEmptyStartup bool) (runEr
 
 	msgBus := bus.NewMessageBus()
 	agentLoop := agent.NewAgentLoop(cfg, msgBus, provider)
+	if err = agentLoop.MemoryError(); err != nil {
+		agentLoop.Close()
+		return err
+	}
 	msgBus.SetEventPublisher(agentLoop.RuntimeEventBus())
 	publishGatewayEvent(agentLoop, runtimeevents.KindGatewayStart, startedAt, nil)
 

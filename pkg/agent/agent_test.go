@@ -23,6 +23,7 @@ import (
 	"github.com/sipeed/picoclaw/pkg/config"
 	runtimeevents "github.com/sipeed/picoclaw/pkg/events"
 	"github.com/sipeed/picoclaw/pkg/media"
+	"github.com/sipeed/picoclaw/pkg/memory"
 	"github.com/sipeed/picoclaw/pkg/providers"
 	"github.com/sipeed/picoclaw/pkg/routing"
 	"github.com/sipeed/picoclaw/pkg/session"
@@ -4851,11 +4852,8 @@ func TestAgentLoop_VisionUnsupportedErrorReturnsClearFailure(t *testing.T) {
 		t.Fatal("expected default agent")
 	}
 	history := agent.Sessions.GetHistory(sessionKey)
-	if len(history) == 0 {
-		t.Fatal("expected user message to remain in session history")
-	}
-	if len(history[0].Media) == 0 {
-		t.Fatalf("history[0].Media = %v, want original media preserved", history[0].Media)
+	if len(history) != 0 {
+		t.Fatalf("failed turn must not persist a partial exchange, got %d messages", len(history))
 	}
 }
 
@@ -6054,40 +6052,23 @@ func TestProcessMessage_PersistsReasoningToolResponseAsSingleAssistantRecord(t *
 		t.Fatalf("assistant tool calls = %+v, want single read_file tool", assistantWithToolCall.ToolCalls)
 	}
 
-	sessionDir := filepath.Join(tmpDir, "sessions")
-	entries, err := os.ReadDir(sessionDir)
+	db, err := memory.Open(memoryDatabasePath(tmpDir))
 	if err != nil {
-		t.Fatalf("ReadDir(%q) error = %v", sessionDir, err)
+		t.Fatal(err)
 	}
-
-	var jsonlPath string
-	for _, entry := range entries {
-		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".jsonl") {
-			continue
-		}
-		jsonlPath = filepath.Join(sessionDir, entry.Name())
-		break
-	}
-	if jsonlPath == "" {
-		t.Fatal("expected session jsonl file to be created")
-	}
-
-	data, err := os.ReadFile(jsonlPath)
+	defer db.Close()
+	persisted, err := db.GetHistory(t.Context(), sessionKeys[0])
 	if err != nil {
-		t.Fatalf("ReadFile(%q) error = %v", jsonlPath, err)
+		t.Fatal(err)
 	}
-
-	lines := strings.Split(strings.TrimSpace(string(data)), "\n")
-	if len(lines) < 3 {
-		t.Fatalf("jsonl lines = %d, want at least 3", len(lines))
+	if len(persisted) < 3 {
+		t.Fatalf("SQLite message count = %d", len(persisted))
 	}
-
+	if _, err := os.Stat(filepath.Join(tmpDir, "sessions")); !os.IsNotExist(err) {
+		t.Fatalf("legacy session directory was written: %v", err)
+	}
 	matchingRecords := 0
-	for _, line := range lines {
-		var msg providers.Message
-		if err := json.Unmarshal([]byte(line), &msg); err != nil {
-			t.Fatalf("Unmarshal(jsonl line) error = %v", err)
-		}
+	for _, msg := range persisted {
 		if msg.Role != "assistant" {
 			continue
 		}
@@ -6101,12 +6082,12 @@ func TestProcessMessage_PersistsReasoningToolResponseAsSingleAssistantRecord(t *
 				msg.ReasoningContent != "Read the file before answering." ||
 				len(msg.ToolCalls) != 1 ||
 				toolName != "read_file" {
-				t.Fatalf("assistant jsonl record = %+v, want content+reasoning+tool_calls in one line", msg)
+				t.Fatalf("assistant SQLite record = %+v, want content+reasoning+tool_calls in one line", msg)
 			}
 		}
 	}
 	if matchingRecords != 1 {
-		t.Fatalf("matching assistant jsonl records = %d, want exactly 1 canonical assistant record", matchingRecords)
+		t.Fatalf("matching assistant SQLite records = %d, want exactly 1 canonical assistant record", matchingRecords)
 	}
 }
 

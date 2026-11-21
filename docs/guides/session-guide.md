@@ -17,11 +17,7 @@ A session controls:
 - whether two users in the same group share context
 - whether different chats, threads, or spaces stay isolated
 
-Session data is stored under your workspace, typically:
-
-```text
-~/.picoclaw/workspace/sessions/
-```
+Recent conversation context lives in `state/memory/memory.sqlite3` under the data directory. Shared conversation scopes do not share private preferences or records. See [SQLite memory](memory.md).
 
 ## Quick Start
 

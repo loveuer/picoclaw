@@ -666,6 +666,11 @@ func (c *FeishuChannel) handleMessageReceive(ctx context.Context, event *larkim.
 		content = cleaned
 	}
 
+	authoredPrivateText := ""
+	if stringValue(message.MessageType) == "text" && len(mediaRefs) == 0 && replyTargetID(message) == "" &&
+		stringValue(message.ThreadId) == "" {
+		authoredPrivateText = content
+	}
 	if replyTargetID(message) != "" || stringValue(message.ThreadId) != "" {
 		content, mediaRefs = c.prependReplyContext(ctx, message, chatID, content, mediaRefs)
 	}
@@ -700,6 +705,9 @@ func (c *FeishuChannel) handleMessageReceive(ctx context.Context, event *larkim.
 		inboundCtx.SpaceID = *sender.TenantKey
 	}
 
+	if inboundChatType == "direct" {
+		ctx = channels.WithPrivateChat(ctx, authoredPrivateText)
+	}
 	c.HandleInboundContext(ctx, chatID, content, mediaRefs, inboundCtx, senderInfo)
 	return nil
 }

@@ -17,16 +17,15 @@ Session 系统承担四件事：
 1. 决定哪些消息应该共享同一段上下文。
 2. 让这段上下文能跨 turn、跨进程重启持久存在。
 3. 向 agent loop 暴露一个足够小的 `SessionStore` 抽象。
-4. 在存储层和路由层迁移期间继续兼容旧 session key。
+4. 解析路由和工具使用的会话别名。
 
 ## 主要组件
 
 | 层次 | 文件 | 作用 |
 | --- | --- | --- |
 | Session 抽象 | `pkg/session/session_store.go` | 定义 agent loop 依赖的 `SessionStore` 接口。 |
-| 旧后端 | `pkg/session/manager.go` | 每个 session 一个 JSON 文件的旧实现，仍作为回退方案保留。 |
-| Session 适配层 | `pkg/session/jsonl_backend.go` | 把 `pkg/memory.Store` 适配成 `SessionStore`，并支持 alias 与 scope metadata。 |
-| 持久化存储 | `pkg/memory/jsonl.go` | Append-only JSONL 存储与 `.meta.json` 元数据侧文件。 |
+| Session 适配层 | `pkg/session/sqlite_backend.go` | 提供 `SessionStore` 接口，处理会话别名和作用域。 |
+| 持久化存储 | `pkg/memory/sqlite.go` | 在 SQLite 中保存会话、消息和别名。 |
 | Scope / Key 构建 | `pkg/session/scope.go`、`pkg/session/key.go`、`pkg/session/allocator.go` | 从路由结果生成结构化 scope、不透明 canonical key 和 legacy alias。 |
 | 运行时集成 | `pkg/agent/instance.go`、`pkg/agent/loop.go`、`pkg/agent/loop_message.go` | 初始化存储、分配 session scope，并在 turn 执行前落 metadata。 |
 
@@ -81,8 +80,8 @@ agent:main:feishu:channel:c001
 agent:main:pico:direct:pico:session-123
 ```
 
-这些 alias 很重要，因为旧 session、部分测试以及某些工具仍然会引用这种格式。
-JSONL backend 会在读写前先把 alias 解析回 canonical key。
+部分工具和测试使用这类别名。
+SQLite session store 会在读写前先把 alias 解析回 canonical key。
 
 此外，如果调用方已经显式传入了受支持的 session key，agent loop 会保留它，不强行改成新分配的 routed key。
 这条逻辑在 `pkg/agent/loop_utils.go:resolveScopeKey` 中：
@@ -116,7 +115,7 @@ InboundMessage
    - `MainSessionKey`：agent 级主会话 key
    - `MainAliases`：主会话对应的 legacy alias
 4. `runAgentLoop` 通过 `ensureSessionMetadata` 持久化 scope metadata 和 alias。
-5. 后续读写时，`JSONLBackend.ResolveSessionKey` 会先把 alias 映射回 canonical key。
+5. 后续读写时，`SQLiteSessionStore.ResolveSessionKey` 会先把 alias 映射回 canonical key。
 
 `MainSessionKey` 和普通聊天会话是分开的。
 它主要服务于 agent 级、系统级的上下文场景，比如 `processSystemMessage`。
@@ -152,77 +151,11 @@ group:-1001234567890/99
 `session.identity_links` 可以把多个 sender 标识折叠为一个 canonical identity。
 dispatch 匹配和 session 分配都会使用这套映射，因此同一个人即使跨 channel 或 account 使用不同原始 sender ID，也可以继续落到同一段上下文里。
 
-## 存储格式
+## 存储与提交
 
-默认运行时后端是 `pkg/memory.JSONLStore`，外面包了一层 `session.JSONLBackend`。
+SQLite 是运行时会话存储。每个 `PICOCLAW_HOME` 有一份数据库，`sessions` 保存摘要、作用域和版本，`session_messages` 保存消息，`session_aliases` 保存路由别名。
 
-每个 session 使用两类文件：
-
-```text
-{sanitized_key}.jsonl
-{sanitized_key}.meta.json
-```
-
-各自保存：
-
-- `.jsonl`：一行一个 `providers.Message`，append-only
-- `.meta.json`：摘要、时间戳、行数、逻辑截断偏移、scope、aliases
-
-`SessionMeta` 当前包含：
-
-- `Key`
-- `Summary`
-- `Skip`
-- `Count`
-- `CreatedAt`
-- `UpdatedAt`
-- `Scope`
-- `Aliases`
-
-## 写入与崩溃语义
-
-JSONL store 的设计核心是“追加优先、宁可暂时读到旧数据也不要丢数据”：
-
-- `AddMessage` / `AddFullMessage` 先追加一行 JSON，再 `fsync`，最后更新 metadata。
-- `TruncateHistory` 先做逻辑截断，本质上只是推进 `meta.Skip`。
-- `Compact` 才会真正重写 JSONL 文件，把被跳过的旧行物理移除。
-- `SetHistory` 和 `Compact` 都会先写 metadata 再改写 JSONL；如果中途崩溃，最多短时间暴露旧数据，不应丢数据。
-- 读取 JSONL 时如果碰到损坏行，会跳过该行，而不是让整个 session 读取失败。
-
-`JSONLBackend.Save` 对应到底层的 `store.Compact(...)`。
-也就是说，`Save` 在新实现里不再是“把内存脏数据刷盘”，而是“在逻辑截断后回收无效行占用的磁盘空间”。
-
-## 并发模型
-
-`pkg/memory.JSONLStore` 使用固定 64 分片 mutex，按 session key 的 hash 做串行化。
-这样既能做到“按 session 串行”，又不会因为 session 数量增长而把 mutex map 做成无界结构。
-
-旧的 `SessionManager` 则是一个内存 map 加 RW mutex。
-
-这两个实现都满足同一个 `SessionStore` 接口，所以 agent loop 不需要写任何存储后端特化逻辑。
-
-## 兼容与迁移
-
-`pkg/agent/instance.go:initSessionStore` 会优先初始化 JSONL 后端。
-
-启动过程如下：
-
-1. 创建 `memory.NewJSONLStore(dir)`。
-2. 执行 `memory.MigrateFromJSON(...)`，把旧 `.json` session 迁入新格式。
-3. 用 `session.NewJSONLBackend(store)` 包装。
-4. 如果 JSONL 初始化或迁移失败，则回退到 `session.NewSessionManager(dir)`。
-
-这个回退是刻意设计的：做一半的迁移，比整轮继续使用旧后端更危险。
-
-### Alias 提升
-
-第一次为 canonical key 建 metadata 时，`EnsureSessionMetadata` 会尝试把某个非空 legacy alias 的历史提升到 canonical session。
-但这件事只会在 canonical session 仍然为空时发生，因此不会覆盖已经存在的 canonical 历史。
-
-这保证了系统在迁移到 opaque key 的同时，仍能保留旧历史，例如：
-
-- 旧的 direct-message key
-- 旧的 Pico direct-session key
+普通问答在轮末提交。长轮次可以在完整工具批次结束后提交，进程退出时已提交的消息仍可恢复。摘要压缩与清理按会话版本校验，避免过时的写入恢复已经清空的历史。
 
 ## 其他 SessionStore 实现
 
@@ -242,11 +175,11 @@ Session 系统不只被 agent loop 使用：
 
 - `pkg/session/session_store.go`
 - `pkg/session/manager.go`
-- `pkg/session/jsonl_backend.go`
+- `pkg/session/sqlite_backend.go`
 - `pkg/session/scope.go`
 - `pkg/session/key.go`
 - `pkg/session/allocator.go`
-- `pkg/memory/jsonl.go`
+- `pkg/memory/sqlite.go`
 - `pkg/agent/instance.go`
 - `pkg/agent/loop.go`
 - `pkg/agent/loop_message.go`

@@ -3,7 +3,6 @@ package agent
 import (
 	"context"
 	"errors"
-	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
@@ -12,7 +11,9 @@ import (
 
 	"github.com/sipeed/picoclaw/pkg/bus"
 	"github.com/sipeed/picoclaw/pkg/config"
+	"github.com/sipeed/picoclaw/pkg/memory"
 	"github.com/sipeed/picoclaw/pkg/providers"
+	"github.com/sipeed/picoclaw/pkg/session"
 )
 
 func newConversationTestLoop(t *testing.T, provider providers.LLMProvider) (*AgentLoop, *bus.MessageBus) {
@@ -102,23 +103,28 @@ func TestProcessMessage_NewConversation(t *testing.T) {
 	if !reflect.DeepEqual(userMessages, []string{"看看今天有啥新咖啡", "展开说说"}) {
 		t.Fatalf("follow-up context = %q", userMessages)
 	}
-	reopened := initSessionStore(filepath.Join(agent.Workspace, "sessions"))
+	db, err := memory.Open(memoryDatabasePath(agent.Workspace))
+	if err != nil {
+		t.Fatal(err)
+	}
+	reopened := session.NewSQLiteSessionStore(db)
 	t.Cleanup(func() { _ = reopened.Close() })
 	if history := reopened.GetHistory(key); len(history) != 4 || history[0].Content != "看看今天有啥新咖啡" {
 		t.Fatalf("persisted history = %+v", history)
 	}
 }
 
-type newConversationClearFailure struct{ ContextManager }
+type newConversationClearFailure struct{ turnSessionStore }
 
-func (newConversationClearFailure) Clear(context.Context, string) error {
+func (newConversationClearFailure) ClearSession(context.Context, memory.SessionWrite) error {
 	return errors.New("storage unavailable")
 }
 
 func TestProcessMessage_NewConversationClearFailure(t *testing.T) {
 	provider := &countingMockProvider{response: "must not run"}
 	al, _ := newConversationTestLoop(t, provider)
-	al.contextManager = newConversationClearFailure{al.contextManager}
+	agent := al.registry.GetDefaultAgent()
+	agent.turnStore = newConversationClearFailure{agent.turnStore}
 	reply, err := al.processMessage(t.Context(), newConversationTestMessage("/new question", "chat1"))
 	if err != nil || !strings.Contains(reply, "storage unavailable") || provider.calls != 0 {
 		t.Fatalf("reply = %q, error = %v, calls = %d", reply, err, provider.calls)
@@ -157,7 +163,7 @@ func TestProcessMessage_NewConversationDiscardsPendingSummary(t *testing.T) {
 		agent.Sessions.AddMessage(key, "user", "旧问题")
 		agent.Sessions.AddMessage(key, "assistant", "旧回答")
 	}
-	manager := al.contextManager.(*legacyContextManager)
+	manager := al.contextManager
 	done := make(chan struct{})
 	go func() { defer close(done); manager.summarizeSession(agent, key) }()
 	t.Cleanup(func() {

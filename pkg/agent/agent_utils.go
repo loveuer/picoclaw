@@ -396,19 +396,6 @@ func buildSessionAliases(canonicalKey string, keys ...string) []string {
 	return aliases
 }
 
-func ensureSessionMetadata(store session.SessionStore, key string, scope *session.SessionScope, aliases []string) {
-	if key == "" || scope == nil {
-		return
-	}
-	metaStore, ok := store.(interface {
-		EnsureSessionMetadata(sessionKey string, scope *session.SessionScope, aliases []string)
-	})
-	if !ok {
-		return
-	}
-	metaStore.EnsureSessionMetadata(key, scope, aliases)
-}
-
 func sleepWithContext(ctx context.Context, d time.Duration) error {
 	timer := time.NewTimer(d)
 	defer timer.Stop()

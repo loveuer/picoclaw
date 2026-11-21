@@ -1,5 +1,7 @@
 # ⚙️ Hướng Dẫn Cấu Hình
 
+> [SQLite memory](memory.md): the old workspace memory and session files are no longer used at runtime.
+
 > Fork configuration: `PICOCLAW_HOME` also changes the default config path; `PICOCLAW_CONFIG` overrides that path. For current model protocols and channel settings, use the [README](../../README.md) and [configuration example](../../config/config.example.json).
 
 > Quay lại [README](../../README.md)
@@ -55,8 +57,6 @@ PicoClaw lưu trữ dữ liệu trong workspace đã cấu hình (mặc định:
 
 ```
 ~/.picoclaw/workspace/
-├── sessions/          # Phiên hội thoại và lịch sử
-├── memory/           # Bộ nhớ dài hạn (MEMORY.md)
 ├── state/            # Trạng thái bền vững (kênh cuối, v.v.)
 ├── cron/             # Cơ sở dữ liệu tác vụ lên lịch
 ├── skills/           # Skill tùy chỉnh
@@ -67,7 +67,6 @@ PicoClaw lưu trữ dữ liệu trong workspace đã cấu hình (mặc định:
 └── USER.md           # Tùy chọn người dùng
 ```
 
-> **Lưu ý:** Các thay đổi đối với `AGENT.md`, `SOUL.md`, `USER.md` và `memory/MEMORY.md` được tự động phát hiện trong thời gian chạy thông qua theo dõi thời gian sửa đổi file (mtime). **Không cần khởi động lại gateway** sau khi chỉnh sửa các file này — agent sẽ tải nội dung mới vào yêu cầu tiếp theo.
 
 ### Chính sách ngữ cảnh request
 

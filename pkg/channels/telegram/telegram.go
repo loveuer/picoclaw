@@ -1204,7 +1204,7 @@ func (c *TelegramChannel) handleMessages(ctx context.Context, messages []*telego
 	}
 
 	c.HandleMessageWithContext(
-		c.ctx,
+		ctx,
 		compositeChatID,
 		content,
 		mediaPaths,

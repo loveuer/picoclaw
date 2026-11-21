@@ -559,7 +559,7 @@ func TestAgentLoop_EmitsSessionSummarizeEvent(t *testing.T) {
 	)
 	defer closeRuntimeEvents()
 
-	lcm := &legacyContextManager{al: al}
+	lcm := &sqliteContextManager{al: al}
 	lcm.summarizeSession(defaultAgent, "session-1")
 
 	events := collectRuntimeEventStream(runtimeCh)

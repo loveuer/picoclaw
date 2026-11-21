@@ -4,6 +4,7 @@ package agent
 
 import (
 	"context"
+	"crypto/sha256"
 	"fmt"
 	"strings"
 
@@ -27,7 +28,7 @@ func (al *AgentLoop) buildContinuationTarget(msg bus.InboundMessage) (*continuat
 	allocation := al.allocateRouteSession(route, msg)
 
 	return &continuationTarget{
-		SessionKey: resolveScopeKey(allocation.SessionKey, msg.SessionKey),
+		SessionKey: inboundSessionKey(allocation, msg),
 		Channel:    msg.Channel,
 		ChatID:     msg.ChatID,
 	}, nil
@@ -37,12 +38,24 @@ func (al *AgentLoop) ProcessDirect(
 	ctx context.Context,
 	content, sessionKey string,
 ) (string, error) {
-	return al.ProcessDirectWithChannel(ctx, content, sessionKey, "cli", "direct")
+	return al.processLocalPrompt(ctx, content, sessionKey, "cli", "direct", false)
+}
+
+// ProcessLocalCLI is the trusted operator entry point for the instance owner.
+// Synthetic and inbound turns do not inherit this authority.
+func (al *AgentLoop) ProcessLocalCLI(ctx context.Context, content, sessionKey string) (string, error) {
+	return al.processLocalPrompt(ctx, content, sessionKey, "cli", "direct", true)
 }
 
 func (al *AgentLoop) ProcessDirectWithChannel(
 	ctx context.Context,
 	content, sessionKey, channel, chatID string,
+) (string, error) {
+	return al.processLocalPrompt(ctx, content, sessionKey, channel, chatID, false)
+}
+
+func (al *AgentLoop) processLocalPrompt(
+	ctx context.Context, content, sessionKey, channel, chatID string, localPrivate bool,
 ) (string, error) {
 	if err := al.ensureHooksInitialized(ctx); err != nil {
 		return "", err
@@ -62,7 +75,7 @@ func (al *AgentLoop) ProcessDirectWithChannel(
 		SessionKey: sessionKey,
 	}
 
-	return al.processMessage(ctx, msg)
+	return al.processMessageWithLocalAccess(ctx, msg, localPrivate)
 }
 
 func (al *AgentLoop) ProcessHeartbeat(
@@ -121,11 +134,19 @@ func (al *AgentLoop) prepareInboundMessageForAgent(
 }
 
 func (al *AgentLoop) processMessage(ctx context.Context, msg bus.InboundMessage) (string, error) {
+	return al.processMessageWithLocalAccess(ctx, msg, false)
+}
+
+func (al *AgentLoop) processMessageWithLocalAccess(
+	ctx context.Context, msg bus.InboundMessage, localPrivate bool,
+) (string, error) {
 	msg = al.prepareInboundMessageForAgent(ctx, msg)
 
 	// Add message preview to log (show full content for error messages)
 	var logContent string
-	if strings.Contains(msg.Content, "Error:") || strings.Contains(msg.Content, "error") {
+	if isPrivateChat(msg) || localPrivate {
+		logContent = "[private message]"
+	} else if strings.Contains(msg.Content, "Error:") || strings.Contains(msg.Content, "error") {
 		logContent = msg.Content // Full content for errors
 	} else {
 		logContent = utils.Truncate(msg.Content, 80)
@@ -155,8 +176,42 @@ func (al *AgentLoop) processMessage(ctx context.Context, msg bus.InboundMessage)
 
 	// Resolve session key from the route allocation, while preserving explicit
 	// agent-scoped keys supplied by the caller.
-	scopeKey := resolveScopeKey(allocation.SessionKey, msg.SessionKey)
+	scopeKey := inboundSessionKey(allocation, msg)
+	private := localPrivate || isPrivateChat(msg)
+	var aliases []string
+	var authored, source string
+	if localPrivate {
+		// The caller's label is only a label, never an override into an IM session.
+		allocation.Scope = session.SessionScope{
+			Version: session.ScopeVersionV1, AgentID: agent.ID, Channel: "cli",
+			Dimensions: []string{"chat"},
+			Values:     map[string]string{"chat": fmt.Sprintf("local:%x", sha256.Sum256([]byte(msg.SessionKey)))},
+		}
+		scopeKey = session.BuildSessionKey(allocation.Scope)
+		authored, source = msg.Content, "cli session "+scopeKey
+	} else if private {
+		authored = msg.PrivateChat.Text
+		source = fmt.Sprintf("%s message %s", msg.Context.Channel, msg.Context.MessageID)
+	} else {
+		aliases = buildSessionAliases(scopeKey, append(allocation.SessionAliases, msg.SessionKey)...)
+	}
+
 	sessionKey := scopeKey
+	if agent.memoryErr != nil {
+		return "", agent.memoryErr
+	}
+	if err := authorizeMemorySession(ctx, agent, sessionKey, private); err != nil {
+		return "", err
+	}
+	if answer, handled, err := agent.handlePrivateMemory(
+		ctx,
+		private,
+		msg.Content,
+		authored,
+		source,
+	); handled {
+		return answer, err
+	}
 
 	// Reset message-tool state for this round so we don't skip publishing due to a previous round.
 	if tool, ok := agent.Tools.Get("message"); ok {
@@ -176,10 +231,16 @@ func (al *AgentLoop) processMessage(ctx context.Context, msg bus.InboundMessage)
 			"route_main_session": allocation.MainSessionKey,
 		})
 
+	cfg := al.GetConfig()
 	opts := processOptions{
+		memoryAutoCapture:  cfg != nil && !cfg.Memory.DisableAutoCapture,
+		privateMemory:      private,
+		memorySender:       msg.Sender,
+		memoryAuthoredText: authored,
+		memorySource:       source,
 		Dispatch: DispatchRequest{
 			SessionKey:     sessionKey,
-			SessionAliases: buildSessionAliases(sessionKey, append(allocation.SessionAliases, msg.SessionKey)...),
+			SessionAliases: aliases,
 			InboundContext: cloneInboundContext(&msg.Context),
 			RouteResult:    cloneResolvedRoute(&route),
 			SessionScope:   session.CloneScope(&allocation.Scope),
@@ -209,6 +270,25 @@ func (al *AgentLoop) processMessage(ctx context.Context, msg bus.InboundMessage)
 }
 
 func (al *AgentLoop) runMessagePrompt(ctx context.Context, agent *AgentInstance, opts processOptions) (string, error) {
+	management, reply, err := al.prepareMemoryManagement(ctx, agent, opts)
+	if err != nil || reply != "" {
+		return reply, err
+	}
+	if management != nil {
+		opts.memoryManagement = management
+		opts.memoryAutoCapture = false
+		opts.AllowStreaming = false
+		opts.EnableSummary = false
+		answer, runErr := al.runAgentLoop(ctx, agent, opts)
+		if runErr != nil {
+			if management.correction != nil {
+				return "更正预览未生成，请重新发起更正。", nil
+			}
+			return management.receipt(), nil
+		}
+		return answer, nil
+	}
+
 	if pending := al.takePendingSkills(opts.Dispatch.SessionKey); len(pending) > 0 {
 		opts.ForcedSkills = append(opts.ForcedSkills, pending...)
 		logger.InfoCF("agent", "Applying pending skill override",
@@ -237,12 +317,34 @@ func (al *AgentLoop) resolveMessageRoute(msg bus.InboundMessage) (routing.Resolv
 	return route, agent, nil
 }
 
+func isPrivateChat(msg bus.InboundMessage) bool {
+	return msg.PrivateChat != nil && msg.Context.ChatType == "direct" && msg.Context.ChatID != ""
+}
+
+func inboundSessionKey(allocation session.Allocation, msg bus.InboundMessage) string {
+	if isPrivateChat(msg) {
+		return allocation.SessionKey
+	}
+	return resolveScopeKey(allocation.SessionKey, msg.SessionKey)
+}
+
 func (al *AgentLoop) allocateRouteSession(route routing.ResolvedRoute, msg bus.InboundMessage) session.Allocation {
-	return session.AllocateRouteSession(session.AllocationInput{
+	inbound := normalizedInboundContext(msg)
+	allocation := session.AllocateRouteSession(session.AllocationInput{
 		AgentID:       route.AgentID,
-		Context:       normalizedInboundContext(msg),
+		Context:       inbound,
 		SessionPolicy: route.SessionPolicy,
 	})
+	if isPrivateChat(msg) {
+		// Even a shared route policy cannot mix private IM conversations.
+		allocation.Scope.Dimensions = []string{"chat"}
+		allocation.Scope.Values = map[string]string{
+			"chat": fmt.Sprintf("private:%x", sha256.Sum256([]byte(inbound.ChatID))),
+		}
+		allocation.SessionKey = session.BuildSessionKey(allocation.Scope)
+		allocation.SessionAliases = nil
+	}
+	return allocation
 }
 
 func (al *AgentLoop) processSystemMessage(

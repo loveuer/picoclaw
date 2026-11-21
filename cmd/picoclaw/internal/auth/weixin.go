@@ -70,9 +70,9 @@ func runWeixinOnboard(baseURL, proxy string, timeout time.Duration) error {
 		effectiveBaseURL = baseURL
 	}
 
-	if err := saveWeixinConfig(botToken, effectiveBaseURL, proxy); err != nil {
+	if err := saveWeixinConfig(botToken, accountID, effectiveBaseURL, proxy); err != nil {
 		fmt.Printf("⚠️  Could not auto-save to config: %v\n", err)
-		printManualWeixinConfig(botToken, effectiveBaseURL)
+		printManualWeixinConfig(botToken, accountID, effectiveBaseURL)
 		return nil
 	}
 
@@ -86,8 +86,8 @@ func runWeixinOnboard(baseURL, proxy string, timeout time.Duration) error {
 	return nil
 }
 
-// saveWeixinConfig patches channels.weixin in the config and saves it.
-func saveWeixinConfig(token, baseURL, proxy string) error {
+// saveWeixinConfig saves the verified iLink account ID alongside its token.
+func saveWeixinConfig(token, accountID, baseURL, proxy string) error {
 	cfgPath := internal.GetConfigPath()
 
 	cfg, err := config.LoadConfig(cfgPath)
@@ -102,33 +102,43 @@ func saveWeixinConfig(token, baseURL, proxy string) error {
 	}
 	bc.Enabled = true
 
-	if decoded, err := bc.GetDecoded(); err == nil && decoded != nil {
-		if weixinCfg, ok := decoded.(*config.WeixinSettings); ok {
-			weixinCfg.Token = *config.NewSecureString(token)
-			const defaultBase = "https://ilinkai.weixin.qq.com/"
-			if baseURL != "" && baseURL != defaultBase {
-				weixinCfg.BaseURL = baseURL
-			}
-			if proxy != "" {
-				weixinCfg.Proxy = proxy
-			}
-		}
+	decoded, err := bc.GetDecoded()
+	if err != nil {
+		return err
+	}
+	weixinCfg, ok := decoded.(*config.WeixinSettings)
+	if !ok {
+		return fmt.Errorf("cannot load Weixin channel settings")
+	}
+	weixinCfg.SetToken(token)
+	weixinCfg.AccountID = accountID
+	const defaultBase = "https://ilinkai.weixin.qq.com/"
+	if baseURL != "" && baseURL != defaultBase {
+		weixinCfg.BaseURL = baseURL
+	}
+	if proxy != "" {
+		weixinCfg.Proxy = proxy
 	}
 
 	return config.SaveConfig(cfgPath, cfg)
 }
 
-func printManualWeixinConfig(token, baseURL string) {
+func printManualWeixinConfig(token, accountID, baseURL string) {
 	fmt.Println()
-	fmt.Println("Add the following to the channels section of your picoclaw config:")
+	fmt.Println("Add the following to channel_list in your picoclaw config:")
 	fmt.Println()
 	fmt.Println(`  "weixin": {`)
+	fmt.Println(`    "type": "weixin",`)
 	fmt.Println(`    "enabled": true,`)
-	fmt.Printf("    \"token\": %q,\n", token)
+	fmt.Println(`    "settings": {`)
+	fmt.Printf("      \"token\": %q,\n", token)
+	fmt.Printf("      \"account_id\": %q", accountID)
 	const defaultBase = "https://ilinkai.weixin.qq.com/"
 	if baseURL != "" && baseURL != defaultBase {
-		fmt.Printf("    \"base_url\": %q,\n", baseURL)
+		fmt.Printf(",\n      \"base_url\": %q", baseURL)
 	}
+	fmt.Println()
+	fmt.Println(`    },`)
 	fmt.Println(`    "allow_from": []`)
 	fmt.Println(`  }`)
 }

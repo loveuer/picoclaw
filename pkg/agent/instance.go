@@ -23,30 +23,35 @@ import (
 // AgentInstance represents a fully configured agent with its own workspace,
 // session manager, context builder, and tool registry.
 type AgentInstance struct {
-	modelMu                   *sync.RWMutex
-	ID                        string
-	Name                      string
-	Model                     string
-	Fallbacks                 []string
-	Workspace                 string
-	MaxIterations             int
-	MaxTokens                 int
-	Temperature               float64
-	ThinkingLevel             ThinkingLevel
-	ThinkingLevelConfigured   bool
-	ContextWindow             int
-	SummarizeMessageThreshold int
-	SummarizeTokenPercent     int
-	Provider                  providers.LLMProvider
-	Sessions                  session.SessionStore
-	ContextBuilder            *ContextBuilder
-	Tools                     *tools.ToolRegistry
-	Definition                AgentContextDefinition
-	Subagents                 *config.SubagentsConfig
-	SkillsFilter              []string
-	MCPServerAllowlist        map[string]struct{}
-	Candidates                []providers.FallbackCandidate
-	ImageCandidates           []providers.FallbackCandidate
+	memoryDB                   *memory.SQLite
+	turnStore                  turnSessionStore
+	memoryErr                  error
+	memoryClassificationCtx    context.Context
+	cancelMemoryClassification context.CancelFunc
+	modelMu                    *sync.RWMutex
+	ID                         string
+	Name                       string
+	Model                      string
+	Fallbacks                  []string
+	Workspace                  string
+	MaxIterations              int
+	MaxTokens                  int
+	Temperature                float64
+	ThinkingLevel              ThinkingLevel
+	ThinkingLevelConfigured    bool
+	ContextWindow              int
+	SummarizeMessageThreshold  int
+	SummarizeTokenPercent      int
+	Provider                   providers.LLMProvider
+	Sessions                   session.SessionStore
+	ContextBuilder             *ContextBuilder
+	Tools                      *tools.ToolRegistry
+	Definition                 AgentContextDefinition
+	Subagents                  *config.SubagentsConfig
+	SkillsFilter               []string
+	MCPServerAllowlist         map[string]struct{}
+	Candidates                 []providers.FallbackCandidate
+	ImageCandidates            []providers.FallbackCandidate
 
 	// Router is non-nil when model routing is configured and the light model
 	// was successfully resolved. It scores each incoming message and decides
@@ -162,8 +167,12 @@ func NewAgentInstance(
 		}
 	}
 
-	sessionsDir := filepath.Join(workspace, "sessions")
-	sessions := initSessionStore(sessionsDir)
+	memoryDB, memoryErr := memory.Open(memoryDatabasePath(workspace))
+	var sessions *session.SQLiteSessionStore
+	if memoryErr == nil {
+		sessions = session.NewSQLiteSessionStore(memoryDB)
+		toolsRegistry.Register(&memorySearchTool{db: memoryDB})
+	}
 
 	mcpDiscoveryActive := agentHasDiscoverableMCPServers(cfg, agentMCPServerAllowlist)
 	contextBuilder := NewContextBuilder(workspace).
@@ -320,36 +329,46 @@ func NewAgentInstance(
 		}
 	}
 
-	return &AgentInstance{
-		modelMu:                   &sync.RWMutex{},
-		ID:                        agentID,
-		Name:                      agentName,
-		Model:                     model,
-		Fallbacks:                 fallbacks,
-		Workspace:                 workspace,
-		MaxIterations:             maxIter,
-		MaxTokens:                 maxTokens,
-		Temperature:               temperature,
-		ThinkingLevel:             thinkingLevel,
-		ThinkingLevelConfigured:   thinkingLevelConfigured,
-		ContextWindow:             contextWindow,
-		SummarizeMessageThreshold: summarizeMessageThreshold,
-		SummarizeTokenPercent:     summarizeTokenPercent,
-		Provider:                  provider,
-		Sessions:                  sessions,
-		ContextBuilder:            contextBuilder,
-		Tools:                     toolsRegistry,
-		Definition:                definition,
-		Subagents:                 subagents,
-		SkillsFilter:              skillsFilter,
-		MCPServerAllowlist:        agentMCPServerAllowlist,
-		Candidates:                candidates,
-		ImageCandidates:           imageCandidates,
-		Router:                    router,
-		LightCandidates:           lightCandidates,
-		LightProvider:             lightProvider,
-		CandidateProviders:        candidateProviders,
+	classificationCtx, cancelClassification := context.WithCancel(context.Background())
+	agent := &AgentInstance{
+		memoryClassificationCtx:    classificationCtx,
+		cancelMemoryClassification: cancelClassification,
+		modelMu:                    &sync.RWMutex{},
+		ID:                         agentID,
+		Name:                       agentName,
+		Model:                      model,
+		Fallbacks:                  fallbacks,
+		Workspace:                  workspace,
+		MaxIterations:              maxIter,
+		MaxTokens:                  maxTokens,
+		Temperature:                temperature,
+		ThinkingLevel:              thinkingLevel,
+		ThinkingLevelConfigured:    thinkingLevelConfigured,
+		ContextWindow:              contextWindow,
+		SummarizeMessageThreshold:  summarizeMessageThreshold,
+		SummarizeTokenPercent:      summarizeTokenPercent,
+		Provider:                   provider,
+		memoryDB:                   memoryDB,
+		memoryErr:                  memoryErr,
+		ContextBuilder:             contextBuilder,
+		Tools:                      toolsRegistry,
+		Definition:                 definition,
+		Subagents:                  subagents,
+		SkillsFilter:               skillsFilter,
+		MCPServerAllowlist:         agentMCPServerAllowlist,
+		Candidates:                 candidates,
+		ImageCandidates:            imageCandidates,
+		Router:                     router,
+		LightCandidates:            lightCandidates,
+		LightProvider:              lightProvider,
+		CandidateProviders:         candidateProviders,
 	}
+	if sessions != nil {
+		agent.Sessions = sessions
+		agent.turnStore = sessions
+		toolsRegistry.Register(&memoryWriteTool{agent: agent})
+	}
+	return agent
 }
 
 // populateCandidateProvidersFromNames resolves each model name (alias or
@@ -681,6 +700,9 @@ func mediaTempDirPattern() string {
 
 // Close releases resources held by the agent's providers and session store.
 func (a *AgentInstance) Close() error {
+	if a.cancelMemoryClassification != nil {
+		a.cancelMemoryClassification()
+	}
 	modelMu := a.modelStateMutex()
 	modelMu.Lock()
 	defer modelMu.Unlock()
@@ -758,32 +780,7 @@ func closeUnreferencedStatefulProviders(
 	closeUniqueStatefulProviders(removed...)
 }
 
-// initSessionStore creates the session persistence backend.
-// It uses the JSONL store by default and auto-migrates legacy JSON sessions.
-// Falls back to SessionManager if the JSONL store cannot be initialized or
-// if migration fails (which indicates the store cannot write reliably).
-func initSessionStore(dir string) session.SessionStore {
-	store, err := memory.NewJSONLStore(dir)
-	if err != nil {
-		logger.WarnCF("agent", "Memory JSONL store init failed; falling back to json sessions",
-			map[string]any{"error": err.Error()})
-		return session.NewSessionManager(dir)
-	}
-
-	if n, merr := memory.MigrateFromJSON(context.Background(), dir, store); merr != nil {
-		// Migration failure means the store could not write data.
-		// Fall back to SessionManager to avoid a split state where
-		// some sessions are in JSONL and others remain in JSON.
-		logger.WarnCF("agent", "Memory migration failed; falling back to json sessions",
-			map[string]any{"error": merr.Error()})
-		store.Close()
-		return session.NewSessionManager(dir)
-	} else if n > 0 {
-		logger.InfoCF("agent", "Memory migrated to JSONL", map[string]any{"sessions_migrated": n})
-	}
-
-	return session.NewJSONLBackend(store)
-}
+var memoryDatabasePath = func(_ string) string { return memory.Path(config.GetHome()) }
 
 func expandHome(path string) string {
 	if path == "" {

@@ -33,6 +33,7 @@ type Config struct {
 	Version   int             `json:"version"             yaml:"-"`
 	Isolation IsolationConfig `json:"isolation,omitempty" yaml:"-"`
 	Agents    AgentsConfig    `json:"agents"              yaml:"-"`
+	Memory    MemoryConfig    `json:"memory,omitzero"     yaml:"-"`
 	Session   SessionConfig   `json:"session,omitempty"   yaml:"-"`
 	Evolution EvolutionConfig `json:"evolution,omitempty" yaml:"-"`
 	Channels  ChannelsConfig  `json:"channel_list"        yaml:"channel_list"`
@@ -48,6 +49,11 @@ type Config struct {
 
 	// cache for sensitive values and compiled regex (computed once)
 	sensitiveCache *SensitiveDataCache
+}
+
+// MemoryConfig controls the instance's scheduled memory review.
+type MemoryConfig struct {
+	DisableAutoCapture bool `json:"disable_auto_capture,omitempty"`
 }
 
 type EvolutionConfig struct {
@@ -437,8 +443,6 @@ type AgentDefaults struct {
 	SubTurn                   SubTurnConfig      `json:"subturn"                                                                                      envPrefix:"PICOCLAW_AGENTS_DEFAULTS_SUBTURN_"`
 	ToolFeedback              ToolFeedbackConfig `json:"tool_feedback,omitempty"`
 	SplitOnMarker             bool               `json:"split_on_marker"                  env:"PICOCLAW_AGENTS_DEFAULTS_SPLIT_ON_MARKER"` // split messages on <|[SPLIT]|> marker
-	ContextManager            string             `json:"context_manager,omitempty"        env:"PICOCLAW_AGENTS_DEFAULTS_CONTEXT_MANAGER"`
-	ContextManagerConfig      json.RawMessage    `json:"context_manager_config,omitempty" env:"PICOCLAW_AGENTS_DEFAULTS_CONTEXT_MANAGER_CONFIG"`
 	TurnProfile               TurnProfileConfig  `json:"turn_profile,omitempty"`
 	MaxLLMRetries             int                `json:"max_llm_retries,omitempty"        env:"PICOCLAW_AGENTS_DEFAULTS_MAX_LLM_RETRIES"`
 	LLMRetryBackoffSecs       int                `json:"llm_retry_backoff_secs,omitempty" env:"PICOCLAW_AGENTS_DEFAULTS_LLM_RETRY_BACKOFF_SECS"`
@@ -1216,14 +1220,10 @@ func LoadConfig(path string) (*Config, error) {
 			return nil, err
 		}
 
-		err = MakeBackup(path)
-		if err != nil {
+		if err = MakeBackup(path); err != nil {
 			return nil, err
 		}
-
-		defer func(cfg *Config) {
-			_ = SaveConfig(path, cfg)
-		}(cfg)
+		defer func() { _ = SaveConfig(path, cfg) }()
 	case 1:
 		// V1→V3 migration: rename channels→channel_list, infer Enabled, migrate channel configs
 		logger.InfoF(
@@ -1270,14 +1270,10 @@ func LoadConfig(path string) (*Config, error) {
 			return nil, err
 		}
 
-		err = MakeBackup(path)
-		if err != nil {
+		if err = MakeBackup(path); err != nil {
 			return nil, err
 		}
-
-		defer func(cfg *Config) {
-			_ = SaveConfig(path, cfg)
-		}(cfg)
+		defer func() { _ = SaveConfig(path, cfg) }()
 		logger.InfoF(
 			"config migrate success",
 			map[string]any{"from": versionInfo.Version, "to": CurrentVersion},
@@ -1322,14 +1318,10 @@ func LoadConfig(path string) (*Config, error) {
 			return nil, err
 		}
 
-		err = MakeBackup(path)
-		if err != nil {
+		if err = MakeBackup(path); err != nil {
 			return nil, err
 		}
-
-		defer func(cfg *Config) {
-			_ = SaveConfig(path, cfg)
-		}(cfg)
+		defer func() { _ = SaveConfig(path, cfg) }()
 		logger.InfoF(
 			"config migrate success",
 			map[string]any{"from": versionInfo.Version, "to": CurrentVersion},

@@ -37,7 +37,7 @@ func (p *Pipeline) CallLLM(
 	// PreLLM: graceful terminal handling
 	exec.gracefulTerminal, _ = ts.gracefulInterruptRequested()
 	exec.providerToolDefs = ts.agent.Tools.ToProviderDefs()
-	exec.providerToolDefs = filterToolsByTurnProfile(exec.providerToolDefs, ts.profile)
+	exec.providerToolDefs = turnToolDefs(exec.providerToolDefs, ts)
 
 	// Native web search support
 	webSearchEnabled := al.cfg.Tools.IsToolEnabled("web") && turnProfileToolAllowed(ts.profile, "web_search")
@@ -82,7 +82,7 @@ func (p *Pipeline) CallLLM(
 	nativeSearchBeforeHook := exec.useNativeSearch
 
 	// BeforeLLM hook
-	if p.Hooks != nil {
+	if p.Hooks != nil && !ts.opts.privateMemory {
 		llmReq, decision := p.Hooks.BeforeLLM(turnCtx, &LLMHookRequest{
 			Meta:             ts.eventMeta("runTurn", "turn.llm.request"),
 			Context:          cloneTurnContext(ts.turnCtx),
@@ -98,7 +98,7 @@ func (p *Pipeline) CallLLM(
 				prevModel := exec.llmModel
 				exec.llmModel = llmReq.Model
 				exec.callMessages = llmReq.Messages
-				exec.providerToolDefs = filterToolsByTurnProfile(llmReq.Tools, ts.profile)
+				exec.providerToolDefs = turnToolDefs(llmReq.Tools, ts)
 				exec.llmOpts = llmReq.Options
 				if strings.TrimSpace(exec.llmModel) != "" && exec.llmModel != prevModel {
 					if err := p.applyBeforeLLMModelRewrite(ts, exec); err != nil {
@@ -128,7 +128,7 @@ func (p *Pipeline) CallLLM(
 	if nativeSearchBeforeHook && !exec.useNativeSearch {
 		exec.providerToolDefs = restoreToolDefinition(
 			exec.providerToolDefs,
-			filterToolsByTurnProfile(ts.agent.Tools.ToProviderDefs(), ts.profile),
+			turnToolDefs(ts.agent.Tools.ToProviderDefs(), ts),
 			"web_search",
 		)
 	}
@@ -165,12 +165,14 @@ func (p *Pipeline) CallLLM(
 			"temperature":       ts.agent.Temperature,
 			"system_prompt_len": len(exec.callMessages[0].Content),
 		})
-	logger.DebugCF("agent", "Full LLM request",
-		map[string]any{
-			"iteration":     iteration,
-			"messages_json": formatMessagesForLog(exec.callMessages),
-			"tools_json":    formatToolsForLog(exec.providerToolDefs),
-		})
+	if !ts.opts.privateMemory {
+		logger.DebugCF("agent", "Full LLM request",
+			map[string]any{
+				"iteration":     iteration,
+				"messages_json": formatMessagesForLog(exec.callMessages),
+				"tools_json":    formatToolsForLog(exec.providerToolDefs),
+			})
+	}
 
 	// LLM call closure with fallback support
 	callLLM := func(
@@ -228,7 +230,7 @@ func (p *Pipeline) CallLLM(
 				if exec.useNativeSearch {
 					candidateTools = restoreToolDefinition(
 						candidateTools,
-						filterToolsByTurnProfile(ts.agent.Tools.ToProviderDefs(), ts.profile),
+						turnToolDefs(ts.agent.Tools.ToProviderDefs(), ts),
 						"web_search",
 					)
 				}
@@ -393,34 +395,31 @@ func (p *Pipeline) CallLLM(
 				))
 			}
 
-			if compactErr := p.ContextManager.Compact(ctx, &CompactRequest{
-				SessionKey: ts.sessionKey,
-				Reason:     ContextCompressReasonRetry,
-				Budget:     ts.agent.ContextWindow,
-			}); compactErr != nil {
-				logger.WarnCF("agent", "Context overflow compact failed", map[string]any{
-					"session_key": ts.sessionKey,
-					"error":       compactErr.Error(),
-				})
-			}
-			ts.refreshRestorePointFromSession(ts.agent)
-			if asmResp, asmErr := p.ContextManager.Assemble(ctx, &AssembleRequest{
-				SessionKey: ts.sessionKey,
-				Budget:     ts.agent.ContextWindow,
-				MaxTokens:  ts.agent.MaxTokens,
-			}); asmErr == nil && asmResp != nil {
-				exec.history = asmResp.History
-				exec.summary = asmResp.Summary
-			}
 			contextualSkills := ts.activeSkills
 			if ts.agent.ContextBuilder != nil {
 				contextualSkills = ts.agent.ContextBuilder.ResolveActiveSkillsForContext(ts.activeSkills)
 			}
 			ts.recordSkillContextSnapshot(skillContextTriggerContextRetryRebuild, contextualSkills)
-			stableHistory, protectedTurnTail := splitHistoryForActiveTurn(
-				exec.history,
-				ts.persistedMessagesSnapshot(),
-			)
+			stableHistory := exec.history
+			// The provider can have a smaller effective window than our estimate.
+			// Drop a complete historical prefix on retry, even when the estimate fits.
+			if len(stableHistory) > 0 {
+				cut := findSafeBoundary(stableHistory, len(stableHistory)/2)
+				if cut <= 0 || !isSafeBoundary(stableHistory, cut) {
+					cut = len(stableHistory)
+				}
+				stableHistory = stableHistory[cut:]
+				al.emitEvent(
+					runtimeevents.KindAgentContextCompress,
+					ts.eventMeta("runTurn", "turn.context.compress"),
+					ContextCompressPayload{
+						Reason:            ContextCompressReasonRetry,
+						DroppedMessages:   cut,
+						RemainingMessages: len(stableHistory),
+					},
+				)
+			}
+			protectedTurnTail := append([]providers.Message(nil), exec.messages[exec.currentTurnStart:]...)
 			buildMessages := func(trimmedHistory []providers.Message) []providers.Message {
 				fullHistory := append(append([]providers.Message(nil), trimmedHistory...), protectedTurnTail...)
 				rebuildPromptReq := promptBuildRequestForTurn(ts, fullHistory, exec.summary, "", nil, p.Cfg)
@@ -449,7 +448,7 @@ func (p *Pipeline) CallLLM(
 				exec.providerToolDefs,
 				ts.agent.MaxTokens,
 			)
-			exec.history = append(trimmedStableHistory, protectedTurnTail...)
+			exec.history = trimmedStableHistory
 			exec.messages = buildMessages(trimmedStableHistory)
 			exec.currentTurnStart = len(exec.messages) - len(protectedTurnTail)
 			if exec.gracefulTerminal {
@@ -508,7 +507,7 @@ func (p *Pipeline) CallLLM(
 	}
 
 	// AfterLLM hook
-	if p.Hooks != nil {
+	if p.Hooks != nil && !ts.opts.privateMemory {
 		llmResp, decision := p.Hooks.AfterLLM(turnCtx, &LLMHookResponse{
 			Meta:     ts.eventMeta("runTurn", "turn.llm.response"),
 			Context:  cloneTurnContext(ts.turnCtx),
@@ -551,12 +550,15 @@ func (p *Pipeline) CallLLM(
 		exec.response.ReasoningDetails = nil
 	}
 	reasoningContent := responseReasoningContent(exec.response)
-	go al.handleReasoning(
-		turnCtx,
-		reasoningContent,
-		ts.channel,
-		al.targetReasoningChannelID(ts.channel),
-	)
+	if !ts.opts.privateMemory {
+		go al.handleReasoning(
+			turnCtx,
+			reasoningContent,
+			ts.channel,
+			al.targetReasoningChannelID(ts.channel),
+		)
+	}
+
 	al.emitEvent(
 		runtimeevents.KindAgentLLMResponse,
 		ts.eventMeta("runTurn", "turn.llm.response"),
@@ -580,6 +582,9 @@ func (p *Pipeline) CallLLM(
 		llmResponseFields["prompt_tokens"] = exec.response.Usage.PromptTokens
 		llmResponseFields["completion_tokens"] = exec.response.Usage.CompletionTokens
 		llmResponseFields["total_tokens"] = exec.response.Usage.TotalTokens
+	}
+	if ts.opts.privateMemory {
+		delete(llmResponseFields, "reasoning")
 	}
 	logger.DebugCF("agent", "LLM response", llmResponseFields)
 
@@ -670,9 +675,7 @@ func (p *Pipeline) CallLLM(
 	}
 	exec.messages = append(exec.messages, assistantMsg)
 	if !ts.opts.NoHistory {
-		ts.agent.Sessions.AddFullMessage(ts.sessionKey, assistantMsg)
-		ts.recordPersistedMessage(assistantMsg)
-		ts.ingestMessage(turnCtx, al, assistantMsg)
+		ts.addTurnMessage(assistantMsg)
 	}
 
 	return ControlToolLoop, nil

@@ -20,16 +20,13 @@ func (p *Pipeline) SetupTurn(ctx context.Context, ts *turnState) (*turnExecution
 	var history []providers.Message
 	var summary string
 	if !ts.opts.NoHistory {
-		if resp, err := p.ContextManager.Assemble(ctx, &AssembleRequest{
-			SessionKey: ts.sessionKey,
-			Budget:     ts.agent.ContextWindow,
-			MaxTokens:  ts.agent.MaxTokens,
-		}); err == nil && resp != nil {
-			history = resp.History
-			summary = resp.Summary
+		snap, err := p.al.contextManager.beginTurn(ctx, ts)
+		if err != nil {
+			return nil, err
 		}
+		history = snap.Messages
+		summary = boundedSessionSummary(snap.Summary, ts.agent.ContextWindow, ts.agent.MaxTokens)
 	}
-	ts.captureRestorePoint(history, summary)
 
 	contextualSkills := ts.activeSkills
 	if ts.agent.ContextBuilder != nil {
@@ -47,29 +44,10 @@ func (p *Pipeline) SetupTurn(ctx context.Context, ts *turnState) (*turnExecution
 	messages = resolveMediaRefs(messages, p.MediaStore, maxMediaSize, currentTurnStart)
 
 	if !ts.opts.NoHistory {
-		toolDefs := filterToolsByTurnProfile(ts.agent.Tools.ToProviderDefs(), ts.profile)
+		toolDefs := turnToolDefs(ts.agent.Tools.ToProviderDefs(), ts)
 		if isOverContextBudget(ts.agent.ContextWindow, messages, toolDefs, ts.agent.MaxTokens) {
 			logger.WarnCF("agent", "Proactive compression: context budget exceeded before LLM call",
 				map[string]any{"session_key": ts.sessionKey})
-			if err := p.ContextManager.Compact(ctx, &CompactRequest{
-				SessionKey: ts.sessionKey,
-				Reason:     ContextCompressReasonProactive,
-				Budget:     ts.agent.ContextWindow,
-			}); err != nil {
-				logger.WarnCF("agent", "Proactive compact failed", map[string]any{
-					"session_key": ts.sessionKey,
-					"error":       err.Error(),
-				})
-			}
-			ts.refreshRestorePointFromSession(ts.agent)
-			if resp, err := p.ContextManager.Assemble(ctx, &AssembleRequest{
-				SessionKey: ts.sessionKey,
-				Budget:     ts.agent.ContextWindow,
-				MaxTokens:  ts.agent.MaxTokens,
-			}); err == nil && resp != nil {
-				history = resp.History
-				summary = resp.Summary
-			}
 			originalHistoryCount := len(history)
 			var fit bool
 			history, messages, fit = trimHistoryToFitContextWindow(
@@ -118,13 +96,7 @@ func (p *Pipeline) SetupTurn(ctx context.Context, ts *turnState) (*turnExecution
 
 	if !ts.opts.NoHistory && (strings.TrimSpace(ts.userMessage) != "" || len(ts.media) > 0) {
 		rootMsg := userPromptMessage(ts.userMessage, ts.media)
-		if len(rootMsg.Media) > 0 {
-			ts.agent.Sessions.AddFullMessage(ts.sessionKey, rootMsg)
-		} else {
-			ts.agent.Sessions.AddMessage(ts.sessionKey, rootMsg.Role, rootMsg.Content)
-		}
-		ts.recordPersistedMessage(rootMsg)
-		ts.ingestMessage(ctx, p.al, rootMsg)
+		ts.addTurnMessage(rootMsg)
 	}
 
 	activeCandidates, activeModel, usedLight := p.al.selectCandidates(ts.agent, ts.userMessage, messages)

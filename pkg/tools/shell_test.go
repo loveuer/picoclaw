@@ -376,8 +376,8 @@ func TestShellTool_EmptyChannelBlockedWhenNotAllowRemote(t *testing.T) {
 	}
 }
 
-// TestShellTool_AllowRemoteBypassesChannelCheck verifies allowRemote=true permits any channel
-func TestShellTool_AllowRemoteBypassesChannelCheck(t *testing.T) {
+// Remote opt-in does not replace filesystem isolation.
+func TestShellTool_AllowRemoteRequiresIsolation(t *testing.T) {
 	cfg := &config.Config{}
 	cfg.Tools.Exec.EnableDenyPatterns = true
 	cfg.Tools.Exec.AllowRemote = true
@@ -389,8 +389,8 @@ func TestShellTool_AllowRemoteBypassesChannelCheck(t *testing.T) {
 	ctx := WithToolContext(context.Background(), "telegram", "chat-1")
 	result := tool.Execute(ctx, map[string]any{"action": "run", "command": "echo hi"})
 
-	if result.IsError {
-		t.Fatalf("expected allowRemote=true to permit remote channel, got: %s", result.ForLLM)
+	if !result.IsError || !strings.Contains(result.ForLLM, "bubblewrap") {
+		t.Fatalf("expected unisolated remote shell to fail, got: %s", result.ForLLM)
 	}
 }
 

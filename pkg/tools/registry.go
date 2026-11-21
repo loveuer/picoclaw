@@ -240,6 +240,13 @@ func (r *ToolRegistry) Get(name string) (Tool, bool) {
 	return entry.Tool, true
 }
 
+type privateToolLogsKey struct{}
+
+// WithPrivateToolLogs hides the arguments and error payload of tools in a private turn.
+func WithPrivateToolLogs(ctx context.Context) context.Context {
+	return context.WithValue(ctx, privateToolLogsKey{}, true)
+}
+
 func (r *ToolRegistry) Execute(ctx context.Context, name string, args map[string]any) *ToolResult {
 	return r.ExecuteWithContext(ctx, name, args, "", "", nil)
 }
@@ -255,11 +262,12 @@ func (r *ToolRegistry) ExecuteWithContext(
 	channel, chatID string,
 	asyncCallback AsyncCallback,
 ) *ToolResult {
-	logger.InfoCF("tool", "Tool execution started",
-		map[string]any{
-			"tool": name,
-			"args": args,
-		})
+	private, _ := ctx.Value(privateToolLogsKey{}).(bool)
+	logArgs := map[string]any{"tool": name}
+	if !private {
+		logArgs["args"] = args
+	}
+	logger.InfoCF("tool", "Tool execution started", logArgs)
 
 	tool, ok := r.Get(name)
 	if !ok {
@@ -331,17 +339,23 @@ func (r *ToolRegistry) ExecuteWithContext(
 		}
 	}
 
-	result = normalizeToolResult(result, name, r.mediaStore, channel, chatID)
+	if !private || name != "memory_search" {
+		result = normalizeToolResult(result, name, r.mediaStore, channel, chatID)
+	}
 
 	duration := time.Since(start)
 
 	// Log based on result type
 	if result.IsError {
+		errorText := result.ForLLM
+		if private {
+			errorText = "[private]"
+		}
 		logger.ErrorCF("tool", "Tool execution failed",
 			map[string]any{
 				"tool":     name,
 				"duration": duration.Milliseconds(),
-				"error":    result.ForLLM,
+				"error":    errorText,
 			})
 	} else if result.Async {
 		logger.InfoCF("tool", "Tool started (async)",

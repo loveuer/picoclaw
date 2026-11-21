@@ -86,7 +86,8 @@ func (p *Pipeline) tryConfiguredStreamingLLM(
 			exec.llmOpts,
 			func(chunk providers.StreamChunk) {
 				recordChunk()
-				if !exec.suppressReasoning && strings.TrimSpace(chunk.ReasoningContent) != "" {
+				if !exec.suppressReasoning && !ts.opts.privateMemory &&
+					strings.TrimSpace(chunk.ReasoningContent) != "" {
 					publisher.UpdateReasoning(ctx, chunk.ReasoningContent)
 				}
 				if strings.TrimSpace(chunk.Content) != "" {

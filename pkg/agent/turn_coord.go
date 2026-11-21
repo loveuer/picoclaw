@@ -37,6 +37,9 @@ func (al *AgentLoop) runTurn(ctx context.Context, ts *turnState, pipeline *Pipel
 
 	turnStatus := TurnEndStatusCompleted
 	defer func() {
+		if ts.opts.privateMemory {
+			return
+		}
 		attemptedSkills := ts.attemptedSkillsSnapshot()
 		skillContextSnapshots := ts.skillContextSnapshotsSnapshot()
 		finalSuccessfulPath := []string(nil)
@@ -77,7 +80,7 @@ func (al *AgentLoop) runTurn(ctx context.Context, ts *turnState, pipeline *Pipel
 		runtimeevents.KindAgentTurnStart,
 		ts.eventMeta("runTurn", "turn.start"),
 		TurnStartPayload{
-			UserMessage: ts.userMessage,
+			UserMessage: turnEventMessage(ts),
 			MediaCount:  len(ts.media),
 		},
 	)
@@ -162,9 +165,7 @@ func (al *AgentLoop) runTurn(ctx context.Context, ts *turnState, pipeline *Pipel
 				messages = append(messages, resolvedPending[i])
 				totalContentLen += len(pm.Content)
 				if !ts.opts.NoHistory {
-					ts.agent.Sessions.AddFullMessage(ts.sessionKey, pm)
-					ts.recordPersistedMessage(pm)
-					ts.ingestMessage(turnCtx, al, pm)
+					ts.addTurnMessage(pm)
 				}
 				logger.InfoCF("agent", "Injected steering message into context",
 					map[string]any{
@@ -235,6 +236,18 @@ func (al *AgentLoop) runTurn(ctx context.Context, ts *turnState, pipeline *Pipel
 			toolCtrl := pipeline.ExecuteTools(ctx, turnCtx, ts, exec, iteration)
 			switch toolCtrl {
 			case ToolControlContinue:
+				if ts.hardAbortRequested() {
+					turnStatus = TurnEndStatusAborted
+					return al.abortTurn(ts)
+				}
+				if commitErr := ts.commitTurnMemory(turnCtx, true); commitErr != nil {
+					if ts.hardAbortRequested() {
+						turnStatus = TurnEndStatusAborted
+						return al.abortTurn(ts)
+					}
+					turnStatus = TurnEndStatusError
+					return turnResult{}, commitErr
+				}
 				// Re-read exec.messages since ExecuteTools may have updated it
 				// (added tool results/skipped messages) before returning ControlContinue
 				messages = exec.messages
@@ -294,7 +307,7 @@ func (al *AgentLoop) runTurn(ctx context.Context, ts *turnState, pipeline *Pipel
 func (al *AgentLoop) abortTurn(ts *turnState) (turnResult, error) {
 	ts.setPhase(TurnPhaseAborted)
 	if !ts.opts.NoHistory {
-		if err := ts.restoreSession(ts.agent); err != nil {
+		if err := ts.rollbackTurnMemory(); err != nil {
 			al.emitEvent(
 				runtimeevents.KindAgentError,
 				ts.eventMeta("abortTurn", "turn.error"),
@@ -339,29 +352,6 @@ func (al *AgentLoop) selectCandidates(
 	return agent.LightCandidates, resolvedCandidateModel(agent.LightCandidates, agent.Router.LightModel()), true
 }
 
-func (al *AgentLoop) resolveContextManager() ContextManager {
-	name := al.cfg.Agents.Defaults.ContextManager
-	if name == "" || name == "legacy" {
-		return &legacyContextManager{al: al}
-	}
-	factory, ok := lookupContextManager(name)
-	if !ok {
-		logger.WarnCF("agent", "Unknown context manager, falling back to legacy", map[string]any{
-			"name": name,
-		})
-		return &legacyContextManager{al: al}
-	}
-	cm, err := factory(al.cfg.Agents.Defaults.ContextManagerConfig, al)
-	if err != nil {
-		logger.WarnCF("agent", "Failed to create context manager, falling back to legacy", map[string]any{
-			"name":  name,
-			"error": err.Error(),
-		})
-		return &legacyContextManager{al: al}
-	}
-	return cm
-}
-
 func (al *AgentLoop) askSideQuestion(
 	ctx context.Context,
 	agent *AgentInstance,
@@ -387,6 +377,12 @@ func (al *AgentLoop) askSideQuestion(
 			return "", err
 		}
 		*opts = resolved
+		if opts.privateMemory {
+			opts.memoryOverlays, err = memoryPrompt(ctx, agent.memoryDB, false)
+			if err != nil {
+				return "", err
+			}
+		}
 	}
 
 	var media []string
@@ -403,14 +399,12 @@ func (al *AgentLoop) askSideQuestion(
 	var history []providers.Message
 	var summary string
 	if opts != nil && !opts.NoHistory {
-		if resp, err := al.contextManager.Assemble(ctx, &AssembleRequest{
-			SessionKey: opts.SessionKey,
-			Budget:     agent.ContextWindow,
-			MaxTokens:  agent.MaxTokens,
-		}); err == nil && resp != nil {
-			history = resp.History
-			summary = resp.Summary
+		_, snap, err := agent.turnStore.TurnSnapshot(ctx, opts.Dispatch.SessionKey, opts.privateMemory)
+		if err != nil {
+			return "", err
 		}
+		history = snap.Messages
+		summary = boundedSessionSummary(snap.Summary, agent.ContextWindow, agent.MaxTokens)
 	}
 
 	var promptReq PromptBuildRequest
@@ -497,7 +491,7 @@ func (al *AgentLoop) askSideQuestion(
 		turnCtx = newTurnContext(opts.Dispatch.InboundContext, opts.Dispatch.RouteResult, opts.Dispatch.SessionScope)
 	}
 	llmModel := activeModel
-	if al.hooks != nil {
+	if al.hooks != nil && (opts == nil || !opts.privateMemory) {
 		llmReq, decision := al.hooks.BeforeLLM(ctx, &LLMHookRequest{
 			Meta: HookMeta{
 				Source:      "askSideQuestion",
@@ -598,7 +592,7 @@ func (al *AgentLoop) askSideQuestion(
 	}
 
 	// Apply after_llm hooks
-	if al.hooks != nil {
+	if al.hooks != nil && (opts == nil || !opts.privateMemory) {
 		llmResp, decision := al.hooks.AfterLLM(ctx, &LLMHookResponse{
 			Meta: HookMeta{
 				Source:      "askSideQuestion",
@@ -731,4 +725,11 @@ func (al *AgentLoop) sideQuestionModelConfig(
 	// If candidate specifies a different provider/model, override
 	clone := *modelCfg
 	return &clone, nil
+}
+
+func turnEventMessage(ts *turnState) string {
+	if ts.opts.privateMemory {
+		return ""
+	}
+	return ts.userMessage
 }

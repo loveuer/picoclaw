@@ -4,6 +4,7 @@ package feishu
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"testing"
 
@@ -449,5 +450,40 @@ func TestResetTrackedToolFeedbackAfterEditFailure_DismissesTrackedMessage(t *tes
 	}
 	if _, ok := ch.currentToolFeedbackMessage("chat-1"); ok {
 		t.Fatal("expected tracked tool feedback to be cleared after edit failure reset")
+	}
+}
+
+func TestFeishuPrivateMemoryUsesChannelAllowlistWithoutTenant(t *testing.T) {
+	messageBus := bus.NewMessageBus()
+	defer messageBus.Close()
+	c := &FeishuChannel{BaseChannel: channels.NewBaseChannel("work", nil, messageBus, []string{"feishu:alice"})}
+	event := func(sender string) *larkim.P2MessageReceiveV1 {
+		t.Helper()
+		payload := `{"event":{"sender":{"sender_id":{"open_id":"` + sender + `"},"sender_type":"user"},"message":{
+"chat_id":"chat","chat_type":"p2p","message_id":"message","message_type":"text","content":"{\"text\":\"记一下原神进度\"}"}}}`
+		var in larkim.P2MessageReceiveV1
+		if err := json.Unmarshal([]byte(payload), &in); err != nil {
+			t.Fatal(err)
+		}
+		return &in
+	}
+	if err := c.handleMessageReceive(t.Context(), event("other")); err != nil {
+		t.Fatal(err)
+	}
+	select {
+	case <-messageBus.InboundChan():
+		t.Fatal("blocked sender entered the agent")
+	default:
+	}
+	if err := c.handleMessageReceive(t.Context(), event("alice")); err != nil {
+		t.Fatal(err)
+	}
+	select {
+	case msg := <-messageBus.InboundChan():
+		if msg.PrivateChat == nil || msg.PrivateChat.Text != "记一下原神进度" {
+			t.Fatal("allowed Feishu message did not grant shared memory access")
+		}
+	default:
+		t.Fatal("missing allowed Feishu message")
 	}
 }
