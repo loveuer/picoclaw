@@ -1,74 +1,36 @@
 name: Release
 
 on:
-  workflow_dispatch:
-    inputs:
-      channel:
-        description: Release channel (manual publication only)
-        required: true
-        type: choice
-        options:
-          - stable
-          - nightly
-        default: stable
-      tag:
-        description: Existing tag for a stable release (leave empty for nightly)
-        required: false
-        type: string
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
 
 permissions:
   contents: read
 
 concurrency:
-  group: release-${{ inputs.channel }}
+  group: release-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
   release:
-    name: Publish Linux amd64 release
+    name: Build and publish release archives
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    env:
+      RELEASE_VERSION: ${{ github.ref_name }}
     steps:
+      - name: Validate release tag
+        run: |
+          if [[ ! "$RELEASE_VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Release tags must match vMAJOR.MINOR.PATCH."
+            exit 1
+          fi
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
           persist-credentials: false
-      - name: Select source and version
-        id: source
-        env:
-          RELEASE_CHANNEL: ${{ inputs.channel }}
-          RELEASE_TAG: ${{ inputs.tag }}
-        run: |
-          set -euo pipefail
-          case "$RELEASE_CHANNEL" in
-            stable)
-              if [[ -z "$RELEASE_TAG" || "$RELEASE_TAG" == nightly ]]; then
-                echo '::error::Stable publication requires an existing tag other than nightly.'
-                exit 1
-              fi
-              git check-ref-format "refs/tags/$RELEASE_TAG"
-              target=$(git rev-parse --verify "refs/tags/$RELEASE_TAG^{commit}")
-              git checkout --detach "$target"
-              version="$RELEASE_TAG"
-              ;;
-            nightly)
-              if [[ -n "$RELEASE_TAG" ]]; then
-                echo '::error::Nightly publishes the selected workflow ref; leave tag empty.'
-                exit 1
-              fi
-              target=$(git rev-parse HEAD)
-              version="nightly-$(date -u +%Y%m%d)-$(git rev-parse --short=8 HEAD)"
-              ;;
-            *) echo '::error::Unknown release channel.'; exit 1 ;;
-          esac
-          # Versions enter linker flags and step outputs; accept only plain version characters.
-          if [[ ! "$version" =~ ^[a-zA-Z0-9][a-zA-Z0-9._+-]*$ ]]; then
-            echo '::error::Unsupported version format.'
-            exit 1
-          fi
-          echo "version=$version" >> "$GITHUB_OUTPUT"
-          echo "target=$target" >> "$GITHUB_OUTPUT"
       - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
@@ -77,30 +39,12 @@ jobs:
           go generate ./...
           make lint-docs
           go test -tags stdjson ./...
-      - name: Package binary and SHA256 manifest
-        env:
-          RELEASE_VERSION: ${{ steps.source.outputs.version }}
-        run: bash scripts/package-release.sh "$RELEASE_VERSION"
+      - name: Package release archives and checksums
+        run: bash scripts/package-release.sh "$RELEASE_VERSION" "$RUNNER_TEMP/picoclaw-release"
       - name: Publish GitHub release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
-          RELEASE_CHANNEL: ${{ inputs.channel }}
-          RELEASE_TAG: ${{ inputs.tag }}
-          RELEASE_VERSION: ${{ steps.source.outputs.version }}
-          RELEASE_TARGET: ${{ steps.source.outputs.target }}
         run: |
-          set -euo pipefail
-          assets=(dist/picoclaw_Linux_x86_64.tar.gz dist/checksums.txt)
-          if [[ "$RELEASE_CHANNEL" == stable ]]; then
-            gh release create "$RELEASE_TAG" --verify-tag --title "$RELEASE_TAG" \
-              --generate-notes --latest=true "${assets[@]}"
-          else
-            # Replace nightly only after the new source has passed tests and packaging.
-            if gh release view nightly --json tagName >/dev/null 2>&1; then
-              gh release delete nightly --cleanup-tag --yes
-            fi
-            gh release create nightly --target "$RELEASE_TARGET" \
-              --title "Nightly $RELEASE_VERSION" --notes "Build $RELEASE_VERSION ($RELEASE_TARGET)." \
-              --prerelease --latest=false "${assets[@]}"
-          fi
+          gh release create "$RELEASE_VERSION" --verify-tag --title "$RELEASE_VERSION" \
+            --generate-notes --latest=true "$RUNNER_TEMP/picoclaw-release/"*

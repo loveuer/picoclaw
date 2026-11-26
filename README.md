@@ -66,20 +66,16 @@ make build GOOS=linux GOARCH=amd64 \
 
 GitHub 的 `CI` 工作流在推送 `main`、提交 PR 或手动触发时运行，保留测试、文档检查、vet、lint、漏洞检查、Docker 集成测试和 Linux amd64 构建。
 
-`Release` 仅手动触发，发布到当前仓库的 GitHub Releases，使用内置 `GITHUB_TOKEN`。自动发布目标收敛为 Linux amd64，不再运行定时 nightly、多平台发布、Docker Hub / TOS 上传或 deb/rpm 打包；本地 Docker 环境和交叉编译命令仍可使用。
-
-发布稳定版时，先提交包含发布脚本的代码，创建并推送版本标签，例如：
+`Release` 在推送 `v数字.数字.数字` 格式的标签时运行，例如：
 
 ```bash
 git tag v1.0.0
 git push origin v1.0.0
 ```
 
-然后在 GitHub Actions 中手动运行 `Release`，选择 `channel=stable`、`tag=v1.0.0`。工作流会检出该标签，测试并构建后创建稳定版 Release，设为 latest。标签必须指向包含新发布脚本的提交；已发布版本不覆盖。
+工作流检出该标签，测试并构建后创建稳定版 GitHub Release，设为 latest。产物包括 Windows、macOS 和 Linux 的 amd64、arm64 压缩包，以及 Android arm64 的命令行二进制压缩包。所有平台统一使用 `.tgz`，每个包内含可执行文件和 `LICENSE`。Release 同时提供 `checksums.txt`，可供自更新使用。
 
-发布测试版时，选择需要构建的分支或标签，设置 `channel=nightly`，将 `tag` 留空。测试和打包成功后会替换 `nightly` Release 及标签，标记为预发布，不影响 latest 稳定版。
-
-两种发布均上传 `picoclaw_Linux_x86_64.tar.gz` 和 `checksums.txt`。压缩包内含 `picoclaw` 与 `LICENSE`，可供下面的自更新命令使用。也可在本地生成同样的发布包：
+也可在本地生成同样的发布包：
 
 ```bash
 bash scripts/package-release.sh v1.0.0
@@ -97,7 +93,7 @@ picoclaw update --check
 # 应用稳定版；也可将命令名换成实际安装的 picoclaw-beta
 picoclaw update
 
-# 检查 / 应用本 fork 的 nightly Release
+# 仓库另行发布 nightly 时，可检查或应用该版本
 picoclaw update --nightly --check
 picoclaw update --nightly
 
@@ -108,7 +104,7 @@ picoclaw update --url https://github.com/loveuer/picoclaw/releases/tag/v1.0.0 --
 
 `--url` 支持 GitHub 仓库、Release 页面或 Releases API 地址，与 `--repo`、`--nightly` 互斥。不会把无效地址当成默认源。`--check` 检查产物可用性，不比较版本新旧；可配合 `--platform`、`--arch` 查询其他平台，实际自更新仅允许当前系统与架构。
 
-发布更新时需要先在本 fork 创建稳定版 Release 或名为 `nightly` 的 Release，并上传对应平台的 `.tar.gz`、`.tgz`、`.tar` 或 `.zip` 包。例如 `picoclaw_Linux_x86_64.tar.gz`，内部包含 `picoclaw` 或 `picoclaw-beta`（Windows 对应 `.exe`）。需要 GitHub 提供的 SHA256 digest，或包含产物文件名与 SHA256 的 checksums 文件。单独的二进制下载链接目前不支持。
+发布更新时需要先在本 fork 创建稳定版 Release 或名为 `nightly` 的 Release，并上传对应平台的 `.tar.gz`、`.tgz`、`.tar` 或 `.zip` 包。例如 `picoclaw_Linux_x86_64.tgz`，内部包含 `picoclaw` 或 `picoclaw-beta`（Windows 对应 `.exe`）。需要 GitHub 提供的 SHA256 digest，或包含产物文件名与 SHA256 的 checksums 文件。单独的二进制下载链接目前不支持。
 
 更新会校验下载文件并替换当前可执行文件，保留实际安装名称，需要对安装目录有写权限。沿用现有回滚机制保留旧 binary 为 `.old`；不会修改用户配置、自动重启服务或覆盖工作区 Skill。更新后按部署方式重启；需要刷新内置 Skill 时，再使用 `skills install-builtin`。
 

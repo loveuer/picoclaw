@@ -2,8 +2,8 @@
 
 > Back to [Guides](README.md)
 
-This fork currently publishes only Linux amd64 archives. There is no Android or Linux ARM64 release asset; the previous upstream download commands do not install this fork.
+For an ARM64 Android device running Termux, download `picoclaw_Android_arm64.tgz` from a [stable release of this fork](https://github.com/loveuer/picoclaw/releases/latest), extract it inside Termux, and run `./picoclaw`.
 
-The Makefile retains `make build-android-arm64`, which produces `build/picoclaw-android-arm64` from this repository. Android builds and runtime behavior are outside the current CI and have not been verified for this fork. Check the target environment and dependencies before using them.
+To build from source, run `make build-android-arm64` to produce `build/picoclaw-android-arm64`. The release workflow cross-compiles the binary. Check runtime compatibility on your device.
 
-For the maintained installation path, use [Linux amd64 or a local source build](../../README.md#从源码构建). Model protocols and configuration are described in the [provider guide](providers.md).
+Model protocols and configuration are described in the [provider guide](providers.md).
